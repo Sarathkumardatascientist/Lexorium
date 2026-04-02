@@ -1,20 +1,15 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "functions": {
-    "api/chat.js": {
+    "api/index.js": {
       "maxDuration": 60
-    },
-    "api/billing/create-order.js": {
-      "maxDuration": 30
-    },
-    "api/billing/verify-payment.js": {
-      "maxDuration": 30
-    },
-    "api/contact/enterprise.js": {
-      "maxDuration": 15
     }
   },
   "rewrites": [
+    {
+      "source": "/api/:route*",
+      "destination": "/api?route=:route*"
+    },
     {
       "source": "/app",
       "destination": "/app.html"
