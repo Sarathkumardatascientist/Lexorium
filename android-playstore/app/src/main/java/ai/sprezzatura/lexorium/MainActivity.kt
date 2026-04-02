@@ -84,6 +84,8 @@ class MainActivity : AppCompatActivity() {
         offlineBody = findViewById(R.id.offlineBody)
         retryButton = findViewById(R.id.retryButton)
 
+        swipeRefresh.setColorSchemeResources(R.color.lexorium_gold)
+        swipeRefresh.setProgressBackgroundColorSchemeResource(R.color.lexorium_surface)
         retryButton.setOnClickListener { webView.reload() }
         swipeRefresh.setOnRefreshListener { webView.reload() }
 
