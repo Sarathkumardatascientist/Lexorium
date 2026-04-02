@@ -32,6 +32,8 @@
     line-height: 1.6;
     -webkit-font-smoothing: antialiased;
     letter-spacing: 0.01em;
+    max-width: 100%;
+    overflow-x: hidden;
   }
 
   body {
@@ -56,6 +58,7 @@
     height: 100dvh;
     flex: 1;
     min-width: 0;
+    min-height: 0;
     max-width: none;
     margin: 0;
     border-left: none;
@@ -1511,6 +1514,8 @@
     flex-direction: column;
     gap: 0;
     scroll-behavior: smooth;
+    min-width: 0;
+    overscroll-behavior: contain;
   }
 
   .messages::-webkit-scrollbar { width: 3px; }
@@ -1525,6 +1530,7 @@
     border-bottom: 1px solid var(--line);
     animation: fadeUp 0.3s ease both;
     align-items: start;
+    min-width: 0;
   }
 
   .msg:last-child { border-bottom: none; }
@@ -1592,6 +1598,7 @@
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(188px, 1fr));
     gap: 10px;
+    min-width: 0;
   }
 
   .msg-attachment-card {
@@ -2365,8 +2372,10 @@
   /* â”€â”€ INPUT â”€â”€ */
   footer {
     border-top: 1px solid var(--line);
-    padding: 20px 36px 28px;
+    padding: 20px 36px calc(28px + env(safe-area-inset-bottom));
     background: var(--bg);
+    position: relative;
+    z-index: 10;
   }
 
   .input-row {
@@ -2378,6 +2387,7 @@
     border-radius: 999px;
     padding: 10px 14px 10px 10px;
     transition: border-color 0.25s;
+    min-width: 0;
   }
 
   .input-row:focus-within {
@@ -2474,6 +2484,8 @@
     text-align: center;
     font-weight: 300;
     text-transform: uppercase;
+    white-space: normal;
+    overflow-wrap: anywhere;
   }
 
   .error-msg {
@@ -2878,40 +2890,181 @@
   @media (max-width: 768px) {
     body {
       display: block;
-      overflow: auto;
+      overflow: hidden;
     }
 
     .shell {
       width: 100%;
+      height: 100dvh;
+      min-height: 100dvh;
       border-left: none;
+      border-right: none;
+    }
+
+    header {
+      padding: 0 14px;
+    }
+
+    .header-row1 {
+      grid-template-columns: auto minmax(0, 1fr) auto;
+      gap: 8px;
+      min-height: 50px;
+      height: auto;
+      padding: 8px 0 6px;
+    }
+
+    .header-center-logo {
+      justify-content: flex-start;
+      min-width: 0;
+    }
+
+    .header-center-logo .app-brand-wordmark {
+      font-size: 18px;
+    }
+
+    .header-right {
+      gap: 4px;
+      min-width: 0;
+    }
+
+    .auth-pill {
+      display: none !important;
+    }
+
+    .header-row2 {
+      justify-content: flex-start;
+      padding: 0 0 10px;
+    }
+
+    .routing-status,
+    .plan-status {
+      width: 100%;
+      align-items: flex-start;
+      text-align: left;
+    }
+
+    .plan-status-note {
+      max-width: none;
     }
 
     .messages {
-      padding: 24px 20px;
+      padding: 20px 14px 24px;
     }
 
     .msg {
-      grid-template-columns: 44px 1fr;
-      gap: 12px;
-      padding: 18px 0;
+      grid-template-columns: 1fr;
+      gap: 8px;
+      padding: 16px 0;
+    }
+
+    .msg > .msg-role,
+    .msg > .msg-meta,
+    .msg > .msg-body,
+    .msg > .msg-actions {
+      grid-column: 1;
+    }
+
+    .msg.user .msg-role {
+      padding-top: 0;
+      font-size: 8.5px;
+      letter-spacing: 0.18em;
     }
 
     .msg.assistant .msg-body {
-      padding: 16px 18px;
+      padding: 16px 16px 15px;
+      border-radius: 18px;
       line-height: 1.78;
     }
 
+    .assistant-brand-row {
+      gap: 10px;
+      margin-bottom: 12px;
+      padding-bottom: 12px;
+      align-items: flex-start;
+    }
+
+    .assistant-brand-name {
+      font-size: 15px;
+    }
+
+    .assistant-brand-label {
+      letter-spacing: 0.12em;
+    }
+
+    .msg-body p,
+    .msg-body ul li,
+    .msg-body ol li,
+    .msg-body blockquote,
+    .msg-body code,
+    .msg-body pre {
+      overflow-wrap: anywhere;
+    }
+
+    .msg-attachments-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .msg-attachment-name {
+      white-space: normal;
+      overflow: visible;
+      text-overflow: clip;
+    }
+
+    .msg-actions {
+      grid-column: 1;
+      flex-wrap: wrap;
+      overflow: visible;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .flowchart-wrap {
+      margin-top: 16px;
+      padding-top: 14px;
+    }
+
+    .flowchart-canvas {
+      padding: 12px;
+      border-radius: 16px;
+    }
+
+    .flowchart-canvas svg {
+      min-width: 560px;
+    }
+
     footer {
-      padding: 16px 20px 20px;
+      padding: 14px 14px calc(16px + env(safe-area-inset-bottom));
     }
 
     .input-row {
-      gap: 10px;
-      padding: 10px 12px;
+      align-items: flex-end;
+      gap: 8px;
+      padding: 10px;
+      border-radius: 22px;
+    }
+
+    textarea {
+      font-size: 16px;
+      line-height: 1.5;
+    }
+
+    .attach-btn,
+    .voice-btn,
+    .send-btn {
+      width: 36px;
+      height: 36px;
     }
 
     .attach-preview {
       padding: 10px 0 4px;
+    }
+
+    .attach-menu {
+      left: 0;
+      right: auto;
+      min-width: min(220px, calc(100vw - 28px));
+      max-width: min(280px, calc(100vw - 28px));
+      max-height: min(52vh, 360px);
     }
 
     .history-actions,
@@ -2922,8 +3075,9 @@
     }
 
     .settings-modal {
-      width: min(96vw, 760px);
-      max-height: 92vh;
+      width: min(100vw - 16px, 760px);
+      max-height: min(100dvh - 16px, 92vh);
+      border-radius: 20px;
     }
 
     .settings-shell {
@@ -2935,20 +3089,94 @@
       border-right: none;
       border-bottom: 1px solid rgba(255,255,255,0.08);
     }
+
+    .settings-content {
+      padding: 18px 16px 24px;
+    }
+
+    .settings-header {
+      padding-bottom: 14px;
+      margin-bottom: 6px;
+    }
+
+    .settings-row {
+      padding: 16px 0;
+      gap: 12px;
+    }
   }
 
   @media (max-width: 560px) {
     .history-panel {
-      width: 274px;
-      max-width: 82vw;
+      width: min(86vw, 300px);
+      max-width: 86vw;
+    }
+
+    .header-center-logo .app-brand-wordmark {
+      font-size: 16px;
     }
 
     .messages {
-      padding: 20px 16px;
+      padding: 18px 12px 22px;
     }
 
     .msg.assistant .msg-body {
-      padding: 15px 16px;
+      padding: 14px;
+      border-radius: 16px;
+      font-size: 13.5px;
+      line-height: 1.72;
+    }
+
+    .assistant-brand-row {
+      margin-bottom: 10px;
+      padding-bottom: 10px;
+      gap: 9px;
+    }
+
+    .assistant-brand-mark {
+      width: 30px;
+      height: 30px;
+      border-radius: 10px;
+    }
+
+    .msg-body h1 {
+      font-size: 19px;
+    }
+
+    .msg-body h2 {
+      font-size: 16px;
+    }
+
+    .msg-body h3 {
+      font-size: 10px;
+    }
+
+    .empty {
+      padding: 40px 14px;
+      gap: 16px;
+    }
+
+    .empty-title {
+      font-size: 26px;
+    }
+
+    .empty-sub {
+      letter-spacing: 0.18em;
+    }
+
+    .starter-heading {
+      text-align: center;
+    }
+
+    .starters {
+      width: 100%;
+      max-width: none;
+    }
+
+    .starter {
+      width: 100%;
+      padding: 10px 12px;
+      text-align: center;
+      border-radius: 12px;
     }
 
     .settings-content {
@@ -3008,6 +3236,10 @@
 
     .attach-preview {
       gap: 6px;
+    }
+
+    .footer-hint {
+      display: none;
     }
   }
 </style>
@@ -4437,7 +4669,7 @@
     const plan = getCurrentPlanSummary();
     if (plan?.unmetered) {
       planStatusEl.innerHTML = `
-        <span class="plan-status-primary">${escapeHtml(`${plan.name || 'Enterprise'} plan | Unlimited queries`)}</span>
+        <span class="plan-status-primary">${escapeHtml(`${plan.name || 'Enterprise'} plan | Priority access enabled`)}</span>
         <span class="plan-status-note">${escapeHtml(getHabitLine())}</span>
       `;
       return;

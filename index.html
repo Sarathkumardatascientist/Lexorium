@@ -43,6 +43,7 @@ body {
   overflow-x: hidden;
   min-height: 100vh;
   position: relative;
+  max-width: 100%;
 }
 
 body.cursor-enhanced {
@@ -1181,6 +1182,10 @@ nav {
   font-size: 34px;
   font-style: italic;
   line-height: 1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 6px;
 }
 
 .plan-price span {
@@ -1188,7 +1193,7 @@ nav {
   font-size: 12px;
   font-style: normal;
   color: rgba(192,192,192,0.45);
-  margin-left: 6px;
+  margin-left: 0;
 }
 
 .plan-note {
@@ -1945,6 +1950,10 @@ footer {
     gap: 14px 12px;
     flex-wrap: wrap;
   }
+  .hero-beam,
+  .hero-ring {
+    display: none;
+  }
   .nav-logo { flex: 1 1 auto; min-width: 0; }
   .nav-logo img { width: 32px; height: 32px; border-radius: 10px; }
   .nav-logo-wordmark { font-size: 18px; }
@@ -2013,7 +2022,12 @@ footer {
     letter-spacing: 0.1em;
   }
   .hero-prism-stage { margin-top: 42px; }
-  .hero-prism-shell { padding: 18px; border-radius: 24px; }
+  .hero-prism-shell {
+    padding: 18px;
+    border-radius: 24px;
+    max-width: 100%;
+    overflow: hidden;
+  }
   .prism-surface { grid-template-columns: 1fr; gap: 14px; }
   .prism-panel-main { padding: 22px; }
   .prism-panel-side { padding: 14px; }
@@ -2065,6 +2079,16 @@ footer {
   .platform-card-copy { font-size: 12px; }
   .pricing-grid { grid-template-columns: 1fr; }
   .plans-grid { grid-template-columns: 1fr; }
+  .pricing-card,
+  .plan-card,
+  .feature-card,
+  .signin-inner,
+  .how-inner,
+  .platform-card {
+    width: 100%;
+    min-width: 0;
+    overflow: hidden;
+  }
   .pricing-card { padding: 28px 22px; }
   .plan-card { padding: 28px 22px; }
   .pricing-stack { gap: 8px; }
@@ -2089,6 +2113,7 @@ footer {
     font-size: 13px;
   }
   .contact-form-grid { grid-template-columns: 1fr; }
+  .contact-form-grid > * { min-width: 0; }
   .signin-note { line-height: 1.8; }
   .cta-banner {
     margin: 0 20px 36px;
@@ -2118,11 +2143,39 @@ footer {
 }
 
 @media (max-width: 560px) {
+  nav {
+    padding: 12px 16px;
+    gap: 10px;
+  }
+  .nav-logo {
+    flex: 1 1 100%;
+  }
+  .nav-links {
+    order: 2;
+  }
+  .nav-cta {
+    order: 4;
+    width: 100%;
+    margin-left: 0;
+    justify-content: center;
+    padding: 12px 16px;
+  }
   .hero { padding-top: 140px; }
   .steps-row {
     grid-template-columns: 1fr;
     gap: 16px;
     margin-top: 36px;
+  }
+  .hero-prism-shell {
+    padding: 16px;
+    border-radius: 22px;
+  }
+  .plan-price {
+    font-size: 28px;
+    line-height: 1.05;
+  }
+  .plan-price span {
+    font-size: 11px;
   }
   .step { text-align: left; padding: 18px 16px 14px; }
   .step-num { margin: 0 0 16px; }
