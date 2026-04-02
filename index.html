@@ -2483,17 +2483,27 @@ footer {
   let cashfreeMode = 'production';
   let planCatalog = [];
   const COOKIE_CONSENT_KEY = 'lexorium.cookie.consent.v1';
+  const DEPLOYMENT_BACKEND_ERROR = 'This deployment is frontend-only right now. Lexorium needs live backend API routes under /api/* for sign-in, chat, billing, and history. Deploy it on a full-stack host like Vercel, Render, or Railway instead of GitHub Pages or other static-only hosting.';
   const signinButton = document.getElementById('puterSignInBtn');
   const signinStatusEl = document.getElementById('signinStatus');
   const enterpriseStatusEl = document.getElementById('enterpriseStatus');
   const cookieBannerEl = document.getElementById('cookieBanner');
   const heroPrismShellEl = document.getElementById('heroPrismShell');
 
+  function getApiFailureMessage(response, data, url) {
+    const status = Number(response?.status || 0);
+    const target = String(url || '').trim();
+    if ([404, 405, 500, 501].includes(status) && target.startsWith('api/')) {
+      return DEPLOYMENT_BACKEND_ERROR;
+    }
+    return data?.message || `Request failed with status ${status}.`;
+  }
+
   async function fetchJson(url, options) {
     const response = await fetch(url, options).catch(() => { throw new Error('Could not reach the Lexorium server. Start the local server or open the deployed app.'); });
     const data = await response.json().catch(() => ({}));
     if (!response.ok) {
-      throw new Error(data?.message || `Request failed with status ${response.status}.`);
+      throw new Error(getApiFailureMessage(response, data, url));
     }
     return data;
   }

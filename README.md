@@ -22,6 +22,7 @@ npm run dev
 - Set `PUBLIC_APP_URL` to your real `https://` production domain before enabling Cashfree production checkout.
 - Use `npm start` in production. It no longer forces localhost or local-dev mode.
 - Before packaging the desktop app for release, set `desktop/app-config.json` to your deployed HTTPS app URL.
+- GitHub Pages or other static-only hosting will not run Lexorium correctly because sign-in, chat, billing, and history depend on live `/api/*` backend routes.
 
 ## Plans
 

@@ -28,6 +28,7 @@ Important:
 - Rotate any Cashfree or other production secrets that have ever been exposed outside your private deployment environment.
 - Set `PUBLIC_APP_URL` to your live `https://` origin before enabling production checkout.
 - Use `npm start` in production. Do not use the localhost-only `npm run dev` script on your deployed host.
+- Do not deploy Lexorium on GitHub Pages or other static-only hosting. It requires live `/api/*` backend routes for sign-in, sessions, chat, billing, and enterprise contact handling.
 
 ## Puter
 

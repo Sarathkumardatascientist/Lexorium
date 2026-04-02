@@ -3546,6 +3546,7 @@
   const CHAT_HISTORY_STORAGE = 'lexorium_chat_history_v1';
   const PERSONALIZATION_STORAGE = 'lexorium_personalization_v1';
   const SIDEBAR_PREFERENCE_STORAGE = 'lexorium_sidebar_preference_v1';
+  const DEPLOYMENT_BACKEND_ERROR = 'This deployment is missing live backend API support. Lexorium needs working /api/* routes for sign-in, chat, billing, and history. Deploy it on a full-stack host like Vercel, Render, or Railway instead of GitHub Pages or other static-only hosting.';
   const ROUTE_RANK = { free: 0, pro: 1, enterprise: 2 };
   const NEXT_PLAN_BY_TIER = { free: 'pro', pro: 'enterprise', enterprise: 'enterprise' };
   const STARTER_PROMPT_FALLBACKS = ['Explain Section 138 NI Act', 'Draft a legal notice', 'Summarize a case'];
@@ -3641,6 +3642,15 @@
     }
   }
 
+  function getApiFailureMessage(response, payload, url) {
+    const status = Number(response?.status || 0);
+    const target = String(url || '').trim();
+    if ([404, 405, 500, 501].includes(status) && target.startsWith('api/')) {
+      return DEPLOYMENT_BACKEND_ERROR;
+    }
+    return payload?.message || `Request failed with status ${status}.`;
+  }
+
   async function syncSessionWithPuter(interactive) {
     let token = getStoredPuterToken();
     if (!token && interactive) {
@@ -3668,7 +3678,7 @@
 
     const payload = await response.json().catch(() => ({}));
     if (!response.ok) {
-      throw new Error(payload?.message || 'Your sign-in could not be completed.');
+      throw new Error(getApiFailureMessage(response, payload, SESSION_API_URL));
     }
     return payload?.profile || null;
   }
@@ -3686,6 +3696,9 @@
     const response = await fetch(SESSION_API_URL, { credentials: 'same-origin' }).catch(() => ({ __networkError: true }));
     if (response?.__networkError) return { __networkError: true, message: 'Could not reach the Lexorium server. Start the local server or open the deployed app.' };
     const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      return { __networkError: true, message: getApiFailureMessage(response, data, SESSION_API_URL) };
+    }
     return data || null;
   }
 
@@ -6355,7 +6368,7 @@
     }
     const payload = await response.json().catch(() => ({}));
     if (!response.ok) {
-      const error = new Error(payload?.error?.message || payload?.message || `API error ${response.status}`);
+      const error = new Error(getApiFailureMessage(response, payload?.error ? payload.error : payload, CHAT_API_URL));
       error.code = payload?.code || payload?.type || response.status;
       error.type = payload?.type || null;
       error.meta = payload?.meta || null;
