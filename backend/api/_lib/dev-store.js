@@ -585,6 +585,44 @@ async function recordCheckoutIntent(uid, planId, checkout) {
   return paymentRecord.data;
 }
 
+async function recordPaymentEvent(uid, planId, payment) {
+  const state = readState();
+  const normalizedPlan = normalizePlanId(planId);
+  const plan = getPlanConfig(normalizedPlan);
+  const currentTime = now();
+  const paymentRecord = buildPaymentRecord(uid, normalizedPlan, {
+    provider: payment?.provider || process.env.PAYMENT_PROVIDER || 'cashfree',
+    orderId: payment?.orderId || '',
+    paymentId: payment?.paymentId || '',
+    invoiceId: payment?.invoiceId || payment?.orderId || '',
+    subscriptionId: payment?.subscriptionId || '',
+    status: payment?.status || 'received',
+    eventType: payment?.eventType || 'webhook_received',
+    amountPaise: payment?.amountPaise ?? plan.pricePaise,
+    currency: payment?.currency || 'INR',
+    paidAt: payment?.paidAt || null,
+    raw: payment?.raw || null,
+  }, currentTime);
+  if (!paymentRecord) return null;
+  state.payments = state.payments || {};
+  state.payments[paymentRecord.id] = paymentRecord.data;
+  state.analytics = Array.isArray(state.analytics) ? state.analytics : [];
+  state.analytics.push({
+    uid,
+    eventName: payment?.eventType || 'webhook_received',
+    metadata: {
+      provider: payment?.provider || process.env.PAYMENT_PROVIDER || 'cashfree',
+      planId: normalizedPlan,
+      status: payment?.status || 'received',
+      orderId: payment?.orderId || '',
+      paymentId: payment?.paymentId || '',
+    },
+    createdAt: currentTime,
+  });
+  writeState(state);
+  return paymentRecord.data;
+}
+
 function exportText(conversation) {
   const sections = [...CORE_RESPONSE_HEADINGS, 'Sources'];
   return [
@@ -660,6 +698,7 @@ module.exports = {
   isPro,
   listConversations,
   recordCheckoutIntent,
+  recordPaymentEvent,
   clearConversations,
   removeConversation,
   renameConversation,

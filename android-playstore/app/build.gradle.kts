@@ -1,7 +1,33 @@
+import java.io.FileInputStream
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
 }
+
+val keystoreProperties = Properties()
+val keystorePropertiesFile = rootProject.file("keystore.properties")
+if (keystorePropertiesFile.exists()) {
+    FileInputStream(keystorePropertiesFile).use(keystoreProperties::load)
+}
+
+fun signingValue(propertyKey: String, envKey: String): String? {
+    return (keystoreProperties.getProperty(propertyKey) ?: System.getenv(envKey))
+        ?.trim()
+        ?.takeIf { it.isNotEmpty() }
+}
+
+val releaseStoreFile = signingValue("storeFile", "LEXORIUM_ANDROID_STORE_FILE")
+val releaseStorePassword = signingValue("storePassword", "LEXORIUM_ANDROID_STORE_PASSWORD")
+val releaseKeyAlias = signingValue("keyAlias", "LEXORIUM_ANDROID_KEY_ALIAS")
+val releaseKeyPassword = signingValue("keyPassword", "LEXORIUM_ANDROID_KEY_PASSWORD")
+val hasReleaseSigning = listOf(
+    releaseStoreFile,
+    releaseStorePassword,
+    releaseKeyAlias,
+    releaseKeyPassword,
+).all { !it.isNullOrBlank() }
 
 android {
     namespace = "ai.sprezzatura.lexorium"
@@ -22,6 +48,17 @@ android {
         buildConfigField("String", "LEXORIUM_BASE_URL", "\"https://lexoriumai.com\"")
     }
 
+    signingConfigs {
+        if (hasReleaseSigning) {
+            create("release") {
+                storeFile = rootProject.file(requireNotNull(releaseStoreFile))
+                storePassword = requireNotNull(releaseStorePassword)
+                keyAlias = requireNotNull(releaseKeyAlias)
+                keyPassword = requireNotNull(releaseKeyPassword)
+            }
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = false
@@ -29,6 +66,9 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            if (hasReleaseSigning) {
+                signingConfig = signingConfigs.getByName("release")
+            }
         }
     }
 

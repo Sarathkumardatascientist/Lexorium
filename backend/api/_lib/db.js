@@ -558,6 +558,39 @@ async function recordCheckoutIntent(uid, planId, checkout) {
   return paymentRecord.data;
 }
 
+async function recordPaymentEvent(uid, planId, payment) {
+  const normalizedPlan = normalizePlanId(planId);
+  const plan = getPlanConfig(normalizedPlan);
+  const currentTime = now();
+  const paymentRecord = buildPaymentRecord(uid, normalizedPlan, {
+    provider: payment?.provider || process.env.PAYMENT_PROVIDER || 'cashfree',
+    orderId: payment?.orderId || '',
+    paymentId: payment?.paymentId || '',
+    invoiceId: payment?.invoiceId || payment?.orderId || '',
+    subscriptionId: payment?.subscriptionId || '',
+    status: payment?.status || 'received',
+    eventType: payment?.eventType || 'webhook_received',
+    amountPaise: payment?.amountPaise ?? plan.pricePaise,
+    currency: payment?.currency || 'INR',
+    paidAt: payment?.paidAt || null,
+    raw: payment?.raw || null,
+  }, currentTime);
+  if (!paymentRecord) return null;
+  await getDb().collection('payments').doc(paymentRecord.id).set(paymentRecord.data, { merge: true });
+  await getDb().collection('billing_events').add({
+    uid,
+    createdAt: currentTime,
+    planId: normalizedPlan,
+    type: payment?.eventType || 'webhook_received',
+    status: payment?.status || 'received',
+    provider: payment?.provider || process.env.PAYMENT_PROVIDER || 'cashfree',
+    orderId: payment?.orderId || '',
+    paymentId: payment?.paymentId || '',
+    raw: payment?.raw || null,
+  });
+  return paymentRecord.data;
+}
+
 async function findUserByEmail(email) {
   const snap = await getDb().collection('users').where('email', '==', String(email || '').toLowerCase()).limit(1).get();
   return snap.empty ? null : snap.docs[0].id;
@@ -637,6 +670,7 @@ module.exports = {
   isPro,
   listConversations,
   recordCheckoutIntent,
+  recordPaymentEvent,
   clearConversations,
   removeConversation,
   renameConversation,

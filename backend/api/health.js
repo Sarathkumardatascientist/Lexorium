@@ -6,6 +6,7 @@ const { isLocalDevStoreEnabled } = require('./_lib/dev-store');
 module.exports = async (_req, res) => {
   const localDevStore = isLocalDevStoreEnabled();
   const firestoreConfigured = !!(process.env.FIREBASE_PROJECT_ID || process.env.FIREBASE_PUBLIC_PROJECT_ID);
+  const publicAppUrl = String(process.env.PUBLIC_APP_URL || '').trim();
   let firestoreReady = false;
   let firestoreMessage = localDevStore
     ? 'Local development store is active on localhost. Firestore is bypassed for local runs.'
@@ -32,5 +33,6 @@ module.exports = async (_req, res) => {
     firestoreMessage,
     paymentProvider: process.env.PAYMENT_PROVIDER || 'cashfree',
     cashfreeConfigured: !!((process.env.CASHFREE_APP_ID || process.env.APP_ID) && (process.env.CASHFREE_SECRET_KEY || process.env.SECRET_KEY)),
+    cashfreeWebhookUrl: publicAppUrl ? `${publicAppUrl.replace(/\/+$/, '')}/api/billing/webhook` : '/api/billing/webhook',
   });
 };

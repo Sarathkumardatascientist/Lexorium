@@ -16,6 +16,8 @@ module.exports = async (_req, res) => {
   const paymentEnabled = hasRealValue(paymentAppId) && hasRealValue(paymentSecret);
   const cashfreeMode = String(process.env.CASHFREE_ENV || 'production').toLowerCase() === 'sandbox' ? 'sandbox' : 'production';
   const enterpriseLeadConfigured = hasEnterpriseGoogleFormConfig();
+  const publicAppUrl = String(process.env.PUBLIC_APP_URL || '').trim();
+  const cashfreeWebhookUrl = publicAppUrl ? `${publicAppUrl.replace(/\/+$/, '')}/api/billing/webhook` : '/api/billing/webhook';
 
   return sendJson(res, 200, {
     authProvider: 'puter',
@@ -33,6 +35,7 @@ module.exports = async (_req, res) => {
     planDurationDays: Number.parseInt(process.env.PLAN_DURATION_DAYS || process.env.PRO_PLAN_DURATION_DAYS || '30', 10) || 30,
     contactSalesEmail: String(process.env.CONTACT_SALES_EMAIL || 'aisprezzatura@gmail.com').trim(),
     desktopDownloadUrl: String(process.env.LEXORIUM_DESKTOP_DOWNLOAD_URL || '/api/download/desktop').trim() || '/api/download/desktop',
+    cashfreeWebhookUrl,
     enterpriseLeadConfigured,
     plans: getPublicPlanCatalog(),
     modelCatalog: buildPublicModelCatalog(),
