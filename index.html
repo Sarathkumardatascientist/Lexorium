@@ -2413,7 +2413,7 @@ footer {
 <section class="cta-banner" id="download">
   <h2 class="cta-banner-title reveal">Ready to install the Lexorium <em>desktop app</em>?</h2>
   <div class="hero-actions">
-    <a class="btn-primary" href="downloads/Lexorium-Setup.exe" download>
+    <a class="btn-primary" href="downloads/Lexorium-Setup.exe" download id="desktopDownloadBtn">
       Download Windows Installer
       <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v9"/><polyline points="4.5,8.5 8,12 11.5,8.5"/><path d="M3 14h10"/></svg>
     </a>
@@ -2485,10 +2485,43 @@ footer {
   const COOKIE_CONSENT_KEY = 'lexorium.cookie.consent.v1';
   const DEPLOYMENT_BACKEND_ERROR = 'This deployment is frontend-only right now. Lexorium needs live backend API routes under /api/* for sign-in, chat, billing, and history. Deploy it on a full-stack host like Vercel, Render, or Railway instead of GitHub Pages or other static-only hosting.';
   const signinButton = document.getElementById('puterSignInBtn');
+  const desktopDownloadBtn = document.getElementById('desktopDownloadBtn');
   const signinStatusEl = document.getElementById('signinStatus');
   const enterpriseStatusEl = document.getElementById('enterpriseStatus');
   const cookieBannerEl = document.getElementById('cookieBanner');
   const heroPrismShellEl = document.getElementById('heroPrismShell');
+
+  function applyDesktopDownloadUrl(url) {
+    if (!desktopDownloadBtn) return;
+    const normalized = String(url || '').trim();
+    if (normalized) {
+      desktopDownloadBtn.href = normalized;
+      if (/^https?:\/\//i.test(normalized)) {
+        desktopDownloadBtn.removeAttribute('download');
+        desktopDownloadBtn.target = '_blank';
+        desktopDownloadBtn.rel = 'noreferrer';
+      } else {
+        desktopDownloadBtn.setAttribute('download', '');
+        desktopDownloadBtn.removeAttribute('target');
+        desktopDownloadBtn.removeAttribute('rel');
+      }
+      return;
+    }
+
+    if (/^https:$/i.test(window.location.protocol) && !/localhost|127\.0\.0\.1/i.test(window.location.hostname)) {
+      desktopDownloadBtn.href = '#';
+      desktopDownloadBtn.removeAttribute('download');
+      desktopDownloadBtn.removeAttribute('target');
+      desktopDownloadBtn.removeAttribute('rel');
+      if (!desktopDownloadBtn.dataset.fallbackBound) {
+        desktopDownloadBtn.dataset.fallbackBound = 'true';
+        desktopDownloadBtn.addEventListener('click', (event) => {
+          event.preventDefault();
+          alert('Desktop installer is not configured on this deployment yet. Set LEXORIUM_DESKTOP_DOWNLOAD_URL in your server environment or publish the installer through GitHub Releases.');
+        });
+      }
+    }
+  }
 
   function getApiFailureMessage(response, data, url) {
     const status = Number(response?.status || 0);
@@ -2516,6 +2549,7 @@ footer {
     cashfreeMode = data.cashfreeMode || cashfreeMode;
     planCatalog = Array.isArray(data.plans) ? data.plans : [];
     contactSalesEmail = data.contactSalesEmail || contactSalesEmail;
+    applyDesktopDownloadUrl(data.desktopDownloadUrl || '');
     return data;
   }
 

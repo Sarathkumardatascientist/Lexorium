@@ -1,0 +1,35 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "functions": {
+    "api/chat.js": {
+      "maxDuration": 60
+    },
+    "api/billing/create-order.js": {
+      "maxDuration": 30
+    },
+    "api/billing/verify-payment.js": {
+      "maxDuration": 30
+    },
+    "api/contact/enterprise.js": {
+      "maxDuration": 15
+    }
+  },
+  "rewrites": [
+    {
+      "source": "/app",
+      "destination": "/app.html"
+    },
+    {
+      "source": "/privacy",
+      "destination": "/privacy.html"
+    },
+    {
+      "source": "/terms",
+      "destination": "/terms.html"
+    },
+    {
+      "source": "/account",
+      "destination": "/account.html"
+    }
+  ]
+}

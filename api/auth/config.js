@@ -32,6 +32,7 @@ module.exports = async (_req, res) => {
     proPlanPricePaise: Number.parseInt(process.env.PRO_PLAN_PRICE_PAISE || '79900', 10) || 79900,
     planDurationDays: Number.parseInt(process.env.PLAN_DURATION_DAYS || process.env.PRO_PLAN_DURATION_DAYS || '30', 10) || 30,
     contactSalesEmail: process.env.CONTACT_SALES_EMAIL || 'aisprezzatura@gmail.com',
+    desktopDownloadUrl: process.env.LEXORIUM_DESKTOP_DOWNLOAD_URL || '',
     enterpriseLeadConfigured,
     plans: getPublicPlanCatalog(),
     modelCatalog: buildPublicModelCatalog(),

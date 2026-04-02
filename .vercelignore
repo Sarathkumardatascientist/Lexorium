@@ -1,0 +1,10 @@
+.git/
+.local/
+node_modules/
+desktop/
+downloads/
+server.out.log
+server.err.log
+start-lexorium.cmd
+start-lexorium.vbs
+server-local.js

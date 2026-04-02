@@ -24,6 +24,15 @@ npm run dev
 - Before packaging the desktop app for release, set `desktop/app-config.json` to your deployed HTTPS app URL.
 - GitHub Pages or other static-only hosting will not run Lexorium correctly because sign-in, chat, billing, and history depend on live `/api/*` backend routes.
 
+## Vercel deployment
+
+- This repo now includes `vercel.json` and `.vercelignore` so it can be deployed on Vercel as a static site plus serverless `api/*` routes.
+- In Vercel, import the GitHub repo as an `Other` project.
+- Leave the default install command, and do not use `npm run dev` as the production command.
+- Add all required environment variables from `.env.example` in the Vercel dashboard.
+- Set `PUBLIC_APP_URL` to your Vercel production domain.
+- Optionally set `LEXORIUM_DESKTOP_DOWNLOAD_URL` to a GitHub Release asset or another hosted installer URL so the website download button points to a real installer in production.
+
 ## Plans
 
 - Free: 30 queries per rolling 24-hour window with basic legal chat only.
