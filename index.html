@@ -2526,10 +2526,14 @@ footer {
   function getApiFailureMessage(response, data, url) {
     const status = Number(response?.status || 0);
     const target = String(url || '').trim();
-    if ([404, 405, 500, 501].includes(status) && target.startsWith('api/')) {
+    const message = String(data?.message || '').trim();
+    if ([404, 405, 501].includes(status) && target.startsWith('api/')) {
       return DEPLOYMENT_BACKEND_ERROR;
     }
-    return data?.message || `Request failed with status ${status}.`;
+    if (status === 500 && target.startsWith('api/') && /api route not found|frontend-only|static-only/i.test(message)) {
+      return DEPLOYMENT_BACKEND_ERROR;
+    }
+    return message || `Request failed with status ${status}.`;
   }
 
   async function fetchJson(url, options) {
