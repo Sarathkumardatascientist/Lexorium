@@ -1,0 +1,5 @@
+﻿const root = document.getElementById('accountRoot');
+async function api(url, options) { const res = await fetch(url, options); const data = await res.json().catch(() => ({})); if (!res.ok) throw new Error(data.message || 'Request failed'); return data; }
+function line(text) { const p = document.createElement('p'); p.textContent = text; root.appendChild(p); }
+async function boot() { const session = await api('/api/auth/session', { credentials: 'same-origin' }).catch(() => ({ authenticated: false })); root.innerHTML = ''; if (!session.authenticated) { line('Sign in on the Lexorium landing page to view account details.'); return; } const p = session.profile; const u = session.usage; line('Name: ' + (p.name || p.email)); line('Email: ' + p.email); line('Current plan: ' + session.plan.name); line('Subscription status: ' + (p.subscriptionStatus || 'inactive')); line('Renewal / expiry: ' + (p.subscriptionEnd || 'Not set')); line('Total messages: ' + (p.totalMessages || 0)); line('Usage: ' + (u ? (u.used + ' used, ' + u.remaining + ' remaining') : 'Pro access active')); }
+boot();

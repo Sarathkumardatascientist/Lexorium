@@ -1,0 +1,11 @@
+* text=auto
+
+*.cmd text eol=crlf
+*.vbs text eol=crlf
+
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.ico binary
+*.pdf binary
+*.exe binary

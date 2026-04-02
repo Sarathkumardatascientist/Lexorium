@@ -1,0 +1,65 @@
+{
+  "name": "lexorium",
+  "version": "1.0.0",
+  "private": true,
+  "type": "commonjs",
+  "main": "desktop/main.js",
+  "description": "Lexorium desktop and web legal AI experience.",
+  "author": "Sprezzatura AI",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "dev": "set LEXORIUM_LOCAL_DEV=1&& set PUBLIC_APP_URL=http://localhost:3000&& node server.js",
+    "start": "node server.js",
+    "desktop:dev": "set LEXORIUM_DESKTOP_APP_URL=http://localhost:3000&& electron .",
+    "desktop:build": "powershell -ExecutionPolicy Bypass -File desktop/build-desktop-installer.ps1"
+  },
+  "dependencies": {
+    "@heyputer/puter.js": "^2.2.14",
+    "firebase-admin": "^13.4.0"
+  },
+  "devDependencies": {
+    "electron": "^36.2.1",
+    "electron-builder": "^25.1.8"
+  },
+  "build": {
+    "appId": "ai.sprezzatura.lexorium",
+    "productName": "Lexorium",
+    "directories": {
+      "output": "downloads",
+      "buildResources": "desktop"
+    },
+    "files": [
+      "desktop/**/*",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "desktop/app-config.json",
+        "to": "app-config.json"
+      }
+    ],
+    "win": {
+      "icon": "desktop/icon.ico",
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "artifactName": "Lexorium-Setup.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "installerIcon": "desktop/icon.ico",
+      "uninstallerIcon": "desktop/icon.ico",
+      "installerHeaderIcon": "desktop/icon.ico",
+      "shortcutName": "Lexorium"
+    }
+  }
+}
