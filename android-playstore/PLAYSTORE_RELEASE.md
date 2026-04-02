@@ -9,6 +9,8 @@ This Android shell wraps the live Lexorium deployment at `https://lexoriumai.com
 3. Create a release keystore or use your existing Play signing keystore.
 4. Copy `keystore.properties.example` to `keystore.properties`.
 5. Fill in the real release keystore values.
+6. In Google Play Console, create the subscription product `lexorium_pro_monthly` or update the app build/config to the exact subscription ID you will use.
+7. Enable the Google Play Developer API and create a service account that your backend can use to verify subscription purchases.
 
 ## Release signing
 
@@ -43,3 +45,14 @@ Package details:
 - Application ID: `ai.sprezzatura.lexorium`
 - Target SDK: `35`
 - Base URL: `https://lexoriumai.com`
+- Default Play subscription product: `lexorium_pro_monthly`
+
+## Backend environment for Play Billing
+
+Set these on the deployed backend before testing Android upgrades:
+
+- `GOOGLE_PLAY_SERVICE_ACCOUNT_EMAIL`
+- `GOOGLE_PLAY_SERVICE_ACCOUNT_PRIVATE_KEY`
+- `GOOGLE_PLAY_SERVICE_ACCOUNT_PRIVATE_KEY_ID` (optional)
+- `GOOGLE_PLAY_PACKAGE_NAME=ai.sprezzatura.lexorium`
+- `GOOGLE_PLAY_PRO_SUBSCRIPTION_ID=lexorium_pro_monthly`

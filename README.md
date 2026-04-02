@@ -5,7 +5,7 @@ Lexorium is a legal intelligence product built around Puter-powered auth and AI,
 ## Local setup
 
 1. Copy `.env.example` to `.env` if needed.
-2. Set `SESSION_SECRET`, Firebase Admin values, Cashfree credentials, and Google Form entry ids for the enterprise lead form.
+2. Set `SESSION_SECRET`, Firebase Admin values, Cashfree credentials, Google Play Billing service-account values, and Google Form entry ids for the enterprise lead form.
 3. Run on Node.js 24+ for Puter.js backend support.
 4. Start the web app:
 
@@ -51,6 +51,9 @@ npm run dev
 - `api/billing/create-order` creates the self-serve Pro checkout order.
 - `api/billing/verify-payment` verifies order status server-side and upgrades the user plan.
 - `api/billing/webhook` accepts Cashfree webhook events and activates the purchased plan after signature verification.
+- Android upgrades use Google Play Billing.
+- `api/billing/google-play-activate` verifies the Play purchase token against the Google Play Developer API and upgrades the signed-in Lexorium account from the backend.
+- Set `GOOGLE_PLAY_SERVICE_ACCOUNT_EMAIL`, `GOOGLE_PLAY_SERVICE_ACCOUNT_PRIVATE_KEY`, `GOOGLE_PLAY_PACKAGE_NAME`, and `GOOGLE_PLAY_PRO_SUBSCRIPTION_ID` in production before releasing the Android app.
 
 ## Enterprise leads
 
@@ -64,6 +67,12 @@ npm run dev
 - The raw unpacked Electron bundle is still emitted in `downloads/win-unpacked/` during the build pipeline.
 - Before a production desktop build, update `desktop/app-config.json` to your deployed HTTPS Lexorium URL so the desktop app connects to the hosted backend without shipping server secrets locally.
 - Large desktop installer binaries are intentionally ignored in git. Publish `downloads/Lexorium-Setup.exe` through GitHub Releases or external storage after building.
+
+## Android app
+
+- The Android shell lives in `android-playstore/`.
+- Google Play Billing is wired to the `lexorium_pro_monthly` subscription product by default.
+- Before Play release, create the matching subscription in Play Console and grant your backend service account access to the Google Play Developer API.
 
 ## Notes
 

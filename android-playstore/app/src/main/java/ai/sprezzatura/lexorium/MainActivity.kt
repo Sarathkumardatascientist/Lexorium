@@ -43,6 +43,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var offlineTitle: TextView
     private lateinit var offlineBody: TextView
     private lateinit var retryButton: Button
+    private lateinit var playBillingManager: LexoriumPlayBillingManager
 
     private var fileCallback: ValueCallback<Array<Uri>>? = null
     private var pendingPermissionRequest: PermissionRequest? = null
@@ -87,11 +88,14 @@ class MainActivity : AppCompatActivity() {
         swipeRefresh.setOnRefreshListener { webView.reload() }
 
         setupWebView()
+        playBillingManager = LexoriumPlayBillingManager(this, webView, BuildConfig.LEXORIUM_BASE_URL)
+        webView.addJavascriptInterface(playBillingManager.getJavascriptBridge(), "LexoriumAndroidBridge")
+        playBillingManager.start()
 
         if (savedInstanceState != null) {
             webView.restoreState(savedInstanceState)
         } else {
-            webView.loadUrl(BuildConfig.LEXORIUM_BASE_URL)
+            webView.loadUrl(BuildConfig.LEXORIUM_APP_URL)
         }
 
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
@@ -116,6 +120,7 @@ class MainActivity : AppCompatActivity() {
         fileCallback = null
         pendingPermissionRequest?.deny()
         pendingPermissionRequest = null
+        playBillingManager.destroy()
         webView.destroy()
         super.onDestroy()
     }

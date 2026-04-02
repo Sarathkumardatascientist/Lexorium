@@ -20,6 +20,10 @@ Deploy the static pages and `api/` routes on the same origin. Configure:
 - `GOOGLE_FORM_ENTRY_WORK_EMAIL`
 - `GOOGLE_FORM_ENTRY_ORGANIZATION`
 - `GOOGLE_FORM_ENTRY_REQUIREMENTS`
+- `GOOGLE_PLAY_SERVICE_ACCOUNT_EMAIL`
+- `GOOGLE_PLAY_SERVICE_ACCOUNT_PRIVATE_KEY`
+- `GOOGLE_PLAY_PACKAGE_NAME`
+- `GOOGLE_PLAY_PRO_SUBSCRIPTION_ID`
 - `LEXORIUM_DISABLED_MODELS`
 - `LEXORIUM_DESKTOP_DOWNLOAD_URL` (optional)
 
@@ -53,6 +57,13 @@ Important:
 - Point the payment return URL to `PUBLIC_APP_URL/app.html?cashfree_order_id={order_id}`.
 - Point Cashfree webhooks to `/api/billing/webhook`.
 - Self-serve checkout is designed for Pro only. Enterprise remains contact-sales-led.
+
+## Google Play Billing
+
+- Android Pro upgrades should use Google Play Billing instead of Cashfree.
+- Create the Play subscription product `lexorium_pro_monthly` or set `GOOGLE_PLAY_PRO_SUBSCRIPTION_ID` to your chosen subscription ID.
+- Grant the backend service account access to the Google Play Developer API for your app in Play Console.
+- Point the Android shell at the same deployed backend so `/api/billing/google-play-activate` can verify the purchase token and update the Lexorium user record.
 
 ## Google Forms
 

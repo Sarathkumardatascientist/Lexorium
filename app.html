@@ -3619,6 +3619,9 @@
     paymentProvider: 'cashfree',
     paymentPublicKey: '',
     cashfreeMode: 'production',
+    playBillingEnabled: false,
+    androidPackageName: '',
+    androidProSubscriptionId: '',
     plans: [],
     modelCatalog: [],
     modelCounts: {},
@@ -3653,6 +3656,67 @@
       }
     } catch (_error) {
       // Ignore local storage failures and continue with the live session.
+    }
+  }
+
+  function hasAndroidNativeBridge() {
+    return typeof window !== 'undefined'
+      && typeof window.LexoriumAndroidBridge !== 'undefined'
+      && window.LexoriumAndroidBridge !== null;
+  }
+
+  function isAndroidPlayBillingHost() {
+    return hasAndroidNativeBridge() && /LexoriumAndroid/i.test(navigator.userAgent || '');
+  }
+
+  async function syncPlanFromSession() {
+    const session = await fetchSessionProfile().catch(() => null);
+    if (session?.plan) currentPlan = session.plan;
+    if (session?.usage) currentUsage = session.usage;
+    if (session?.retention) retentionState = session.retention;
+    renderPlanStatus();
+    renderAccountSummary();
+    return session;
+  }
+
+  function startAndroidPlayUpgrade(targetPlan) {
+    if (!isAndroidPlayBillingHost()) return false;
+    if (String(targetPlan || '').trim().toLowerCase() !== 'pro') return false;
+    if (!authConfig.playBillingEnabled) return false;
+    if (!window.LexoriumAndroidBridge?.startProUpgrade) return false;
+    closeUpgradeModal();
+    showToast('Opening Google Play secure subscription...');
+    try {
+      window.LexoriumAndroidBridge.startProUpgrade(String(currentUserUid || '').trim());
+      return true;
+    } catch (error) {
+      showError(error?.message || 'Could not open Google Play Billing.');
+      return true;
+    }
+  }
+
+  async function handleAndroidBillingResult(detail) {
+    const state = String(detail?.status || '').trim().toLowerCase();
+    if (state === 'success') {
+      await syncPlanFromSession();
+      unlockComposer();
+      showToast(detail?.message || 'Lexorium Pro is active on this account.');
+      return;
+    }
+    if (state === 'pending') {
+      showToast(detail?.message || 'Your Google Play purchase is pending confirmation.');
+      return;
+    }
+    if (state === 'cancelled') {
+      showToast(detail?.message || 'Google Play purchase was cancelled.');
+      return;
+    }
+    if (state === 'processing') {
+      showToast(detail?.message || 'Finalising your Google Play upgrade...');
+      return;
+    }
+    if (detail?.message) {
+      showError(detail.message);
     }
   }
 
@@ -3731,6 +3795,9 @@
       paymentProvider: data.paymentProvider || 'cashfree',
       paymentPublicKey: data.paymentPublicKey || '',
       cashfreeMode: data.cashfreeMode || 'production',
+      playBillingEnabled: Boolean(data.playBillingEnabled),
+      androidPackageName: data.androidPackageName || '',
+      androidProSubscriptionId: data.androidProSubscriptionId || '',
       contactSalesEmail: data.contactSalesEmail || 'aisprezzatura@gmail.com',
       plans: Array.isArray(data.plans) ? data.plans : [],
       modelCatalog: Array.isArray(data.modelCatalog) ? data.modelCatalog : [],
@@ -4497,6 +4564,10 @@
     const targetPlan = String(planId || pendingUpgradePlan || 'pro').trim().toLowerCase();
     if (targetPlan === 'enterprise') {
       window.location.href = 'index.html#enterprise-contact';
+      return;
+    }
+    if (startAndroidPlayUpgrade(targetPlan)) {
+      await trackEvent('paywall_cta_clicked', { source: 'android_play', planId: currentPlan.id, targetPlanId: targetPlan });
       return;
     }
     if (!authConfig.paymentEnabled || authConfig.paymentProvider !== 'cashfree' || !authConfig.paymentPublicKey) {
@@ -6817,6 +6888,10 @@
     updateRoutingIndicator(lastRoutedModel, null);
     inputEl.focus();
   }
+
+  window.addEventListener('lexorium:play-billing-result', (event) => {
+    handleAndroidBillingResult(event?.detail || {}).catch(() => null);
+  });
 
   bootstrapApp();
 </script>

@@ -1,4 +1,5 @@
 const { sendJson } = require('../_lib/http');
+const { getGooglePlayConfig } = require('../billing/_google-play');
 const { getModelSettings } = require('../_lib/config');
 const { buildPublicModelCatalog, getTierModelCounts } = require('../_lib/model-registry');
 const { getPublicPlanCatalog } = require('../_lib/plan-access');
@@ -18,6 +19,7 @@ module.exports = async (_req, res) => {
   const enterpriseLeadConfigured = hasEnterpriseGoogleFormConfig();
   const publicAppUrl = String(process.env.PUBLIC_APP_URL || '').trim();
   const cashfreeWebhookUrl = publicAppUrl ? `${publicAppUrl.replace(/\/+$/, '')}/api/billing/webhook` : '/api/billing/webhook';
+  const googlePlay = getGooglePlayConfig();
 
   return sendJson(res, 200, {
     authProvider: 'puter',
@@ -36,6 +38,9 @@ module.exports = async (_req, res) => {
     contactSalesEmail: String(process.env.CONTACT_SALES_EMAIL || 'aisprezzatura@gmail.com').trim(),
     desktopDownloadUrl: String(process.env.LEXORIUM_DESKTOP_DOWNLOAD_URL || '/api/download/desktop').trim() || '/api/download/desktop',
     cashfreeWebhookUrl,
+    playBillingEnabled: googlePlay.enabled,
+    androidPackageName: googlePlay.packageName,
+    androidProSubscriptionId: googlePlay.proSubscriptionId,
     enterpriseLeadConfigured,
     plans: getPublicPlanCatalog(),
     modelCatalog: buildPublicModelCatalog(),

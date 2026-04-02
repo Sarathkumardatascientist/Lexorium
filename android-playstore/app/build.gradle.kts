@@ -46,6 +46,8 @@ android {
         }
 
         buildConfigField("String", "LEXORIUM_BASE_URL", "\"https://lexoriumai.com\"")
+        buildConfigField("String", "LEXORIUM_APP_URL", "\"https://lexoriumai.com/app.html\"")
+        buildConfigField("String", "LEXORIUM_PLAY_PRO_PRODUCT_ID", "\"lexorium_pro_monthly\"")
     }
 
     signingConfigs {
@@ -92,4 +94,5 @@ dependencies {
     implementation("com.google.android.material:material:1.12.0")
     implementation("androidx.swiperefreshlayout:swiperefreshlayout:1.1.0")
     implementation("androidx.activity:activity-ktx:1.10.1")
+    implementation("com.android.billingclient:billing-ktx:7.1.1")
 }

@@ -509,6 +509,8 @@ async function activatePaidPlan(uid, planId, payment) {
   const plan = getPlanConfig(planId);
   const paymentOrderId = String(payment?.orderId || '').trim();
   const paymentId = String(payment?.paymentId || '').trim();
+  const requestedEndAt = Date.parse(payment?.subscriptionEnd || 0);
+  const currentEndAt = Date.parse(user.subscriptionEnd || 0);
   const alreadyApplied =
     normalizePlanId(user.plan) === plan.id
     && String(user.subscriptionStatus || '').toLowerCase() === 'active'
@@ -517,12 +519,15 @@ async function activatePaidPlan(uid, planId, payment) {
       (paymentOrderId && String(user.billingSubscriptionId || '').trim() === paymentOrderId)
       || (paymentId && String(user.billingPaymentId || '').trim() === paymentId)
     );
-  if (alreadyApplied) return user;
-  const end = new Date();
-  end.setUTCDate(end.getUTCDate() + PLAN_DURATION_DAYS);
+  if (alreadyApplied && (!Number.isFinite(requestedEndAt) || requestedEndAt <= 0 || currentEndAt >= requestedEndAt)) {
+    return user;
+  }
+  const end = Number.isFinite(requestedEndAt) && requestedEndAt > 0
+    ? new Date(requestedEndAt)
+    : new Date(Date.now() + PLAN_DURATION_DAYS * 24 * 60 * 60 * 1000);
   user.plan = plan.id;
   user.subscriptionStatus = 'active';
-  user.subscriptionStart = now();
+  user.subscriptionStart = String(payment?.subscriptionStart || '').trim() || user.subscriptionStart || now();
   user.subscriptionEnd = end.toISOString();
   user.billingProvider = payment.provider || process.env.PAYMENT_PROVIDER || 'cashfree';
   user.billingCustomerId = payment.customerId || null;

@@ -2701,6 +2701,9 @@ footer {
   let paymentProvider = 'cashfree';
   let paymentPublicKey = '';
   let cashfreeMode = 'production';
+  let playBillingEnabled = false;
+  let androidPackageName = '';
+  let androidProSubscriptionId = '';
   let planCatalog = [];
   const COOKIE_CONSENT_KEY = 'lexorium.cookie.consent.v1';
   const DEPLOYMENT_BACKEND_ERROR = 'This deployment is frontend-only right now. Lexorium needs live backend API routes under /api/* for sign-in, chat, billing, and history. Deploy it on a full-stack host like Vercel, Render, or Railway instead of GitHub Pages or other static-only hosting.';
@@ -2723,6 +2726,46 @@ footer {
       desktopDownloadBtn.removeAttribute('target');
       desktopDownloadBtn.removeAttribute('rel');
       desktopDownloadBtn.setAttribute('download', '');
+    }
+  }
+
+  function hasAndroidNativeBridge() {
+    return typeof window !== 'undefined'
+      && typeof window.LexoriumAndroidBridge !== 'undefined'
+      && window.LexoriumAndroidBridge !== null;
+  }
+
+  function isAndroidPlayBillingHost() {
+    return hasAndroidNativeBridge() && /LexoriumAndroid/i.test(navigator.userAgent || '');
+  }
+
+  function startAndroidPlayUpgrade(profile) {
+    if (!isAndroidPlayBillingHost() || !playBillingEnabled) return false;
+    if (!window.LexoriumAndroidBridge?.startProUpgrade) return false;
+    try {
+      window.LexoriumAndroidBridge.startProUpgrade(String(profile?.uid || '').trim());
+      return true;
+    } catch (error) {
+      alert(error?.message || 'Could not open Google Play Billing.');
+      return true;
+    }
+  }
+
+  function handleAndroidBillingResult(detail) {
+    const state = String(detail?.status || '').trim().toLowerCase();
+    if (state === 'success') {
+      window.location.href = APP_URL;
+      return;
+    }
+    if (state === 'pending') {
+      alert(detail?.message || 'Your Google Play purchase is pending confirmation.');
+      return;
+    }
+    if (state === 'cancelled') {
+      return;
+    }
+    if (detail?.message) {
+      alert(detail.message);
     }
   }
 
@@ -2754,6 +2797,9 @@ footer {
     paymentProvider = data.paymentProvider || paymentProvider;
     paymentPublicKey = data.paymentPublicKey || '';
     cashfreeMode = data.cashfreeMode || cashfreeMode;
+    playBillingEnabled = Boolean(data.playBillingEnabled);
+    androidPackageName = data.androidPackageName || '';
+    androidProSubscriptionId = data.androidProSubscriptionId || '';
     planCatalog = Array.isArray(data.plans) ? data.plans : [];
     contactSalesEmail = data.contactSalesEmail || contactSalesEmail;
     applyDesktopDownloadUrl(data.desktopDownloadUrl || '');
@@ -3061,6 +3107,9 @@ footer {
       alert(`Sign in first, then upgrade to ${String(plan || 'Pro').charAt(0).toUpperCase()}${String(plan || 'pro').slice(1)}.`);
       return;
     }
+    if (String(plan || '').trim().toLowerCase() === 'pro' && startAndroidPlayUpgrade(profile)) {
+      return;
+    }
 
     try {
       const order = await fetchJson(CREATE_ORDER_URL, {
@@ -3182,6 +3231,10 @@ footer {
   }
   document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') closeLegal();
+  });
+
+  window.addEventListener('lexorium:play-billing-result', (event) => {
+    handleAndroidBillingResult(event?.detail || {});
   });
 </script>
 </body>
