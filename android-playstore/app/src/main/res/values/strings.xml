@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Lexorium</string>
+    <string name="offline_title">Lexorium needs a connection</string>
+    <string name="offline_body">Reconnect to continue legal research, drafting, attachments, and workspace sync.</string>
+    <string name="retry">Retry</string>
+    <string name="download_description">Saving your Lexorium file to Downloads.</string>
+    <string name="download_started">Downloading %1$s</string>
+    <string name="file_picker_unavailable">No file picker is available on this device.</string>
+</resources>

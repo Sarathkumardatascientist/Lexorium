@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="lexorium_background">#07090D</color>
+    <color name="lexorium_surface">#11151B</color>
+    <color name="lexorium_surface_alt">#181C24</color>
+    <color name="lexorium_gold">#D6A93A</color>
+    <color name="lexorium_gold_soft">#F2D581</color>
+    <color name="lexorium_text">#FFFFFF</color>
+</resources>

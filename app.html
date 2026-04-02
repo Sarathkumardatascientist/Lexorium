@@ -3637,7 +3637,7 @@
 
   function getStoredPuterToken() {
     try {
-      return localStorage.getItem(LEXORIUM_PUTER_TOKEN_STORAGE_KEY) || '';
+      return localStorage.getItem(LEXORIUM_PUTER_TOKEN_STORAGE_KEY) || localStorage.getItem('puter.auth.token') || '';
     } catch (_error) {
       return '';
     }
@@ -3647,7 +3647,10 @@
     try {
       const normalized = String(token || '').trim();
       if (normalized) localStorage.setItem(LEXORIUM_PUTER_TOKEN_STORAGE_KEY, normalized);
-      else localStorage.removeItem(LEXORIUM_PUTER_TOKEN_STORAGE_KEY);
+      else {
+        localStorage.removeItem(LEXORIUM_PUTER_TOKEN_STORAGE_KEY);
+        localStorage.removeItem('puter.auth.token');
+      }
     } catch (_error) {
       // Ignore local storage failures and continue with the live session.
     }

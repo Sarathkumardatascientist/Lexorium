@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <style name="Theme.Lexorium" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <item name="colorPrimary">@color/lexorium_gold</item>
+        <item name="colorPrimaryVariant">@color/lexorium_gold</item>
+        <item name="colorSecondary">@color/lexorium_gold_soft</item>
+        <item name="android:statusBarColor">@color/lexorium_background</item>
+        <item name="android:navigationBarColor">@color/lexorium_background</item>
+        <item name="android:windowBackground">@color/lexorium_background</item>
+        <item name="android:windowSplashScreenBackground">@color/lexorium_background</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/lexorium_logo</item>
+        <item name="android:windowSplashScreenIconBackgroundColor">@color/lexorium_background</item>
+    </style>
+
+</resources>
