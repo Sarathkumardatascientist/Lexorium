@@ -16,3 +16,5 @@ tmp-local-test.js
 one-line-test.js
 *.log
 *firebase-adminsdk*.json
+
+.vercel
