@@ -3546,6 +3546,7 @@
   const CHAT_HISTORY_STORAGE = 'lexorium_chat_history_v1';
   const PERSONALIZATION_STORAGE = 'lexorium_personalization_v1';
   const SIDEBAR_PREFERENCE_STORAGE = 'lexorium_sidebar_preference_v1';
+  const LEXORIUM_PUTER_TOKEN_STORAGE_KEY = 'lexorium.puter.token';
   const DEPLOYMENT_BACKEND_ERROR = 'This deployment is missing live backend API support. Lexorium needs working /api/* routes for sign-in, chat, billing, and history. Deploy it on a full-stack host like Vercel, Render, or Railway instead of GitHub Pages or other static-only hosting.';
   const ROUTE_RANK = { free: 0, pro: 1, enterprise: 2 };
   const NEXT_PLAN_BY_TIER = { free: 'pro', pro: 'enterprise', enterprise: 'enterprise' };
@@ -3636,9 +3637,19 @@
 
   function getStoredPuterToken() {
     try {
-      return localStorage.getItem('puter.auth.token') || '';
+      return localStorage.getItem(LEXORIUM_PUTER_TOKEN_STORAGE_KEY) || '';
     } catch (_error) {
       return '';
+    }
+  }
+
+  function setStoredPuterToken(token) {
+    try {
+      const normalized = String(token || '').trim();
+      if (normalized) localStorage.setItem(LEXORIUM_PUTER_TOKEN_STORAGE_KEY, normalized);
+      else localStorage.removeItem(LEXORIUM_PUTER_TOKEN_STORAGE_KEY);
+    } catch (_error) {
+      // Ignore local storage failures and continue with the live session.
     }
   }
 
@@ -3661,19 +3672,21 @@
       if (!window.puter?.auth?.signIn) {
         throw new Error('Secure sign-in is still loading. Please try again.');
       }
-      await window.puter.auth.signIn();
-      token = getStoredPuterToken();
+      const signInResult = await window.puter.auth.signIn();
+      token = String(signInResult?.token || '').trim();
+      if (token) setStoredPuterToken(token);
     }
-    if (!token) return null;
+    const liveProfile = await window.puter.auth.getUser().catch(() => null);
+    if (!token && !liveProfile) return null;
 
     const response = await fetch(SESSION_API_URL, {
       method: 'POST',
       credentials: 'same-origin',
       headers: {
         'Content-Type': 'application/json',
-        'X-Puter-Token': token,
+        ...(token ? { 'X-Puter-Token': token } : {}),
       },
-      body: JSON.stringify({ token }),
+      body: JSON.stringify({ token, profile: liveProfile || undefined }),
     }).catch(() => ({ __networkError: true }));
 
     if (response?.__networkError) {
@@ -4571,7 +4584,7 @@
     }).catch(() => null);
     try {
       if (window.puter?.auth?.signOut) window.puter.auth.signOut();
-      else localStorage.removeItem('puter.auth.token');
+      setStoredPuterToken('');
     } catch (_error) {
       // Ignore token cleanup failures.
     }

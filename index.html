@@ -2476,6 +2476,7 @@ footer {
   const SESSION_URL = 'api/auth/session';
   const CREATE_ORDER_URL = 'api/billing/create-order';
   const ENTERPRISE_CONTACT_URL = 'api/contact/enterprise';
+  const LEXORIUM_PUTER_TOKEN_STORAGE_KEY = 'lexorium.puter.token';
   let contactSalesEmail = 'aisprezzatura@gmail.com';
   let paymentEnabled = false;
   let paymentProvider = 'cashfree';
@@ -2775,9 +2776,19 @@ footer {
 
   function getStoredPuterToken() {
     try {
-      return localStorage.getItem('puter.auth.token') || '';
+      return localStorage.getItem(LEXORIUM_PUTER_TOKEN_STORAGE_KEY) || '';
     } catch (_error) {
       return '';
+    }
+  }
+
+  function setStoredPuterToken(token) {
+    try {
+      const normalized = String(token || '').trim();
+      if (normalized) localStorage.setItem(LEXORIUM_PUTER_TOKEN_STORAGE_KEY, normalized);
+      else localStorage.removeItem(LEXORIUM_PUTER_TOKEN_STORAGE_KEY);
+    } catch (_error) {
+      // Ignore local storage failures and continue with the live session.
     }
   }
 
@@ -2788,19 +2799,21 @@ footer {
 
     let token = getStoredPuterToken();
     if (!token && interactive) {
-      await window.puter.auth.signIn();
-      token = getStoredPuterToken();
+      const signInResult = await window.puter.auth.signIn();
+      token = String(signInResult?.token || '').trim();
+      if (token) setStoredPuterToken(token);
     }
-    if (!token) return null;
+    const liveProfile = await window.puter.auth.getUser().catch(() => null);
+    if (!token && !liveProfile) return null;
 
     const data = await fetchJson(SESSION_URL, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'X-Puter-Token': token,
+        ...(token ? { 'X-Puter-Token': token } : {}),
       },
       credentials: 'same-origin',
-      body: JSON.stringify({ token }),
+      body: JSON.stringify({ token, profile: liveProfile || undefined }),
     });
     return data?.profile || null;
   }

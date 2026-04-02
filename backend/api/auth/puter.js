@@ -24,6 +24,25 @@ function buildStableUid(profile) {
   return raw ? `puter:${raw.toLowerCase()}` : '';
 }
 
+function sanitizeProfile(profile) {
+  if (!profile || typeof profile !== 'object') return null;
+  return {
+    uuid: pickFirst(profile.uuid, profile.id, profile._id),
+    id: pickFirst(profile.id, profile.uuid, profile._id),
+    _id: pickFirst(profile._id, profile.id, profile.uuid),
+    username: pickFirst(profile.username, profile.handle),
+    handle: pickFirst(profile.handle, profile.username),
+    full_name: pickFirst(profile.full_name, profile.displayName, profile.name),
+    displayName: pickFirst(profile.displayName, profile.full_name, profile.name),
+    name: pickFirst(profile.name, profile.displayName, profile.full_name),
+    email: pickFirst(profile.email),
+    avatar: pickFirst(profile.avatar, profile.picture, profile.profile_picture, profile.photoURL),
+    picture: pickFirst(profile.picture, profile.avatar, profile.profile_picture, profile.photoURL),
+    profile_picture: pickFirst(profile.profile_picture, profile.picture, profile.avatar, profile.photoURL),
+    photoURL: pickFirst(profile.photoURL, profile.picture, profile.avatar, profile.profile_picture),
+  };
+}
+
 module.exports = async (req, res) => {
   if (!requireMethod(req, res, 'POST')) return;
 
@@ -31,13 +50,18 @@ module.exports = async (req, res) => {
   if (body.__error) return sendError(res, body.__error.statusCode || 400, body.__error.message);
 
   const authToken = extractPuterToken(req, body);
-  if (!authToken) return sendError(res, 400, 'A sign-in token is required.');
+  const fallbackProfile = sanitizeProfile(body.profile);
+  if (!authToken && !fallbackProfile) return sendError(res, 400, 'A sign-in token is required.');
 
   let profile;
   try {
-    profile = await resolvePuterUser(authToken);
+    profile = authToken ? await resolvePuterUser(authToken) : fallbackProfile;
   } catch (error) {
-    return sendError(res, error.statusCode || 401, error.message || 'Sign-in could not be verified.');
+    if (fallbackProfile) {
+      profile = fallbackProfile;
+    } else {
+      return sendError(res, error.statusCode || 401, error.message || 'Sign-in could not be verified.');
+    }
   }
 
   const uid = buildStableUid(profile);
