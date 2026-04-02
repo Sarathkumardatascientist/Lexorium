@@ -41,12 +41,12 @@ const PLAN_CONFIG = {
     id: 'free',
     name: 'Free',
     tierLabel: 'Free',
-    description: 'Everyday legal answers with a faster response stack and a light daily cap for individual users getting started.',
-    shortDescription: 'Fast legal intelligence',
+    description: '20 legal queries per day with standard legal responses, basic reasoning, and community-level access for everyday legal clarity.',
+    shortDescription: 'Community legal access',
     routeTier: 'free',
-    dailyLimit: parsePositiveInt(process.env.FREE_DAILY_LIMIT, 30),
+    dailyLimit: parsePositiveInt(process.env.FREE_DAILY_LIMIT, 20),
     pricePaise: 0,
-    priceDisplay: 'Free',
+    priceDisplay: 'INR 0 / month',
     upgradeTarget: 'pro',
     paymentEnabled: false,
     features: {
@@ -62,18 +62,23 @@ const PLAN_CONFIG = {
       allTools: false,
       voiceConversation: false,
       voicePlayback: false,
+      standardLegalResponses: true,
+      basicReasoning: true,
+      communityAccess: true,
     },
   },
   pro: {
     id: 'pro',
     name: 'Pro',
     tierLabel: 'Pro',
-    description: 'Premium legal reasoning, contract drafting, and the full Lexorium toolset with stronger multi-model routing for legal professionals.',
+    description: '120 legal queries per day with advanced legal reasoning, contract drafting tools, priority response speed, and structured legal analysis.',
     shortDescription: 'Premium legal intelligence',
     routeTier: 'pro',
-    dailyLimit: parsePositiveInt(process.env.PRO_DAILY_LIMIT, 500),
-    pricePaise: parsePositiveInt(process.env.PRO_PLAN_PRICE_PAISE, 79900),
-    priceDisplay: 'INR 799 / month',
+    dailyLimit: parsePositiveInt(process.env.PRO_DAILY_LIMIT, 120),
+    pricePaise: parsePositiveInt(process.env.PRO_PLAN_PRICE_PAISE, 89900),
+    priceDisplay: 'INR 899 / month',
+    priceNote: '+ applicable charges',
+    badgeText: 'Most Popular',
     upgradeTarget: 'enterprise',
     paymentEnabled: true,
     features: {
@@ -89,17 +94,18 @@ const PLAN_CONFIG = {
       allTools: true,
       voiceConversation: true,
       voicePlayback: true,
+      priorityResponse: true,
+      structuredLegalAnalysis: true,
     },
   },
   enterprise: {
     id: 'enterprise',
     name: 'Enterprise',
     tierLabel: 'Enterprise',
-    description: 'Custom enterprise rollout with frontier multi-model routing, unlimited queries, team access, workflow design, and commercial onboarding.',
+    description: 'High-priority usage capacity, top-tier models, fastest response priority, advanced legal drafting, structured case-law analysis, bulk query handling, and priority support.',
     shortDescription: 'Enterprise legal intelligence',
     routeTier: 'enterprise',
     dailyLimit: parsePositiveInt(process.env.ENTERPRISE_DAILY_LIMIT, 100000),
-    unmetered: true,
     pricePaise: 0,
     priceDisplay: 'Contact sales',
     upgradeTarget: 'enterprise',
@@ -115,6 +121,10 @@ const PLAN_CONFIG = {
       advancedLegalReasoning: true,
       contractDrafting: true,
       allTools: true,
+      topTierModelsOnly: true,
+      fastestResponsePriority: true,
+      structuredCaseLawAnalysis: true,
+      bulkQueryHandling: true,
       teamAccess: true,
       customWorkflow: true,
       prioritySupport: true,
@@ -123,6 +133,11 @@ const PLAN_CONFIG = {
     },
   },
 };
+
+function getProUpgradeMessage() {
+  const proPlan = getPlanConfig('pro');
+  return `Upgrade to Lexorium Pro for ${proPlan.dailyLimit} legal queries per day, advanced legal reasoning, contract drafting tools, priority response speed, and structured legal analysis.`;
+}
 
 function getPlanConfig(planId) {
   return PLAN_CONFIG[normalizePlanId(planId)] || PLAN_CONFIG.free;
@@ -160,6 +175,8 @@ function getPublicPlanSummary(planId) {
     unmetered: Boolean(plan.unmetered),
     pricePaise: plan.pricePaise,
     priceDisplay: plan.priceDisplay,
+    priceNote: plan.priceNote || '',
+    badgeText: plan.badgeText || '',
     upgradeTarget: plan.upgradeTarget,
     features: { ...plan.features },
   };
@@ -210,33 +227,34 @@ function getUsageWarningState(planId, usage) {
 }
 
 function getFeatureBlockDetails(featureKey) {
+  const proUpgradeMessage = getProUpgradeMessage();
   if (featureKey === 'draftMode') {
     return {
       title: 'Draft Mode is available on Lexorium Pro.',
-      message: 'Upgrade to Lexorium Pro for contract drafting, structured legal drafting, and stronger document-ready output.',
+      message: 'Upgrade to Lexorium Pro for contract drafting tools, advanced legal reasoning, and structured legal analysis.',
     };
   }
   if (featureKey === 'summarizeMode') {
     return {
       title: 'Summarise is available on Lexorium Pro.',
-      message: 'Upgrade to Lexorium Pro for structured summarisation, cleaner issue spotting, and stronger legal reasoning.',
+      message: 'Upgrade to Lexorium Pro for structured legal analysis, cleaner issue spotting, and stronger legal reasoning.',
     };
   }
   if (featureKey === 'researchTool') {
     return {
       title: 'Research Tool is available on Lexorium Pro.',
-      message: 'Upgrade to Lexorium Pro for deeper legal research workflows and full Lexorium tool access.',
+      message: 'Upgrade to Lexorium Pro for deeper legal research workflows, priority response speed, and stronger legal reasoning.',
     };
   }
   if (featureKey === 'exportConversation') {
     return {
       title: 'Export is available on Lexorium Pro.',
-      message: 'Upgrade to Lexorium Pro to export structured legal responses in document-ready formats.',
+      message: 'Upgrade to Lexorium Pro to export structured legal responses and unlock the full Pro workspace.',
     };
   }
   return {
     title: 'This feature is available on Lexorium Pro.',
-    message: 'Upgrade to Lexorium Pro for advanced legal reasoning, contract drafting, and the full Lexorium toolset.',
+    message: proUpgradeMessage,
   };
 }
 
@@ -255,6 +273,7 @@ module.exports = {
   getPlanIdFromUser,
   getPublicPlanCatalog,
   getPublicPlanSummary,
+  getProUpgradeMessage,
   getUpgradeTargetPlan,
   getUsageWarningState,
   isPlanAtLeast,

@@ -11,7 +11,7 @@ const { routeModel } = require('./_lib/model-router');
 const { executeAIRequest, extractProviderToken } = require('./_lib/ai-provider');
 const { buildBlockedPayload, buildSuccessPayload } = require('./_lib/response-normalizer');
 const { parseJsonBody, requireMethod, sendError, sendJson } = require('./_lib/http');
-const { getPlanConfig, getPublicPlanSummary, getUsageWarningState } = require('./_lib/plan-access');
+const { getPlanConfig, getProUpgradeMessage, getPublicPlanSummary, getUsageWarningState } = require('./_lib/plan-access');
 const { buildRetentionSummary } = require('./_lib/retention');
 
 function usageView(planId, usage) {
@@ -335,7 +335,7 @@ module.exports = async (req, res) => {
         code: 'PLAN_LIMIT_REACHED',
         title: 'Today’s Lexorium limit has been reached',
         message: planId === 'free'
-          ? `You’ve reached today’s limit. Upgrade to Lexorium ${upgradePlanName.charAt(0).toUpperCase()}${upgradePlanName.slice(1)} for advanced legal reasoning, contract drafting, and priority responses.`
+          ? `You’ve reached today’s ${plan.dailyLimit}-query Free plan limit. ${getProUpgradeMessage()}`
           : 'You have reached your daily plan limit. Please wait for the next reset window or upgrade your plan.',
         plan,
         usage: deniedUsage,

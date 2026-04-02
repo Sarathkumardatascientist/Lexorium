@@ -2,7 +2,7 @@ const { getSessionFromRequest } = require('../auth/_session');
 const db = require('../_lib/db');
 const devStore = require('../_lib/dev-store');
 const store = devStore.isLocalDevStoreEnabled() ? devStore : db;
-const { getUser, track } = store;
+const { getUser, recordCheckoutIntent, track } = store;
 const { parseJsonBody, requireMethod, sendError, sendJson } = require('../_lib/http');
 const { createHeaders, getCashfreeConfig } = require('./_cashfree');
 const { comparePlanIds, getCheckoutPlan, getPlanForProfile } = require('../_lib/plan-access');
@@ -27,7 +27,7 @@ function resolveReturnBase(req, cashfreeMode) {
   const host = String(req.headers?.['x-forwarded-host'] || req.headers?.host || '')
     .split(',')[0]
     .trim();
-  const envBase = String(process.env.PUBLIC_APP_URL || '').replace(/\/+$/, '');
+  const envBase = String(process.env.PUBLIC_APP_URL || '').trim().replace(/\/+$/, '');
   const protocol = forwardedProto || (req.socket?.encrypted ? 'https' : 'http');
   const requestUrl = host ? parseOrigin(`${protocol}://${host}`) : null;
   const envUrl = parseOrigin(envBase);
@@ -41,7 +41,7 @@ function resolveReturnBase(req, cashfreeMode) {
     ));
 
     if (!securePublicUrl) {
-      const error = new Error('Cashfree production checkout requires PUBLIC_APP_URL to be a public HTTPS app URL. Set PUBLIC_APP_URL=https://your-domain.com and restart the server.');
+      const error = new Error('Cashfree production checkout requires PUBLIC_APP_URL to be a public HTTPS app URL. Set PUBLIC_APP_URL=https://lexoriumai.com and restart the server.');
       error.statusCode = 400;
       throw error;
     }
@@ -136,6 +136,16 @@ module.exports = async (req, res) => {
   if (!upstream.ok) {
     return sendError(res, upstream.status, data?.message || data?.error || 'Failed to create payment order.');
   }
+
+  await recordCheckoutIntent(user.uid, checkoutPlan.id, {
+    provider: 'cashfree',
+    orderId: data.order_id,
+    paymentSessionId: data.payment_session_id,
+    status: 'initiated',
+    amountPaise: checkoutPlan.pricePaise,
+    currency: data.order_currency || 'INR',
+    raw: data,
+  }).catch(() => null);
 
   return sendJson(res, 200, {
     ok: true,

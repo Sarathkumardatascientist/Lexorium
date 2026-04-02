@@ -13,7 +13,7 @@ const nextReset = () => new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
 function isLocalDevStoreEnabled() {
   if (process.env.LEXORIUM_LOCAL_DEV === '0') return false;
   if (process.env.LEXORIUM_LOCAL_DEV === '1') return true;
-  return /localhost|127\.0\.0\.1/i.test(String(process.env.PUBLIC_APP_URL || ''));
+  return /localhost|127\.0\.0\.1/i.test(String(process.env.PUBLIC_APP_URL || '').trim());
 }
 
 function isPro(user) {
@@ -27,6 +27,8 @@ function normalize(uid, data) {
     name: data.name || '',
     email: String(data.email || '').toLowerCase(),
     avatar: data.avatar || '',
+    authProvider: data.authProvider || 'puter',
+    accountStatus: data.accountStatus || 'active',
     plan: normalizePlanId(data.plan),
     subscriptionStatus: data.subscriptionStatus || 'inactive',
     subscriptionStart: data.subscriptionStart || null,
@@ -36,6 +38,7 @@ function normalize(uid, data) {
     totalMessages: Number(data.totalMessages || 0),
     totalConversations: Number(data.totalConversations || 0),
     lastActiveAt: data.lastActiveAt || null,
+    lastLoginAt: data.lastLoginAt || null,
     createdAt: data.createdAt || null,
     updatedAt: data.updatedAt || null,
     billingProvider: data.billingProvider || null,
@@ -70,6 +73,132 @@ function buildUsage(user) {
   };
 }
 
+function safeDocKey(...parts) {
+  return parts
+    .filter(Boolean)
+    .join('_')
+    .replace(/[^A-Za-z0-9_-]+/g, '_')
+    .replace(/_{2,}/g, '_')
+    .replace(/^_+|_+$/g, '')
+    .slice(0, 120) || `lexorium_${Date.now()}`;
+}
+
+function buildAccountStatus(user) {
+  const status = String(user?.subscriptionStatus || '').toLowerCase();
+  if (status === 'suspended') return 'suspended';
+  const planId = getPlanIdFromUser(user);
+  return planId === 'free' || status === 'active' ? 'active' : 'inactive';
+}
+
+function buildFeatureEntitlements(uid, planId, timestamp) {
+  const features = getPlanConfig(planId).features || {};
+  return {
+    user_id: uid,
+    plan: planId,
+    access_advanced_models: Boolean(features.advancedModelSelection || features.topTierModelsOnly),
+    access_legal_tools: Boolean(features.allTools || features.researchTool || features.summarizeMode),
+    access_case_law_depth: Boolean(features.advancedLegalReasoning || features.structuredCaseLawAnalysis),
+    access_contract_drafting: Boolean(features.contractDrafting || features.draftMode),
+    export_access: Boolean(features.exportConversation),
+    access_voice_analysis: Boolean(features.voiceConversation),
+    access_voice_playback: Boolean(features.voicePlayback),
+    priority_response: Boolean(features.priorityResponse || features.fastestResponsePriority || features.premiumLoading),
+    updated_at: timestamp,
+  };
+}
+
+function buildSubscriptionRecord(uid, user, timestamp) {
+  const planId = getPlanIdFromUser(user);
+  const plan = getPlanConfig(planId);
+  const active = String(user?.subscriptionStatus || '').toLowerCase() === 'active' && Date.parse(user?.subscriptionEnd || 0) > Date.now();
+  return {
+    subscription_id: uid,
+    user_id: uid,
+    plan_name: planId,
+    billing_cycle: plan.pricePaise > 0 ? 'monthly' : (planId === 'free' ? 'free' : 'custom'),
+    price: Number(((plan.pricePaise || 0) / 100).toFixed(2)),
+    price_paise: plan.pricePaise || 0,
+    currency: 'INR',
+    start_date: user?.subscriptionStart || user?.createdAt || timestamp,
+    end_date: user?.subscriptionEnd || null,
+    renewal_status: planId === 'free' ? 'not_applicable' : (active ? 'active' : 'inactive'),
+    payment_status: planId === 'free' ? 'not_required' : (active ? 'paid' : 'pending'),
+    gateway_reference: user?.billingSubscriptionId || null,
+    upgraded_at: planId === 'free' ? null : (user?.subscriptionStart || timestamp),
+    updated_at: timestamp,
+  };
+}
+
+function buildUsageRecord(uid, user, timestamp) {
+  const planId = getPlanIdFromUser(user);
+  const usage = buildUsage(user);
+  const date = dayKey(timestamp);
+  const id = safeDocKey(uid, date);
+  return {
+    id,
+    data: {
+      usage_id: id,
+      user_id: uid,
+      date,
+      queries_used: usage.used,
+      daily_limit: usage.limit,
+      plan: planId,
+      reset_at: usage.resetAt,
+      updated_at: timestamp,
+      created_at: timestamp,
+    },
+  };
+}
+
+function buildPaymentRecord(uid, planId, payment, timestamp) {
+  if (!payment) return null;
+  const plan = getPlanConfig(planId);
+  const id = safeDocKey(payment.paymentId || payment.orderId || payment.invoiceId || uid, payment.eventType || 'payment');
+  return {
+    id,
+    data: {
+      payment_id: id,
+      user_id: uid,
+      plan_name: planId,
+      amount: Number((((payment.amountPaise ?? plan.pricePaise) || 0) / 100).toFixed(2)),
+      amount_paise: Number(payment.amountPaise ?? plan.pricePaise ?? 0),
+      currency: payment.currency || 'INR',
+      payment_gateway: payment.provider || process.env.PAYMENT_PROVIDER || 'cashfree',
+      transaction_id: payment.paymentId || null,
+      invoice_id: payment.invoiceId || payment.orderId || null,
+      gateway_reference: payment.orderId || payment.subscriptionId || null,
+      payment_status: String(payment.status || payment.eventType || 'paid').toLowerCase(),
+      paid_at: payment.paidAt || null,
+      updated_at: timestamp,
+      created_at: timestamp,
+      raw: payment.raw || null,
+    },
+  };
+}
+
+function syncCommercialState(state, uid, user, options = {}) {
+  if (!uid || !user) return;
+  const timestamp = options.timestamp || now();
+  const planId = getPlanIdFromUser(user);
+  state.subscriptions = state.subscriptions || {};
+  state.featureEntitlements = state.featureEntitlements || {};
+  state.usageTracking = state.usageTracking || {};
+  state.payments = state.payments || {};
+
+  state.subscriptions[uid] = buildSubscriptionRecord(uid, user, timestamp);
+  state.featureEntitlements[uid] = buildFeatureEntitlements(uid, planId, timestamp);
+
+  if (options.includeUsage !== false) {
+    const usageRecord = buildUsageRecord(uid, user, timestamp);
+    state.usageTracking[usageRecord.id] = usageRecord.data;
+  }
+
+  const paymentRecord = buildPaymentRecord(uid, planId, options.payment, timestamp);
+  if (paymentRecord) {
+    state.payments[paymentRecord.id] = paymentRecord.data;
+  }
+}
+
 function titleFrom(text) {
   const value = String(text || '').replace(/\s+/g, ' ').trim();
   return value ? (value.length > 72 ? `${value.slice(0, 69)}...` : value) : 'Untitled conversation';
@@ -81,16 +210,23 @@ function ensureStoreDir() {
 
 function readState() {
   ensureStoreDir();
-  if (!fs.existsSync(STORE_PATH)) return { users: {}, conversations: {}, analytics: [] };
+  if (!fs.existsSync(STORE_PATH)) {
+    return { users: {}, conversations: {}, messages: {}, subscriptions: {}, payments: {}, usageTracking: {}, featureEntitlements: {}, analytics: [] };
+  }
   try {
     const state = JSON.parse(fs.readFileSync(STORE_PATH, 'utf8'));
     return {
       users: state.users || {},
       conversations: state.conversations || {},
+      messages: state.messages || {},
+      subscriptions: state.subscriptions || {},
+      payments: state.payments || {},
+      usageTracking: state.usageTracking || {},
+      featureEntitlements: state.featureEntitlements || {},
       analytics: Array.isArray(state.analytics) ? state.analytics : [],
     };
   } catch (_error) {
-    return { users: {}, conversations: {}, analytics: [] };
+    return { users: {}, conversations: {}, messages: {}, subscriptions: {}, payments: {}, usageTracking: {}, featureEntitlements: {}, analytics: [] };
   }
 }
 
@@ -116,8 +252,10 @@ function refreshUser(state, uid) {
     changed = true;
   }
   if (changed) {
+    user.accountStatus = buildAccountStatus(user);
     user.updatedAt = now();
     state.users[uid] = user;
+    syncCommercialState(state, uid, user, { includeUsage: true, timestamp: user.updatedAt });
     writeState(state);
   }
 
@@ -131,16 +269,21 @@ async function getUser(uid) {
 async function upsertUser(profile) {
   const state = readState();
   const base = refreshUser(state, profile.uid) || normalize(profile.uid, {});
+  const currentTime = now();
   const user = {
     ...base,
     name: profile.name || base.name,
     email: String(profile.email || base.email || '').toLowerCase(),
     avatar: profile.avatar || base.avatar,
-    lastActiveAt: now(),
-    updatedAt: now(),
-    createdAt: base.createdAt || now(),
+    authProvider: profile.authProvider || base.authProvider || 'puter',
+    accountStatus: 'active',
+    lastActiveAt: currentTime,
+    lastLoginAt: currentTime,
+    updatedAt: currentTime,
+    createdAt: base.createdAt || currentTime,
   };
   state.users[profile.uid] = user;
+  syncCommercialState(state, profile.uid, user, { includeUsage: true, timestamp: currentTime });
   writeState(state);
   return user;
 }
@@ -166,7 +309,9 @@ async function takeQuota(uid) {
   Object.assign(user, applyDailyActivity(user, currentTime));
   user.lastActiveAt = currentTime;
   user.updatedAt = now();
+  user.accountStatus = buildAccountStatus(user);
   state.users[uid] = user;
+  syncCommercialState(state, uid, user, { includeUsage: true, timestamp: user.updatedAt });
   writeState(state);
   return {
     ok: true,
@@ -258,15 +403,18 @@ async function listConversations(uid) {
 async function saveConversation(uid, payload) {
   const state = readState();
   state.conversations[uid] = state.conversations[uid] || {};
+  state.messages = state.messages || {};
   const id = payload.id || crypto.randomUUID();
   const current = state.conversations[uid][id] || {};
+  const userMessageAt = now();
+  const assistantMessageAt = now();
   const messages = Array.isArray(current.messages) ? current.messages.slice(-38) : [];
   const nextMessages = messages.concat([
-    { role: 'user', content: payload.userText, at: now() },
+    { role: 'user', content: payload.userText, at: userMessageAt },
     {
       role: 'assistant',
       content: payload.answerText,
-      at: now(),
+      at: assistantMessageAt,
       model: payload.model || '',
       modelLabel: payload.modelLabel || '',
       modelTier: payload.modelTier || '',
@@ -277,19 +425,43 @@ async function saveConversation(uid, payload) {
   const conversation = {
     title: current.title || payload.title || titleFrom(payload.userText),
     preview: String(payload.answerText || '').slice(0, 180),
-    updatedAt: now(),
-    createdAt: current.createdAt || now(),
+    updatedAt: assistantMessageAt,
+    createdAt: current.createdAt || userMessageAt,
     isPinned: !!current.isPinned,
     messageCount: nextMessages.length,
     messages: nextMessages,
   };
   state.conversations[uid][id] = conversation;
+  const userMessageId = crypto.randomUUID();
+  const assistantMessageId = crypto.randomUUID();
+  state.messages[userMessageId] = {
+    message_id: userMessageId,
+    conversation_id: id,
+    user_id: uid,
+    role: 'user',
+    content: payload.userText,
+    model_used: '',
+    timestamp: userMessageAt,
+    created_at: userMessageAt,
+  };
+  state.messages[assistantMessageId] = {
+    message_id: assistantMessageId,
+    conversation_id: id,
+    user_id: uid,
+    role: 'assistant',
+    content: payload.answerText,
+    model_used: payload.model || '',
+    model_label: payload.modelLabel || '',
+    model_tier: payload.modelTier || '',
+    timestamp: assistantMessageAt,
+    created_at: assistantMessageAt,
+  };
   const user = refreshUser(state, uid) || normalize(uid, {});
   user.totalMessages = Number(user.totalMessages || 0) + 2;
   user.totalConversations = Number(user.totalConversations || 0) + (current.createdAt ? 0 : 1);
-  user.lastActiveAt = now();
-  user.updatedAt = now();
-  user.createdAt = user.createdAt || now();
+  user.lastActiveAt = assistantMessageAt;
+  user.updatedAt = assistantMessageAt;
+  user.createdAt = user.createdAt || assistantMessageAt;
   state.users[uid] = user;
   writeState(state);
   return { id, ...conversation };
@@ -307,6 +479,9 @@ async function removeConversation(uid, id) {
   const state = readState();
   if (!state.conversations[uid]) return;
   delete state.conversations[uid][id];
+  state.messages = Object.fromEntries(
+    Object.entries(state.messages || {}).filter(([, message]) => message.conversation_id !== id)
+  );
   writeState(state);
 }
 
@@ -320,7 +495,11 @@ async function renameConversation(uid, id, title) {
 
 async function clearConversations(uid) {
   const state = readState();
+  const conversationIds = new Set(Object.keys(state.conversations[uid] || {}));
   delete state.conversations[uid];
+  state.messages = Object.fromEntries(
+    Object.entries(state.messages || {}).filter(([, message]) => !conversationIds.has(message.conversation_id))
+  );
   writeState(state);
 }
 
@@ -349,12 +528,24 @@ async function activatePaidPlan(uid, planId, payment) {
   user.billingCustomerId = payment.customerId || null;
   user.billingSubscriptionId = payment.subscriptionId || payment.orderId || null;
   user.billingPaymentId = payment.paymentId || null;
+  user.authProvider = user.authProvider || 'puter';
+  user.accountStatus = 'active';
   user.dailyFreeUsageCount = 0;
   user.dailyFreeUsageResetAt = nextReset();
   user.lastActiveAt = now();
   user.updatedAt = now();
   user.createdAt = user.createdAt || now();
   state.users[uid] = user;
+  syncCommercialState(state, uid, user, {
+    includeUsage: true,
+    timestamp: user.updatedAt,
+    payment: {
+      ...payment,
+      amountPaise: payment?.amountPaise ?? plan.pricePaise,
+      currency: payment?.currency || 'INR',
+      paidAt: user.updatedAt,
+    },
+  });
   writeState(state);
   return user;
 }
@@ -368,6 +559,30 @@ async function findUserByEmail(email) {
   const state = readState();
   const match = Object.entries(state.users).find(([, user]) => String(user.email || '').toLowerCase() === normalized);
   return match ? match[0] : null;
+}
+
+async function recordCheckoutIntent(uid, planId, checkout) {
+  const state = readState();
+  const normalizedPlan = normalizePlanId(planId);
+  const plan = getPlanConfig(normalizedPlan);
+  const currentTime = now();
+  const paymentRecord = buildPaymentRecord(uid, normalizedPlan, {
+    provider: checkout?.provider || process.env.PAYMENT_PROVIDER || 'cashfree',
+    orderId: checkout?.orderId || '',
+    paymentId: checkout?.paymentSessionId || '',
+    invoiceId: checkout?.orderId || '',
+    status: checkout?.status || 'initiated',
+    eventType: 'checkout_started',
+    amountPaise: checkout?.amountPaise ?? plan.pricePaise,
+    currency: checkout?.currency || 'INR',
+    paidAt: null,
+    raw: checkout?.raw || null,
+  }, currentTime);
+  if (!paymentRecord) return null;
+  state.payments = state.payments || {};
+  state.payments[paymentRecord.id] = paymentRecord.data;
+  writeState(state);
+  return paymentRecord.data;
 }
 
 function exportText(conversation) {
@@ -444,6 +659,7 @@ module.exports = {
   isLocalDevStoreEnabled,
   isPro,
   listConversations,
+  recordCheckoutIntent,
   clearConversations,
   removeConversation,
   renameConversation,

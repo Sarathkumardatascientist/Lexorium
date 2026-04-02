@@ -4,7 +4,7 @@ function parsePositiveInt(value, fallback) {
 }
 
 function getPublicAppUrl() {
-  return String(process.env.PUBLIC_APP_URL || 'http://localhost:3000').replace(/\/$/, '');
+  return String(process.env.PUBLIC_APP_URL || 'http://localhost:3000').trim().replace(/\/$/, '');
 }
 
 function getPublicFirebaseConfig() {
@@ -53,9 +53,9 @@ function getModelSettings() {
 
 module.exports = {
   CONTACT_SALES_EMAIL: process.env.CONTACT_SALES_EMAIL || 'sales@lexorium.com',
-  FREE_DAILY_LIMIT: parsePositiveInt(process.env.FREE_DAILY_LIMIT, 30),
+  FREE_DAILY_LIMIT: parsePositiveInt(process.env.FREE_DAILY_LIMIT, 20),
   PRO_PLAN_DURATION_DAYS: parsePositiveInt(process.env.PRO_PLAN_DURATION_DAYS, 30),
-  PRO_PLAN_PRICE_PAISE: parsePositiveInt(process.env.PRO_PLAN_PRICE_PAISE, 79900),
+  PRO_PLAN_PRICE_PAISE: parsePositiveInt(process.env.PRO_PLAN_PRICE_PAISE, 89900),
   PUBLIC_APP_URL: getPublicAppUrl(),
   RAZORPAY_KEY_ID: process.env.RAZORPAY_KEY_ID || '',
   RAZORPAY_KEY_SECRET: process.env.RAZORPAY_KEY_SECRET || '',

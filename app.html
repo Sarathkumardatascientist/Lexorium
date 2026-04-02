@@ -3101,11 +3101,11 @@
   <div class="modal-overlay" id="upgradeModal">
     <div class="modal">
       <div class="modal-title" id="upgradeModalTitle">Upgrade to Lexorium</div>
-      <div class="upgrade-modal-copy" id="upgradeModalCopy">Upgrade for advanced legal reasoning, contract drafting, and the full Lexorium toolset.</div>
+      <div class="upgrade-modal-copy" id="upgradeModalCopy">Upgrade for 120 legal queries per day, advanced legal reasoning, contract drafting tools, priority response speed, and structured legal analysis.</div>
       <div class="upgrade-modal-points" id="upgradeModalPoints">
-        <div>Advanced legal reasoning</div>
-        <div>Research-grade legal tools</div>
-        <div>Faster routed responses</div>
+        <div>120 legal queries per day</div>
+        <div>Advanced legal reasoning and contract drafting tools</div>
+        <div>Priority response speed and structured legal analysis</div>
       </div>
       <div class="modal-actions">
         <button class="modal-btn" onclick="closeUpgradeModal()">Not now</button>
@@ -3987,7 +3987,7 @@
     }
     openUpgradeModal({
       title: `Upgrade to Lexorium ${formatPlanName(currentPlan?.upgradeTarget || 'pro')}`,
-      message: `Upgrade this account for advanced legal reasoning, contract drafting, voice analysis, and all Pro tools.`,
+      message: 'Upgrade this account for 120 legal queries per day, advanced legal reasoning, contract drafting tools, priority response speed, voice analysis, and structured legal analysis.',
       reason: 'sidebar_upgrade',
       planId: currentPlan?.upgradeTarget || 'pro',
     });
@@ -4480,7 +4480,7 @@
   function openUpgradeModal(options) {
     pendingUpgradePlan = getUpgradeTargetPlan(currentPlan.id, options?.planId || options?.requiredPlan || 'pro');
     document.getElementById('upgradeModalTitle').textContent = options?.title || `Upgrade to Lexorium ${formatPlanName(pendingUpgradePlan)}`;
-    document.getElementById('upgradeModalCopy').textContent = options?.message || 'Upgrade for advanced legal reasoning, contract drafting, and the full Lexorium toolset.';
+    document.getElementById('upgradeModalCopy').textContent = options?.message || 'Upgrade for 120 legal queries per day, advanced legal reasoning, contract drafting tools, priority response speed, and structured legal analysis.';
     const action = document.getElementById('upgradeModalAction');
     action.textContent = options?.ctaLabel || `Upgrade to ${formatPlanName(pendingUpgradePlan)}`;
     document.getElementById('upgradeModal').classList.add('open');
@@ -4708,7 +4708,7 @@
     if (premiumMode && !currentPlan?.features?.[`${mode === 'summarize' ? 'summarizeMode' : mode === 'draft' ? 'draftMode' : 'researchTool'}`]) {
       openUpgradeModal({
         title: featureMap[mode],
-        message: 'Upgrade to Lexorium Pro for advanced legal reasoning, contract drafting, and all legal tools.',
+        message: 'Upgrade to Lexorium Pro for 120 legal queries per day, advanced legal reasoning, contract drafting tools, priority response speed, and structured legal analysis.',
         reason: 'feature_gate',
         planId: currentPlan.id === 'free' ? 'pro' : 'enterprise',
       });
@@ -6609,7 +6609,7 @@
         );
         openUpgradeModal({
           title: 'Daily plan limit reached.',
-          message: 'Upgrade to continue using Lexorium with advanced legal reasoning, contract drafting, and priority responses.',
+          message: 'Upgrade to continue using Lexorium with 120 legal queries per day, advanced legal reasoning, contract drafting tools, priority response speed, and structured legal analysis.',
           reason: 'limit_reached',
           planId: limitUpgradePlan,
           ctaLabel: 'Upgrade to Pro',
@@ -6623,7 +6623,7 @@
         syncVoiceUi();
         openUpgradeModal({
           title: err.payload?.title || `Upgrade to Lexorium ${formatPlanName(targetPlan)}`,
-          message: err.message || err.payload?.message || `Upgrade to Lexorium ${formatPlanName(targetPlan)} for advanced legal reasoning, contract drafting, and all legal tools.`,
+          message: err.message || err.payload?.message || `Upgrade to Lexorium ${formatPlanName(targetPlan)} for 120 legal queries per day, advanced legal reasoning, contract drafting tools, priority response speed, and structured legal analysis.`,
           reason: 'upgrade_required',
           planId: targetPlan,
         });

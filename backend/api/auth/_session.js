@@ -63,7 +63,7 @@ function parseCookies(req) {
 }
 
 function getPublicAppUrl() {
-  return (process.env.PUBLIC_APP_URL || 'http://localhost:3000').replace(/\/$/, '');
+  return String(process.env.PUBLIC_APP_URL || 'http://localhost:3000').trim().replace(/\/$/, '');
 }
 
 function createSessionCookie(user) {

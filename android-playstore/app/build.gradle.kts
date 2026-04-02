@@ -19,7 +19,7 @@ android {
             useSupportLibrary = true
         }
 
-        buildConfigField("String", "LEXORIUM_BASE_URL", "\"https://lexorium-jrfd.vercel.app\"")
+        buildConfigField("String", "LEXORIUM_BASE_URL", "\"https://lexoriumai.com\"")
     }
 
     buildTypes {

@@ -1,4 +1,4 @@
-const { getUsageWarningState } = require('./plan-access');
+const { getProUpgradeMessage, getUsageWarningState } = require('./plan-access');
 
 const STRUCTURED_LABELS = [
   'Issue',
@@ -98,7 +98,7 @@ function buildSuccessPayload(options) {
     model: options.model?.id || '',
     upgradePrompt: warning.showSoftWarning,
     upgradePromptText: warning.showSoftWarning
-      ? 'You\u2019re nearing today\u2019s limit. Upgrade to Pro for advanced legal reasoning, contract drafting, and priority responses.'
+      ? `You\u2019re nearing today\u2019s limit. ${getProUpgradeMessage()}`
       : null,
     choices: [{ index: 0, message: { role: 'assistant', content: answer }, finish_reason: 'stop' }],
     meta: {

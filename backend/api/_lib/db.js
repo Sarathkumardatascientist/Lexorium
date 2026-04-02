@@ -17,6 +17,8 @@ function normalize(uid, data) {
     name: data.name || '',
     email: String(data.email || '').toLowerCase(),
     avatar: data.avatar || '',
+    authProvider: data.authProvider || 'puter',
+    accountStatus: data.accountStatus || 'active',
     plan: normalizePlanId(data.plan),
     subscriptionStatus: data.subscriptionStatus || 'inactive',
     subscriptionStart: data.subscriptionStart || null,
@@ -30,6 +32,7 @@ function normalize(uid, data) {
     totalMessages: Number(data.totalMessages || 0),
     totalConversations: Number(data.totalConversations || 0),
     lastActiveAt: data.lastActiveAt || null,
+    lastLoginAt: data.lastLoginAt || null,
     createdAt: data.createdAt || null,
     updatedAt: data.updatedAt || null,
     persona: normalizePersona(data.persona),
@@ -66,6 +69,138 @@ function buildUsage(user) {
   };
 }
 
+function safeDocKey(...parts) {
+  return parts
+    .filter(Boolean)
+    .join('_')
+    .replace(/[^A-Za-z0-9_-]+/g, '_')
+    .replace(/_{2,}/g, '_')
+    .replace(/^_+|_+$/g, '')
+    .slice(0, 120) || `lexorium_${Date.now()}`;
+}
+
+function buildAccountStatus(user) {
+  const status = String(user?.subscriptionStatus || '').toLowerCase();
+  if (status === 'suspended') return 'suspended';
+  const planId = getPlanIdFromUser(user);
+  return planId === 'free' || status === 'active' ? 'active' : 'inactive';
+}
+
+function buildFeatureEntitlements(uid, planId, timestamp) {
+  const features = getPlanConfig(planId).features || {};
+  return {
+    user_id: uid,
+    plan: planId,
+    access_advanced_models: Boolean(features.advancedModelSelection || features.topTierModelsOnly),
+    access_legal_tools: Boolean(features.allTools || features.researchTool || features.summarizeMode),
+    access_case_law_depth: Boolean(features.advancedLegalReasoning || features.structuredCaseLawAnalysis),
+    access_contract_drafting: Boolean(features.contractDrafting || features.draftMode),
+    export_access: Boolean(features.exportConversation),
+    access_voice_analysis: Boolean(features.voiceConversation),
+    access_voice_playback: Boolean(features.voicePlayback),
+    priority_response: Boolean(features.priorityResponse || features.fastestResponsePriority || features.premiumLoading),
+    updated_at: timestamp,
+  };
+}
+
+function buildSubscriptionRecord(uid, user, timestamp) {
+  const planId = getPlanIdFromUser(user);
+  const plan = getPlanConfig(planId);
+  const active = String(user?.subscriptionStatus || '').toLowerCase() === 'active' && Date.parse(user?.subscriptionEnd || 0) > Date.now();
+  return {
+    subscription_id: uid,
+    user_id: uid,
+    plan_name: planId,
+    billing_cycle: plan.pricePaise > 0 ? 'monthly' : (planId === 'free' ? 'free' : 'custom'),
+    price: Number(((plan.pricePaise || 0) / 100).toFixed(2)),
+    price_paise: plan.pricePaise || 0,
+    currency: 'INR',
+    start_date: user?.subscriptionStart || user?.createdAt || timestamp,
+    end_date: user?.subscriptionEnd || null,
+    renewal_status: planId === 'free' ? 'not_applicable' : (active ? 'active' : 'inactive'),
+    payment_status: planId === 'free' ? 'not_required' : (active ? 'paid' : 'pending'),
+    gateway_reference: user?.billingSubscriptionId || null,
+    upgraded_at: planId === 'free' ? null : (user?.subscriptionStart || timestamp),
+    updated_at: timestamp,
+  };
+}
+
+function buildUsageRecord(uid, user, timestamp) {
+  const planId = getPlanIdFromUser(user);
+  const usage = buildUsage(user);
+  const date = dayKey(timestamp);
+  return {
+    id: safeDocKey(uid, date),
+    data: {
+      usage_id: safeDocKey(uid, date),
+      user_id: uid,
+      date,
+      queries_used: usage.used,
+      daily_limit: usage.limit,
+      plan: planId,
+      reset_at: usage.resetAt,
+      updated_at: timestamp,
+      created_at: timestamp,
+    },
+  };
+}
+
+function buildPaymentRecord(uid, planId, payment, timestamp) {
+  if (!payment) return null;
+  const plan = getPlanConfig(planId);
+  const docId = safeDocKey(payment.paymentId || payment.orderId || payment.invoiceId || uid, payment.eventType || 'payment');
+  return {
+    id: docId,
+    data: {
+      payment_id: docId,
+      user_id: uid,
+      plan_name: planId,
+      amount: Number((((payment.amountPaise ?? plan.pricePaise) || 0) / 100).toFixed(2)),
+      amount_paise: Number(payment.amountPaise ?? plan.pricePaise ?? 0),
+      currency: payment.currency || 'INR',
+      payment_gateway: payment.provider || process.env.PAYMENT_PROVIDER || 'cashfree',
+      transaction_id: payment.paymentId || null,
+      invoice_id: payment.invoiceId || payment.orderId || null,
+      gateway_reference: payment.orderId || payment.subscriptionId || null,
+      payment_status: String(payment.status || payment.eventType || 'paid').toLowerCase(),
+      paid_at: payment.paidAt || null,
+      updated_at: timestamp,
+      created_at: timestamp,
+      raw: payment.raw || null,
+    },
+  };
+}
+
+async function syncCommercialCollections(uid, user, options = {}) {
+  if (!uid || !user) return;
+  const timestamp = options.timestamp || now();
+  const planId = getPlanIdFromUser(user);
+  const batch = getDb().batch();
+
+  batch.set(
+    getDb().collection('subscriptions').doc(uid),
+    buildSubscriptionRecord(uid, user, timestamp),
+    { merge: true }
+  );
+  batch.set(
+    getDb().collection('feature_entitlements').doc(uid),
+    buildFeatureEntitlements(uid, planId, timestamp),
+    { merge: true }
+  );
+
+  if (options.includeUsage !== false) {
+    const usageRecord = buildUsageRecord(uid, user, timestamp);
+    batch.set(getDb().collection('usage_tracking').doc(usageRecord.id), usageRecord.data, { merge: true });
+  }
+
+  const paymentRecord = buildPaymentRecord(uid, planId, options.payment, timestamp);
+  if (paymentRecord) {
+    batch.set(getDb().collection('payments').doc(paymentRecord.id), paymentRecord.data, { merge: true });
+  }
+
+  await batch.commit();
+}
+
 async function getUser(uid) {
   const ref = getDb().collection('users').doc(uid);
   const snap = await ref.get();
@@ -82,9 +217,11 @@ async function getUser(uid) {
     updates.dailyFreeUsageResetAt = nextReset();
   }
   if (Object.keys(updates).length) {
+    updates.accountStatus = buildAccountStatus({ ...user, ...updates });
     updates.updatedAt = now();
     await ref.set(updates, { merge: true });
     user = { ...user, ...updates };
+    await syncCommercialCollections(uid, user, { includeUsage: true, timestamp: updates.updatedAt });
   }
 
   return user;
@@ -93,16 +230,21 @@ async function getUser(uid) {
 async function upsertUser(profile) {
   const ref = getDb().collection('users').doc(profile.uid);
   const base = (await getUser(profile.uid)) || normalize(profile.uid, {});
+  const currentTime = now();
   const payload = {
     ...base,
     name: profile.name || base.name,
     email: String(profile.email || base.email || '').toLowerCase(),
     avatar: profile.avatar || base.avatar,
-    lastActiveAt: now(),
-    updatedAt: now(),
-    createdAt: base.createdAt || now(),
+    authProvider: profile.authProvider || base.authProvider || 'puter',
+    accountStatus: 'active',
+    lastActiveAt: currentTime,
+    lastLoginAt: currentTime,
+    updatedAt: currentTime,
+    createdAt: base.createdAt || currentTime,
   };
   await ref.set(payload, { merge: true });
+  await syncCommercialCollections(profile.uid, payload, { includeUsage: true, timestamp: currentTime });
   return payload;
 }
 
@@ -162,7 +304,7 @@ async function recordRetentionActivity(uid, classification, meta) {
 
 async function takeQuota(uid) {
   const ref = getDb().collection('users').doc(uid);
-  return getDb().runTransaction(async (tx) => {
+  const result = await getDb().runTransaction(async (tx) => {
     const snap = await tx.get(ref);
     if (!snap.exists) throw new Error('User record not found.');
 
@@ -175,15 +317,27 @@ async function takeQuota(uid) {
     const planId = getPlanIdFromUser(user);
     const limit = getDailyLimit(planId);
     if (user.dailyFreeUsageCount >= limit) {
-      return { ok: false, plan: planId, usage: buildUsage(user), first: user.totalMessages === 0 };
+      return { ok: false, plan: planId, usage: buildUsage(user), first: user.totalMessages === 0, user };
     }
 
     const nextUsed = user.dailyFreeUsageCount + 1;
     const currentTime = now();
     const activity = applyDailyActivity(user, currentTime);
-    tx.set(ref, {
+    const nextUser = {
+      ...user,
       dailyFreeUsageCount: nextUsed,
       dailyFreeUsageResetAt: user.dailyFreeUsageResetAt || nextReset(),
+      lastActiveAt: currentTime,
+      lastActiveDayKey: activity.lastActiveDayKey,
+      streakCount: activity.streakCount,
+      longestStreak: activity.longestStreak,
+      daysActiveTotal: activity.daysActiveTotal,
+      updatedAt: currentTime,
+      accountStatus: buildAccountStatus(user),
+    };
+    tx.set(ref, {
+      dailyFreeUsageCount: nextUsed,
+      dailyFreeUsageResetAt: nextUser.dailyFreeUsageResetAt,
       lastActiveAt: currentTime,
       lastActiveDayKey: activity.lastActiveDayKey,
       streakCount: activity.streakCount,
@@ -199,11 +353,17 @@ async function takeQuota(uid) {
         limit,
         used: nextUsed,
         remaining: Math.max(limit - nextUsed, 0),
-        resetAt: user.dailyFreeUsageResetAt,
+        resetAt: nextUser.dailyFreeUsageResetAt,
       },
       first: user.totalMessages === 0,
+      user: nextUser,
     };
   });
+  if (result?.user) {
+    await syncCommercialCollections(uid, result.user, { includeUsage: true, timestamp: result.user.updatedAt || now() });
+  }
+  const { user, ...payload } = result;
+  return payload;
 }
 
 function titleFrom(text) {
@@ -237,13 +397,15 @@ async function saveConversation(uid, payload) {
   const ref = payload.id ? userRef.collection('conversations').doc(payload.id) : userRef.collection('conversations').doc();
   const snap = await ref.get();
   const current = snap.exists ? snap.data() : {};
+  const userMessageAt = now();
+  const assistantMessageAt = now();
   const messages = Array.isArray(current.messages) ? current.messages.slice(-38) : [];
   const nextMessages = messages.concat([
-    { role: 'user', content: payload.userText, at: now() },
+    { role: 'user', content: payload.userText, at: userMessageAt },
     {
       role: 'assistant',
       content: payload.answerText,
-      at: now(),
+      at: assistantMessageAt,
       model: payload.model || '',
       modelLabel: payload.modelLabel || '',
       modelTier: payload.modelTier || '',
@@ -255,19 +417,45 @@ async function saveConversation(uid, payload) {
   const doc = {
     title,
     preview: String(payload.answerText || '').slice(0, 180),
-    updatedAt: now(),
-    createdAt: current.createdAt || now(),
+    updatedAt: assistantMessageAt,
+    createdAt: current.createdAt || userMessageAt,
     isPinned: !!current.isPinned,
     messageCount: nextMessages.length,
     messages: nextMessages,
   };
-  await ref.set(doc, { merge: true });
-  await userRef.set({
+  const userMessageRef = getDb().collection('messages').doc();
+  const assistantMessageRef = getDb().collection('messages').doc();
+  const batch = getDb().batch();
+  batch.set(ref, doc, { merge: true });
+  batch.set(userRef, {
     totalMessages: FieldValue.increment(2),
     totalConversations: snap.exists ? FieldValue.increment(0) : FieldValue.increment(1),
-    lastActiveAt: now(),
-    updatedAt: now(),
+    lastActiveAt: assistantMessageAt,
+    updatedAt: assistantMessageAt,
   }, { merge: true });
+  batch.set(userMessageRef, {
+    message_id: userMessageRef.id,
+    conversation_id: ref.id,
+    user_id: uid,
+    role: 'user',
+    content: payload.userText,
+    model_used: '',
+    timestamp: userMessageAt,
+    created_at: userMessageAt,
+  });
+  batch.set(assistantMessageRef, {
+    message_id: assistantMessageRef.id,
+    conversation_id: ref.id,
+    user_id: uid,
+    role: 'assistant',
+    content: payload.answerText,
+    model_used: payload.model || '',
+    model_label: payload.modelLabel || '',
+    model_tier: payload.modelTier || '',
+    timestamp: assistantMessageAt,
+    created_at: assistantMessageAt,
+  });
+  await batch.commit();
   return { id: ref.id, ...doc };
 }
 
@@ -295,7 +483,7 @@ async function clearConversations(uid) {
 }
 
 async function activatePaidPlan(uid, planId, payment) {
-  const current = await getUser(uid);
+  const current = (await getUser(uid)) || normalize(uid, {});
   const normalizedPlan = normalizePlanId(planId);
   const plan = getPlanConfig(normalizedPlan);
   const paymentOrderId = String(payment?.orderId || '').trim();
@@ -311,26 +499,63 @@ async function activatePaidPlan(uid, planId, payment) {
   if (alreadyApplied) return current;
   const end = new Date();
   end.setUTCDate(end.getUTCDate() + PLAN_DURATION_DAYS);
-  await getDb().collection('users').doc(uid).set({
+  const currentTime = now();
+  const nextUser = {
+    ...current,
     plan: plan.id,
-    subscriptionStatus: plan.id === 'enterprise' ? 'active' : 'active',
-    subscriptionStart: now(),
+    subscriptionStatus: 'active',
+    subscriptionStart: currentTime,
     subscriptionEnd: end.toISOString(),
     billingProvider: payment.provider || process.env.PAYMENT_PROVIDER || 'cashfree',
     billingCustomerId: payment.customerId || null,
     billingSubscriptionId: payment.subscriptionId || payment.orderId || null,
     billingPaymentId: payment.paymentId || null,
+    authProvider: current.authProvider || 'puter',
+    accountStatus: 'active',
     dailyFreeUsageCount: 0,
     dailyFreeUsageResetAt: nextReset(),
-    updatedAt: now(),
-    lastActiveAt: now(),
-  }, { merge: true });
-  await getDb().collection('billing_events').add({ uid, createdAt: now(), planId: plan.id, ...payment });
+    updatedAt: currentTime,
+    lastActiveAt: currentTime,
+    createdAt: current.createdAt || currentTime,
+  };
+  await getDb().collection('users').doc(uid).set(nextUser, { merge: true });
+  await syncCommercialCollections(uid, nextUser, {
+    includeUsage: true,
+    timestamp: currentTime,
+    payment: {
+      ...payment,
+      amountPaise: payment?.amountPaise ?? plan.pricePaise,
+      currency: payment?.currency || 'INR',
+      paidAt: currentTime,
+    },
+  });
+  await getDb().collection('billing_events').add({ uid, createdAt: currentTime, planId: plan.id, ...payment });
   return getUser(uid);
 }
 
 async function activatePro(uid, payment) {
   return activatePaidPlan(uid, 'pro', payment);
+}
+
+async function recordCheckoutIntent(uid, planId, checkout) {
+  const normalizedPlan = normalizePlanId(planId);
+  const plan = getPlanConfig(normalizedPlan);
+  const currentTime = now();
+  const paymentRecord = buildPaymentRecord(uid, normalizedPlan, {
+    provider: checkout?.provider || process.env.PAYMENT_PROVIDER || 'cashfree',
+    orderId: checkout?.orderId || '',
+    paymentId: checkout?.paymentSessionId || '',
+    invoiceId: checkout?.orderId || '',
+    status: checkout?.status || 'initiated',
+    eventType: 'checkout_started',
+    amountPaise: checkout?.amountPaise ?? plan.pricePaise,
+    currency: checkout?.currency || 'INR',
+    paidAt: null,
+    raw: checkout?.raw || null,
+  }, currentTime);
+  if (!paymentRecord) return null;
+  await getDb().collection('payments').doc(paymentRecord.id).set(paymentRecord.data, { merge: true });
+  return paymentRecord.data;
 }
 
 async function findUserByEmail(email) {
@@ -411,6 +636,7 @@ module.exports = {
   getUser,
   isPro,
   listConversations,
+  recordCheckoutIntent,
   clearConversations,
   removeConversation,
   renameConversation,

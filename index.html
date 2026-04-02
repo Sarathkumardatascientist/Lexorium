@@ -1140,10 +1140,32 @@ nav {
   transition: transform 0.28s ease, background 0.28s ease, box-shadow 0.28s ease;
 }
 
+.plan-card.featured {
+  background:
+    radial-gradient(circle at top right, rgba(237, 188, 71, 0.12), transparent 45%),
+    linear-gradient(180deg, rgba(22, 22, 22, 0.96), rgba(11, 11, 11, 0.98));
+}
+
 .plan-card:hover {
   transform: translateY(-8px);
   background: var(--bg3);
   box-shadow: 0 24px 60px rgba(0,0,0,0.24);
+}
+
+.plan-badge {
+  position: absolute;
+  top: 24px;
+  right: 24px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(237,188,71,0.3);
+  background: rgba(237,188,71,0.12);
+  color: #f6ddb0;
+  font-family: 'Jost', sans-serif;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
 }
 
 .plan-name {
@@ -1167,6 +1189,15 @@ nav {
   font-style: normal;
   color: rgba(192,192,192,0.45);
   margin-left: 6px;
+}
+
+.plan-note {
+  font-family: 'Jost', sans-serif;
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(192,192,192,0.42);
+  margin-top: -4px;
 }
 
 .plan-copy {
@@ -2303,8 +2334,8 @@ footer {
     </div>
     <div class="platform-card">
       <div class="platform-card-kicker">For scale</div>
-      <div class="platform-card-title">A cleaner path from individual use to team rollout</div>
-      <p class="platform-card-copy">Free, Pro, and Enterprise remain aligned under one product language, one sign-in flow, and one trust layer.</p>
+      <div class="platform-card-title">Backend authority that keeps commercial access reliable</div>
+      <p class="platform-card-copy">User profiles, subscriptions, payments, usage caps, conversations, and feature entitlements stay controlled in the backend database, so plan access remains dependable after sign-in and payment.</p>
     </div>
   </div>
 </div>
@@ -2315,57 +2346,66 @@ footer {
   <div class="pricing-grid reveal">
     <div class="pricing-card">
       <div class="pricing-kicker">Free Plan</div>
-      <div class="pricing-title">Start with disciplined legal Q&amp;A</div>
-      <p class="pricing-desc">For first-time users who need faster legal answers with a curated multi-model chat stack, a low-friction daily cap, and a simple chat-only experience.</p>
+      <div class="pricing-title">Start with clear everyday legal answers</div>
+      <p class="pricing-desc">For first-time users who want a calm legal workspace with standard responses, basic reasoning, and a disciplined daily cap.</p>
     </div>
     <div class="pricing-card">
       <div class="pricing-kicker">Pro Plan</div>
-      <div class="pricing-title">Unlock the full Lexorium toolset at INR 799/-</div>
-      <p class="pricing-desc">Built for serious legal professionals who need premium legal reasoning, contract drafting, research workflows, stronger model routing, and far higher daily throughput.</p>
+      <div class="pricing-title">Upgrade to a sharper professional legal workspace at INR 899/-</div>
+      <p class="pricing-desc">Built for serious legal professionals who need advanced legal reasoning, contract drafting tools, faster response priority, and structured legal analysis.</p>
     </div>
     <div class="pricing-card">
       <div class="pricing-kicker">Enterprise</div>
       <div class="pricing-title">Custom rollout for firms and legal teams</div>
-      <p class="pricing-desc">Designed for teams that need unlimited queries, shared access, custom workflows, onboarding support, and a commercial deployment path.</p>
+      <p class="pricing-desc">Designed for teams that need high-priority usage capacity, top-tier model access, structured case-law workflows, bulk handling, and priority support.</p>
     </div>
   </div>
   <div class="pricing-stack reveal">
-    <div class="pricing-chip">30 free queries per day</div>
-    <div class="pricing-chip">500 Pro queries per day</div>
-    <div class="pricing-chip">All legal tools on Pro</div>
-    <div class="pricing-chip">Enterprise team rollout</div>
+    <div class="pricing-chip">20 free queries per day</div>
+    <div class="pricing-chip">120 Pro queries per day</div>
+    <div class="pricing-chip">Most Popular: Pro</div>
+    <div class="pricing-chip">Enterprise priority workflows</div>
   </div>
   <div class="plans-grid reveal">
     <div class="plan-card">
       <div class="plan-name">Free</div>
-      <div class="plan-price">INR 0/-<span>/ month</span></div>
-      <p class="plan-copy">Fast legal chat for individual users who want to explore Lexorium before upgrading.</p>
+      <div class="plan-price">&#8377;0<span>/ month</span></div>
+      <p class="plan-copy">A disciplined starter tier for users who want legal clarity without leaving a simple, premium workspace.</p>
       <ul class="plan-list">
-        <li>30 queries per day</li>
-        <li>Faster multi-model legal Q&amp;A</li>
-        <li>No Draft, Summarise, or Research tools</li>
+        <li>20 legal queries per day</li>
+        <li>Standard legal responses</li>
+        <li>Basic reasoning</li>
+        <li>Community-level access</li>
       </ul>
       <a class="plan-btn" href="#signin">Start Free</a>
     </div>
-    <div class="plan-card">
+    <div class="plan-card featured">
+      <div class="plan-badge">Most Popular</div>
       <div class="plan-name">Pro</div>
-      <div class="plan-price">INR 799/-<span>/ month</span></div>
-      <p class="plan-copy">Premium legal reasoning, contract drafting, summarisation, research, and every tool currently available inside Lexorium.</p>
+      <div class="plan-price">&#8377;899<span>/ month</span></div>
+      <div class="plan-note">+ applicable charges</div>
+      <p class="plan-copy">A premium legal workspace for professionals who need faster, deeper, and more structured legal output every day.</p>
       <ul class="plan-list">
-        <li>500 queries per day</li>
-        <li>Premium model routing for higher-accuracy legal work</li>
-        <li>All app tools, exports, and premium workflows</li>
+        <li>120 legal queries per day</li>
+        <li>Advanced legal reasoning</li>
+        <li>Contract drafting tools</li>
+        <li>Priority response speed</li>
+        <li>Structured legal analysis</li>
       </ul>
       <a class="plan-btn" href="#" onclick="goToCheckout('pro'); return false;">Upgrade to Pro</a>
     </div>
     <div class="plan-card">
       <div class="plan-name">Enterprise</div>
       <div class="plan-price">Custom<span>/ pricing</span></div>
-      <p class="plan-copy">Commercial onboarding for firms and legal teams that need scale, shared operations, and tailored workflow support.</p>
+      <p class="plan-copy">Commercial onboarding for firms and legal teams that need faster scale, backend control, and tailored legal workflows.</p>
       <ul class="plan-list">
-        <li>Unlimited queries</li>
-        <li>Team access</li>
-        <li>Custom workflow and onboarding</li>
+        <li>High-priority usage limits</li>
+        <li>Access to top-tier models only</li>
+        <li>Fastest response priority</li>
+        <li>Advanced legal drafting suite</li>
+        <li>Structured case-law analysis</li>
+        <li>Bulk query handling for firms</li>
+        <li>Priority support</li>
       </ul>
       <a class="plan-btn" href="#" onclick="contactSales(); return false;">Contact Sales</a>
     </div>
@@ -2385,7 +2425,7 @@ footer {
         <input class="form-input" type="text" name="teamSize" placeholder="Team size" required>
         <input class="form-input" type="text" name="queryVolume" placeholder="Expected volume" required>
         <input class="form-input full-span" type="text" name="useCase" placeholder="Primary use case" required>
-        <textarea class="form-input full-span" name="requirements" placeholder="Tell us about required features like unlimited queries, team access, custom workflow, security, or onboarding." required></textarea>
+        <textarea class="form-input full-span" name="requirements" placeholder="Tell us about required features like high-priority usage, team access, structured workflows, security, bulk handling, or onboarding." required></textarea>
       </div>
       <button class="form-btn" type="submit">Submit Enterprise Inquiry</button>
       <div class="signin-status" id="enterpriseStatus"></div>
@@ -2413,7 +2453,7 @@ footer {
 <section class="cta-banner" id="download">
   <h2 class="cta-banner-title reveal">Ready to install the Lexorium <em>desktop app</em>?</h2>
   <div class="hero-actions">
-    <a class="btn-primary" href="downloads/Lexorium-Setup.exe" download id="desktopDownloadBtn">
+    <a class="btn-primary" href="api/download/desktop" id="desktopDownloadBtn">
       Download Windows Installer
       <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v9"/><polyline points="4.5,8.5 8,12 11.5,8.5"/><path d="M3 14h10"/></svg>
     </a>
@@ -2495,32 +2535,15 @@ footer {
   function applyDesktopDownloadUrl(url) {
     if (!desktopDownloadBtn) return;
     const normalized = String(url || '').trim();
-    if (normalized) {
-      desktopDownloadBtn.href = normalized;
-      if (/^https?:\/\//i.test(normalized)) {
-        desktopDownloadBtn.removeAttribute('download');
-        desktopDownloadBtn.target = '_blank';
-        desktopDownloadBtn.rel = 'noreferrer';
-      } else {
-        desktopDownloadBtn.setAttribute('download', '');
-        desktopDownloadBtn.removeAttribute('target');
-        desktopDownloadBtn.removeAttribute('rel');
-      }
-      return;
-    }
-
-    if (/^https:$/i.test(window.location.protocol) && !/localhost|127\.0\.0\.1/i.test(window.location.hostname)) {
-      desktopDownloadBtn.href = '#';
+    desktopDownloadBtn.href = normalized || 'api/download/desktop';
+    if (/^https?:\/\//i.test(desktopDownloadBtn.href)) {
       desktopDownloadBtn.removeAttribute('download');
+      desktopDownloadBtn.target = '_blank';
+      desktopDownloadBtn.rel = 'noreferrer';
+    } else {
       desktopDownloadBtn.removeAttribute('target');
       desktopDownloadBtn.removeAttribute('rel');
-      if (!desktopDownloadBtn.dataset.fallbackBound) {
-        desktopDownloadBtn.dataset.fallbackBound = 'true';
-        desktopDownloadBtn.addEventListener('click', (event) => {
-          event.preventDefault();
-          alert('Desktop installer is not configured on this deployment yet. Set LEXORIUM_DESKTOP_DOWNLOAD_URL in your server environment or publish the installer through GitHub Releases.');
-        });
-      }
+      desktopDownloadBtn.setAttribute('download', '');
     }
   }
 

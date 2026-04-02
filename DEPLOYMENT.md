@@ -38,7 +38,7 @@ Important:
 - Do not set an Output Directory for this app.
 - Add the production environment variables in the Vercel dashboard before the first deploy.
 - Set `PUBLIC_APP_URL` to your Vercel production domain.
-- If you want the landing-page desktop installer button to work in production, set `LEXORIUM_DESKTOP_DOWNLOAD_URL` to a hosted installer file such as a GitHub Releases asset URL.
+- If you want the landing-page desktop installer button to work in production, set `LEXORIUM_DESKTOP_DOWNLOAD_URL` to a hosted installer file such as `https://github.com/Sarathkumardatascientist/Lexorium/releases/latest/download/Lexorium-Setup.exe`.
 
 ## Puter
 

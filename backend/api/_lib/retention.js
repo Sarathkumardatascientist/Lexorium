@@ -27,6 +27,8 @@ const TASK_LABELS = {
   translation_of_legal_text: 'Legal translation',
 };
 
+const PRO_UPGRADE_HINT = 'Upgrade to Pro for 120 legal queries per day, advanced legal reasoning, contract drafting tools, priority response speed, and structured legal analysis.';
+
 const PERSONA_PROMPTS = {
   law_student: [
     'Explain Section 138 NI Act',
@@ -162,7 +164,7 @@ function buildRetentionSummary(user, plan, usage) {
     starterPrompts: buildStarterPrompts({ persona, preferredTaskType }),
     onboardingStarterPrompts: ONBOARDING_STARTER_PROMPTS.slice(),
     planUpgradeHint: plan?.id === 'free'
-      ? 'Upgrade to Pro for advanced legal reasoning, contract drafting, and priority responses.'
+      ? PRO_UPGRADE_HINT
       : '',
   };
 }

@@ -19,7 +19,7 @@ npm run dev
 
 - Commit `.env.example`, never commit `.env`.
 - Rotate any secrets that were ever pasted into chat or shared outside your private environment before going live.
-- Set `PUBLIC_APP_URL` to your real `https://` production domain before enabling Cashfree production checkout.
+- Set `PUBLIC_APP_URL` to your real `https://` production domain, such as `https://lexoriumai.com`, before enabling Cashfree production checkout.
 - Use `npm start` in production. It no longer forces localhost or local-dev mode.
 - Before packaging the desktop app for release, set `desktop/app-config.json` to your deployed HTTPS app URL.
 - GitHub Pages or other static-only hosting will not run Lexorium correctly because sign-in, chat, billing, and history depend on live `/api/*` backend routes.
@@ -35,9 +35,9 @@ npm run dev
 
 ## Plans
 
-- Free: 30 queries per rolling 24-hour window with basic legal chat only.
-- Pro: INR 799/month, 500 queries per rolling 24-hour window, advanced legal reasoning, contract drafting, summarisation, research tools, and exports.
-- Enterprise: custom commercial plan with unlimited queries, team access, and custom workflow support.
+- Free: 20 legal queries per day with standard legal responses, basic reasoning, and community-level access.
+- Pro: INR 899/month (+ applicable charges), 120 legal queries per day, advanced legal reasoning, contract drafting tools, priority response speed, structured legal analysis, and premium tools.
+- Enterprise: custom commercial plan with high-priority usage capacity, top-tier model access, structured case-law workflows, bulk handling, and priority support.
 
 ## Routing
 
