@@ -11,8 +11,8 @@ function hasRealValue(value) {
 
 module.exports = async (_req, res) => {
   const paymentProvider = String(process.env.PAYMENT_PROVIDER || 'cashfree').toLowerCase();
-  const paymentAppId = process.env.CASHFREE_APP_ID || process.env.APP_ID || process.env.RAZORPAY_KEY_ID || '';
-  const paymentSecret = process.env.CASHFREE_SECRET_KEY || process.env.SECRET_KEY || process.env.RAZORPAY_KEY_SECRET || '';
+  const paymentAppId = String(process.env.CASHFREE_APP_ID || process.env.APP_ID || process.env.RAZORPAY_KEY_ID || '').trim();
+  const paymentSecret = String(process.env.CASHFREE_SECRET_KEY || process.env.SECRET_KEY || process.env.RAZORPAY_KEY_SECRET || '').trim();
   const paymentEnabled = hasRealValue(paymentAppId) && hasRealValue(paymentSecret);
   const cashfreeMode = String(process.env.CASHFREE_ENV || 'production').toLowerCase() === 'sandbox' ? 'sandbox' : 'production';
   const enterpriseLeadConfigured = hasEnterpriseGoogleFormConfig();
@@ -31,8 +31,8 @@ module.exports = async (_req, res) => {
     enterpriseDailyLimit: Number.parseInt(process.env.ENTERPRISE_DAILY_LIMIT || '100000', 10) || 100000,
     proPlanPricePaise: Number.parseInt(process.env.PRO_PLAN_PRICE_PAISE || '79900', 10) || 79900,
     planDurationDays: Number.parseInt(process.env.PLAN_DURATION_DAYS || process.env.PRO_PLAN_DURATION_DAYS || '30', 10) || 30,
-    contactSalesEmail: process.env.CONTACT_SALES_EMAIL || 'aisprezzatura@gmail.com',
-    desktopDownloadUrl: process.env.LEXORIUM_DESKTOP_DOWNLOAD_URL || '',
+    contactSalesEmail: String(process.env.CONTACT_SALES_EMAIL || 'aisprezzatura@gmail.com').trim(),
+    desktopDownloadUrl: String(process.env.LEXORIUM_DESKTOP_DOWNLOAD_URL || '').trim(),
     enterpriseLeadConfigured,
     plans: getPublicPlanCatalog(),
     modelCatalog: buildPublicModelCatalog(),

@@ -6,9 +6,12 @@ let dbInstance = null;
 let authInstance = null;
 
 function getServiceAccountConfig() {
-  const projectId = process.env.FIREBASE_PROJECT_ID || process.env.FIREBASE_PUBLIC_PROJECT_ID || '';
-  const clientEmail = process.env.FIREBASE_CLIENT_EMAIL || '';
-  const privateKey = String(process.env.FIREBASE_PRIVATE_KEY || '').replace(/\\n/g, '\n');
+  const projectId = String(process.env.FIREBASE_PROJECT_ID || process.env.FIREBASE_PUBLIC_PROJECT_ID || '').trim();
+  const clientEmail = String(process.env.FIREBASE_CLIENT_EMAIL || '').trim();
+  const privateKey = String(process.env.FIREBASE_PRIVATE_KEY || '')
+    .replace(/\r/g, '')
+    .replace(/\\n/g, '\n')
+    .trim();
 
   if (!projectId) {
     throw new Error('FIREBASE_PROJECT_ID is not configured.');
