@@ -49,7 +49,7 @@ function extractAttachmentHints(content) {
 function mapMode(value) {
   const mode = String(value || 'chat').trim().toLowerCase();
   if (mode === 'summary') return 'summarize';
-  return ['draft', 'analyse', 'research', 'summarize'].includes(mode) ? mode : 'chat';
+  return ['draft', 'analyse', 'research', 'summarize', 'risk'].includes(mode) ? mode : 'chat';
 }
 
 function buildLegacyMessages(messages, planId, classification, gate, sources, personalization) {
@@ -284,7 +284,7 @@ module.exports = async (req, res) => {
   }
 
   const classification = classifyQuery({ text: gate.text, mode, attachments });
-  if (classification.requiredFeature || ['legal_drafting', 'case_law_style_analysis', 'comparison', 'compliance_checklist'].includes(classification.taskType)) {
+  if (classification.requiredFeature || ['legal_drafting', 'case_law_style_analysis', 'comparison', 'predictive_risk_scoring', 'compliance_checklist'].includes(classification.taskType)) {
     await track(user.uid, 'premium_intent_detected', {
       planId,
       taskType: classification.taskType,

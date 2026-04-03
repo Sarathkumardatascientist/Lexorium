@@ -53,6 +53,7 @@ const PLAN_CONFIG = {
       draftMode: false,
       summarizeMode: false,
       researchTool: false,
+      predictiveRiskScoring: false,
       exportConversation: false,
       pinConversation: false,
       advancedModelSelection: false,
@@ -71,7 +72,7 @@ const PLAN_CONFIG = {
     id: 'pro',
     name: 'Pro',
     tierLabel: 'Pro',
-    description: '120 legal queries per day with advanced legal reasoning, contract drafting tools, priority response speed, and structured legal analysis.',
+    description: '120 legal queries per day with predictive risk scoring, advanced legal reasoning, contract drafting tools, priority response speed, and structured legal analysis.',
     shortDescription: 'Premium legal intelligence',
     routeTier: 'pro',
     dailyLimit: parsePositiveInt(process.env.PRO_DAILY_LIMIT, 120),
@@ -85,6 +86,7 @@ const PLAN_CONFIG = {
       draftMode: true,
       summarizeMode: true,
       researchTool: true,
+      predictiveRiskScoring: true,
       exportConversation: true,
       pinConversation: true,
       advancedModelSelection: true,
@@ -114,6 +116,7 @@ const PLAN_CONFIG = {
       draftMode: true,
       summarizeMode: true,
       researchTool: true,
+      predictiveRiskScoring: true,
       exportConversation: true,
       pinConversation: true,
       advancedModelSelection: true,
@@ -136,7 +139,7 @@ const PLAN_CONFIG = {
 
 function getProUpgradeMessage() {
   const proPlan = getPlanConfig('pro');
-  return `Upgrade to Lexorium Pro for ${proPlan.dailyLimit} legal queries per day, advanced legal reasoning, contract drafting tools, priority response speed, and structured legal analysis.`;
+  return `Upgrade to Lexorium Pro for ${proPlan.dailyLimit} legal queries per day, predictive risk scoring, deeper legal research, contract drafting tools, priority response speed, and structured legal analysis.`;
 }
 
 function getPlanConfig(planId) {
@@ -244,6 +247,12 @@ function getFeatureBlockDetails(featureKey) {
     return {
       title: 'Research Tool is available on Lexorium Pro.',
       message: 'Upgrade to Lexorium Pro for deeper legal research workflows, priority response speed, and stronger legal reasoning.',
+    };
+  }
+  if (featureKey === 'predictiveRiskScoring') {
+    return {
+      title: 'Predictive Risk Scoring is available on Lexorium Pro.',
+      message: 'Upgrade to Lexorium Pro for predictive risk scoring, advanced legal reasoning, deeper legal research, and structured legal analysis.',
     };
   }
   if (featureKey === 'exportConversation') {

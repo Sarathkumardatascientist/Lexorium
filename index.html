@@ -3,6 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#0A0A0A">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Lexorium">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="assets/lexorium-logo-square.png">
 <title>Lexorium - Powering the Future of Law</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,200;0,9..144,300;0,9..144,400;1,9..144,200;1,9..144,300;1,9..144,400&family=Jost:wght@200;300;400;500;600&display=swap');
@@ -197,6 +203,8 @@ nav {
   align-items: center;
   gap: 36px;
   list-style: none;
+  flex-wrap: wrap;
+  justify-content: center;
 }
 
 .nav-links a {
@@ -227,6 +235,7 @@ nav {
   transition: background 0.2s, transform 0.15s, box-shadow 0.25s ease;
   position: relative;
   overflow: hidden;
+  white-space: nowrap;
 }
 .nav-cta:hover {
   background: var(--white);
@@ -1479,6 +1488,61 @@ textarea.form-input {
   margin: 0 auto 36px;
 }
 
+.why-strip {
+  display: grid;
+  gap: 18px;
+}
+
+.why-kicker {
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: rgba(232,216,191,0.72);
+}
+
+.why-copy {
+  max-width: 860px;
+  margin: 0 auto;
+  font-size: 14px;
+  line-height: 1.9;
+  color: rgba(229,231,235,0.7);
+}
+
+.why-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.why-card {
+  padding: 22px 20px;
+  border-radius: 20px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.025));
+  display: grid;
+  gap: 10px;
+  text-align: left;
+}
+
+.why-card strong {
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.86);
+}
+
+.why-card span {
+  font-size: 13px;
+  line-height: 1.8;
+  color: rgba(229,231,235,0.66);
+}
+
+.install-note {
+  font-size: 11px;
+  line-height: 1.7;
+  color: rgba(255,255,255,0.54);
+}
+
 /* ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ FOOTER ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ */
 footer {
   border-top: 1px solid var(--line);
@@ -1531,6 +1595,36 @@ footer {
   transition: color 0.2s;
 }
 .footer-links a:hover { color: var(--silver); }
+
+.footer-meta {
+  display: grid;
+  gap: 12px;
+  max-width: 560px;
+}
+
+.footer-description {
+  font-size: 12px;
+  line-height: 1.8;
+  color: rgba(229,231,235,0.62);
+}
+
+.footer-legal {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 18px;
+}
+
+.footer-legal a {
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.6);
+  text-decoration: none;
+}
+
+.footer-legal a:hover {
+  color: var(--silver);
+}
 
 .footer-copy {
   font-family: 'Jost', sans-serif;
@@ -1963,12 +2057,14 @@ footer {
     display: flex;
     gap: 10px;
     padding-bottom: 2px;
+    justify-content: flex-start;
     overflow-x: auto;
+    scroll-snap-type: x proximity;
     scrollbar-width: none;
     -ms-overflow-style: none;
   }
   .nav-links::-webkit-scrollbar { display: none; }
-  .nav-links li { flex: 0 0 auto; }
+  .nav-links li { flex: 0 0 auto; scroll-snap-align: start; }
   .nav-links a {
     display: inline-flex;
     align-items: center;
@@ -2079,6 +2175,7 @@ footer {
   .platform-card-copy { font-size: 12px; }
   .pricing-grid { grid-template-columns: 1fr; }
   .plans-grid { grid-template-columns: 1fr; }
+  .why-grid { grid-template-columns: 1fr; }
   .pricing-card,
   .plan-card,
   .feature-card,
@@ -2097,7 +2194,6 @@ footer {
     text-align: center;
     justify-content: center;
   }
-  .plan-card.featured { order: -1; }
   .plan-badge {
     position: static;
     align-self: flex-start;
@@ -2120,6 +2216,13 @@ footer {
     padding: 52px 20px;
     border-radius: 24px;
   }
+  .why-copy {
+    font-size: 13px;
+    line-height: 1.8;
+  }
+  .why-card {
+    padding: 18px;
+  }
   .cookie-banner { left: 16px; right: 16px; bottom: 16px; }
   .cookie-card { padding: 18px; border-radius: 20px; }
   .cookie-actions { width: 100%; }
@@ -2134,6 +2237,12 @@ footer {
     width: 100%;
     gap: 12px;
     flex-wrap: wrap;
+  }
+  .footer-meta {
+    width: 100%;
+  }
+  .footer-legal {
+    gap: 10px 14px;
   }
   .footer-play {
     width: 100%;
@@ -2218,26 +2327,12 @@ footer {
   <ul class="nav-links">
     <li><a href="#features">Features</a></li>
     <li><a href="#how">How It Works</a></li>
-    <li><a href="#models">Models</a></li>
+    <li><a href="#platform">Platform</a></li>
     <li><a href="#pricing">Pricing</a></li>
-    <li><a href="#download">Download</a></li>
     <li><a href="#signin">Sign In</a></li>
   </ul>
-  <a class="nav-cta" href="app.html">Launch App -></a>
+  <a class="nav-cta" href="#signin" id="navLaunchBtn" onclick="handleLaunchApp(event)">Launch App</a>
 </nav>
-
-
-<!-- AI DISCLAIMER BAR -->
-<div class="ai-disclaimer-bar">
-  <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="6"/><line x1="8" y1="5" x2="8" y2="8"/><line x1="8.01" y1="11" x2="8" y2="11"/></svg>
-  <span>Lexorium provides AI-generated legal insights. Verify before use.</span>
-  <span style="color:rgba(192,192,192,0.2);margin:0 2px">·</span>
-  <a href="#" onclick="openLegal('terms'); return false;">Terms</a>
-  <span style="color:rgba(192,192,192,0.2);margin:0 2px">·</span>
-  <a href="#" onclick="openLegal('privacy'); return false;">Privacy</a>
-  <span style="color:rgba(192,192,192,0.2);margin:0 2px">·</span>
-  <a href="#" onclick="openLegal('disclaimer'); return false;">AI Disclaimer</a>
-</div>
 
 <!-- LEGAL MODAL -->
 <div class="legal-overlay" id="legalOverlay" onclick="closeLegalOnBg(event)">
@@ -2257,7 +2352,7 @@ footer {
       <div class="legal-date">Effective Date: April 2026 &middot; Product of Sprezzatura AI</div>
       <div class="legal-body">
         <h3>1. Scope of Service</h3>
-        <p>Lexorium is a legal intelligence platform operated by Sprezzatura AI. The website, app, desktop installer, account services, billing flows, legal-answer interface, uploads, and related APIs are part of the service.</p>
+        <p>Lexorium is a legal intelligence platform operated by Sprezzatura AI. The website, app, installed app experience, account services, billing flows, legal-answer interface, uploads, and related APIs are part of the service.</p>
         <h3>2. Professional Use Boundary</h3>
         <p>Lexorium is designed to support legal and compliance workflows, but it is not a law firm, does not provide legal representation, and does not form a lawyer-client or fiduciary relationship with any user.</p>
         <h3>3. Eligibility and Accounts</h3>
@@ -2303,7 +2398,7 @@ footer {
           <li>To comply with legal obligations and respond to valid requests from authorities.</li>
         </ul>
         <h3>3. Legal Bases and Consent</h3>
-        <p>Where applicable, we process information based on consent, contractual necessity, legitimate interests such as security and service improvement, and legal compliance. Optional analytics cookies should be enabled only where you choose to allow them.</p>
+        <p>Where applicable, we process information based on consent, contractual necessity, legitimate interests such as security and service improvement, and legal compliance. Depending on your location, this may include rights and obligations under frameworks such as the Digital Personal Data Protection Act, 2023, the GDPR, or other applicable privacy laws. Optional analytics cookies should be enabled only where you choose to allow them.</p>
         <h3>4. AI Processing and Providers</h3>
         <p>Content you submit may be processed through Lexorium-managed model or infrastructure providers for the purpose of generating responses and operating the product. Billing data may also be processed by approved payment providers. We aim to limit provider access to what is operationally necessary.</p>
         <h3>5. Sharing and Transfers</h3>
@@ -2317,7 +2412,7 @@ footer {
         <h3>9. Children and Sensitive Matters</h3>
         <p>Lexorium is intended for professional and adult use. If you are handling especially sensitive or privileged information, you remain responsible for deciding whether the service is appropriate for that matter and whether additional controls or redaction are required.</p>
         <h3>10. Cookies and Contact</h3>
-        <p>Essential cookies support sign-in, security, and core functionality. Optional analytics cookies help us improve the product only where you accept them. Questions or privacy requests can be sent to aisprezzatura@gmail.com.</p>
+        <p>Essential cookies support sign-in, security, and core functionality. Optional analytics cookies help us improve the product only where you accept them. Questions or privacy requests can be sent to aisprezzatura@gmail.com. We aim to review privacy, access, correction, deletion, or export requests within a commercially reasonable period, subject to identity verification and legal retention duties.</p>
         <div class="legal-note">Lexorium provides AI-generated legal insights. Verify before use.</div>
       </div>
     </div>
@@ -2359,7 +2454,7 @@ footer {
         <h3>4. Renewals, Changes, and Taxes</h3>
         <p>Where a recurring plan is offered, renewals occur according to the billing cycle shown during purchase unless you cancel in time. Taxes, currency conversion, bank charges, or payment-provider fees may apply depending on your location and payment method.</p>
         <h3>5. Refunds</h3>
-        <p>Except where required by applicable law, payments are generally non-refundable once premium access or usage has been provisioned. If you believe a charge was unauthorised or incorrectly processed, contact us promptly at aisprezzatura@gmail.com so we can review it.</p>
+        <p>Except where required by applicable law, payments are generally non-refundable once premium access or usage has been provisioned. If you believe a charge was unauthorised or incorrectly processed, contact us promptly at aisprezzatura@gmail.com so we can review it, reconcile the gateway reference, and assess any consumer-law obligations that may apply.</p>
         <h3>6. Chargebacks and Disputes</h3>
         <p>If a payment is subject to chargeback, reversal, or fraud review, we may limit account features while the matter is investigated. We may request reasonable supporting information to resolve billing disputes.</p>
         <h3>7. Enterprise Billing</h3>
@@ -2382,7 +2477,7 @@ footer {
   <h1 class="hero-title">The Future of Law is <em>Intelligent</em></h1>
   <p class="hero-sub">Lexorium brings enterprise-grade legal intelligence to every legal professional with structured drafting, compliance analysis, legal research, and automatic request routing.</p>
   <div class="hero-actions">
-    <a class="btn-primary" href="#signin">
+    <a class="btn-primary" href="#signin" onclick="handleLaunchApp(event)">
       Start for Free
       <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="8" x2="13" y2="8"/><polyline points="9,4 13,8 9,12"/></svg>
     </a>
@@ -2416,7 +2511,7 @@ footer {
           <div class="prism-tags">
             <span class="prism-tag">Contract Drafting</span>
             <span class="prism-tag">Case Summaries</span>
-            <span class="prism-tag">Compliance Checklists</span>
+            <span class="prism-tag">Predictive Risk Scoring</span>
             <span class="prism-tag">Document Explanation</span>
           </div>
         </div>
@@ -2465,7 +2560,7 @@ footer {
 <section class="section" id="features">
   <p class="section-eyebrow reveal">Core Capabilities</p>
   <h2 class="section-title reveal">Everything a lawyer needs, <span>amplified</span></h2>
-  <div class="features-grid reveal">
+<div class="features-grid reveal">
 
     <div class="feature-card">
       <div class="feature-icon">
@@ -2495,16 +2590,16 @@ footer {
       <div class="feature-icon">
         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="10" height="8" rx="1"/><path d="M5 7V5a3 3 0 016 0v2"/></svg>
       </div>
-      <div class="feature-title">GDPR & Compliance</div>
-      <p class="feature-desc">Navigate data protection laws, regulatory obligations, and compliance frameworks across jurisdictions with precision guidance.</p>
+      <div class="feature-title">Predictive Risk Scoring</div>
+      <p class="feature-desc">Score dispute exposure, clause sensitivity, and compliance pressure with a structured legal risk band, driver analysis, and practical mitigation path inside one answer.</p>
     </div>
 
     <div class="feature-card">
       <div class="feature-icon">
         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2L3 5v4c0 3 2.5 5.5 5 6.5 2.5-1 5-3.5 5-6.5V5L8 2z"/></svg>
       </div>
-      <div class="feature-title">Risk Assessment</div>
-      <p class="feature-desc">Identify contractual risks, unfavourable clauses, and missing protections with structured risk scoring and remediation paths.</p>
+      <div class="feature-title">Conversation Memory</div>
+      <p class="feature-desc">Keep follow-up questions, uploaded files, and legal context inside one calm workspace so deeper matters do not lose momentum between prompts.</p>
     </div>
 
     <div class="feature-card">
@@ -2549,7 +2644,7 @@ footer {
 </div>
 
 <!-- MODELS -->
-<div class="models-strip" id="models">
+<div class="models-strip" id="platform">
   <p class="section-eyebrow reveal">Platform</p>
   <h2 class="section-title reveal" style="margin-bottom:20px;">Lexorium now runs on a <span>managed legal intelligence stack</span></h2>
   <p class="platform-brief reveal">Lexorium keeps the infrastructure invisible and the legal experience front and center. Users see one calm legal workspace, while your platform handles sign-in, routing, structured reasoning, attachments, and premium plan expansion behind the scenes.</p>
@@ -2569,6 +2664,14 @@ footer {
       <div class="platform-card-title">Backend authority that keeps commercial access reliable</div>
       <p class="platform-card-copy">User profiles, subscriptions, payments, usage caps, conversations, and feature entitlements stay controlled in the backend database, so plan access remains dependable after sign-in and payment.</p>
     </div>
+  </div>
+  <div class="models-scroll reveal" aria-label="Platform components">
+    <div class="model-pill">Lexorium Core Routing</div>
+    <div class="model-pill">Lexorium Structure Engine</div>
+    <div class="model-pill">Claude Sonnet 4.6</div>
+    <div class="model-pill">GPT-5.4</div>
+    <div class="model-pill">Gemini 3.1 Pro</div>
+    <div class="model-pill">Qwen 3.6 Plus</div>
   </div>
 </div>
 
@@ -2621,6 +2724,7 @@ footer {
         <li>120 legal queries per day</li>
         <li>Advanced legal reasoning</li>
         <li>Contract drafting tools</li>
+        <li>Predictive risk scoring</li>
         <li>Priority response speed</li>
         <li>Structured legal analysis</li>
       </ul>
@@ -2677,22 +2781,33 @@ footer {
       </button>
       <div class="signin-status" id="signinStatus"></div>
     </div>
-    <p class="signin-note reveal">Already signed in? <a href="app.html">Open the app</a> &middot; <a href="#" onclick="openLegal('privacy'); return false;">Privacy Policy</a> &middot; <a href="#" onclick="openLegal('terms'); return false;">Terms</a> &middot; <a href="#" onclick="openLegal('billing'); return false;">Billing</a></p>
+    <p class="signin-note reveal">Already signed in? <a href="#signin" onclick="handleLaunchApp(event)">Open the app</a></p>
   </div>
 </section>
 
-<!-- DOWNLOAD -->
-<section class="cta-banner" id="download">
-  <h2 class="cta-banner-title reveal">Ready to install the Lexorium <em>desktop app</em>?</h2>
-  <div class="hero-actions">
-    <a class="btn-primary" href="api/download/desktop" id="desktopDownloadBtn">
-      Download Windows Installer
-      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v9"/><polyline points="4.5,8.5 8,12 11.5,8.5"/><path d="M3 14h10"/></svg>
-    </a>
-    <a class="btn-secondary" href="app.html">
-      Open Web App
-    </a>
+<section class="cta-banner why-strip" id="why-lexorium">
+  <div class="why-kicker reveal">Why Lexorium</div>
+  <h2 class="cta-banner-title reveal">A legal workspace that feels calmer, sharper, and easier to rely on every day.</h2>
+  <p class="why-copy reveal">Lexorium keeps the visible surface minimal while the backend remains the final authority for identity, subscriptions, usage, conversations, and premium legal capabilities. The result is a matte, premium legal product that feels dependable on the web, as an installed app, and across mobile.</p>
+  <div class="why-grid reveal">
+    <div class="why-card">
+      <strong>Premium legal flow</strong>
+      <span>Structured reasoning, contract drafting, document analysis, and predictive risk scoring stay inside one consistent Lexorium experience.</span>
+    </div>
+    <div class="why-card">
+      <strong>Commercial control</strong>
+      <span>Sign-in, plan upgrades, usage limits, query tracking, and entitlements stay controlled in the backend so access remains accurate after payment.</span>
+    </div>
+    <div class="why-card">
+      <strong>Install from the browser</strong>
+      <span>Users can install Lexorium directly from a supported browser for a focused app-style experience similar to modern AI workspaces.</span>
+    </div>
   </div>
+  <div class="hero-actions">
+    <a class="btn-primary" href="#signin" onclick="handleLaunchApp(event)">Launch App</a>
+    <button class="btn-secondary" type="button" id="installWebAppBtn" onclick="promptWebsiteInstall()">Install Web App</button>
+  </div>
+  <div class="install-note" id="installWebAppNote">Install Lexorium from this browser for a focused app-style experience on the devices you already use.</div>
 </section>
 
 <!-- FOOTER -->
@@ -2704,13 +2819,19 @@ footer {
   <ul class="footer-links">
     <li><a href="#features">Features</a></li>
     <li><a href="#how">How It Works</a></li>
-    <li><a href="#models">Models</a></li>
+    <li><a href="#platform">Platform</a></li>
     <li><a href="#pricing">Pricing</a></li>
-    <li><a href="#" onclick="openLegal('privacy'); return false;">Privacy</a></li>
-    <li><a href="#" onclick="openLegal('terms'); return false;">Terms</a></li>
-    <li><a href="#" onclick="openLegal('billing'); return false;">Billing</a></li>
-    <li><a href="#" onclick="openLegal('disclaimer'); return false;">AI Disclaimer</a></li>
+    <li><a href="#enterprise-contact">Enterprise</a></li>
   </ul>
+  <div class="footer-meta">
+    <div class="footer-description">Lexorium is the legal intelligence platform by Sprezzatura AI for structured drafting, research, predictive risk scoring, document analysis, and premium legal workflows.</div>
+    <div class="footer-legal">
+      <a href="#" onclick="openLegal('privacy'); return false;">Privacy</a>
+      <a href="#" onclick="openLegal('terms'); return false;">Terms</a>
+      <a href="#" onclick="openLegal('billing'); return false;">Billing</a>
+      <a href="#" onclick="openLegal('disclaimer'); return false;">AI Disclaimer</a>
+    </div>
+  </div>
   <div class="footer-play" aria-label="Available on Google Play">
     <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
       <path d="M3.2 2.5L13.9 13.2L3.3 21.5C3.1 21 3 20.4 3 19.8V4.2C3 3.6 3.1 3 3.2 2.5Z" fill="#00D5FF"/>
@@ -2758,29 +2879,17 @@ footer {
   let androidPackageName = '';
   let androidProSubscriptionId = '';
   let planCatalog = [];
+  let deferredInstallPrompt = null;
   const COOKIE_CONSENT_KEY = 'lexorium.cookie.consent.v1';
   const DEPLOYMENT_BACKEND_ERROR = 'This deployment is frontend-only right now. Lexorium needs live backend API routes under /api/* for sign-in, chat, billing, and history. Deploy it on a full-stack host like Vercel, Render, or Railway instead of GitHub Pages or other static-only hosting.';
   const signinButton = document.getElementById('puterSignInBtn');
-  const desktopDownloadBtn = document.getElementById('desktopDownloadBtn');
+  const navLaunchBtn = document.getElementById('navLaunchBtn');
+  const installWebAppBtn = document.getElementById('installWebAppBtn');
+  const installWebAppNoteEl = document.getElementById('installWebAppNote');
   const signinStatusEl = document.getElementById('signinStatus');
   const enterpriseStatusEl = document.getElementById('enterpriseStatus');
   const cookieBannerEl = document.getElementById('cookieBanner');
   const heroPrismShellEl = document.getElementById('heroPrismShell');
-
-  function applyDesktopDownloadUrl(url) {
-    if (!desktopDownloadBtn) return;
-    const normalized = String(url || '').trim();
-    desktopDownloadBtn.href = normalized || 'api/download/desktop';
-    if (/^https?:\/\//i.test(desktopDownloadBtn.href)) {
-      desktopDownloadBtn.removeAttribute('download');
-      desktopDownloadBtn.target = '_blank';
-      desktopDownloadBtn.rel = 'noreferrer';
-    } else {
-      desktopDownloadBtn.removeAttribute('target');
-      desktopDownloadBtn.removeAttribute('rel');
-      desktopDownloadBtn.setAttribute('download', '');
-    }
-  }
 
   function hasAndroidNativeBridge() {
     return typeof window !== 'undefined'
@@ -2790,6 +2899,60 @@ footer {
 
   function isAndroidPlayBillingHost() {
     return hasAndroidNativeBridge() && /LexoriumAndroid/i.test(navigator.userAgent || '');
+  }
+
+  function isStandaloneApp() {
+    return window.matchMedia('(display-mode: standalone)').matches || Boolean(window.navigator.standalone);
+  }
+
+  function renderInstallSurface() {
+    if (!installWebAppBtn && !installWebAppNoteEl) return;
+    const installed = isStandaloneApp();
+    const available = Boolean(deferredInstallPrompt);
+    if (installWebAppBtn) {
+      installWebAppBtn.disabled = installed;
+      installWebAppBtn.textContent = installed ? 'Installed' : 'Install Web App';
+    }
+    if (installWebAppNoteEl) {
+      installWebAppNoteEl.textContent = installed
+        ? 'Lexorium is already installed on this device.'
+        : available
+          ? 'Install Lexorium from this browser for a focused app-style experience with faster return visits.'
+          : 'If your browser supports app install, use the button above or your browser menu to install Lexorium.';
+    }
+  }
+
+  function registerPwaSupport() {
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('service-worker.js').catch(() => null);
+    }
+    window.addEventListener('beforeinstallprompt', (event) => {
+      event.preventDefault();
+      deferredInstallPrompt = event;
+      renderInstallSurface();
+    });
+    window.addEventListener('appinstalled', () => {
+      deferredInstallPrompt = null;
+      renderInstallSurface();
+      showSigninMessage('Lexorium is installed and ready.');
+    });
+    renderInstallSurface();
+  }
+
+  async function promptWebsiteInstall() {
+    if (isStandaloneApp()) {
+      showSigninMessage('Lexorium is already installed on this device.');
+      return;
+    }
+    if (deferredInstallPrompt) {
+      const promptEvent = deferredInstallPrompt;
+      deferredInstallPrompt = null;
+      await promptEvent.prompt();
+      await promptEvent.userChoice.catch(() => null);
+      renderInstallSurface();
+      return;
+    }
+    showSigninMessage('Use your browser menu and choose Install app or Add to Home Screen to install Lexorium.');
   }
 
   function startAndroidPlayUpgrade(profile) {
@@ -2855,7 +3018,6 @@ footer {
     androidProSubscriptionId = data.androidProSubscriptionId || '';
     planCatalog = Array.isArray(data.plans) ? data.plans : [];
     contactSalesEmail = data.contactSalesEmail || contactSalesEmail;
-    applyDesktopDownloadUrl(data.desktopDownloadUrl || '');
     return data;
   }
 
@@ -2865,14 +3027,35 @@ footer {
     return data?.authenticated ? (data?.profile || null) : null;
   }
 
+  async function handleLaunchApp(event) {
+    if (event) event.preventDefault();
+    showSigninMessage('Checking your Lexorium workspace...');
+    try {
+      let profile = await getSessionProfile().catch(() => null);
+      if (!profile && getStoredPuterToken()) {
+        profile = await ensureSessionFromPuter(false).catch(() => null);
+      }
+      if (profile) {
+        updateSigninStatus(profile);
+        window.location.href = APP_URL;
+        return;
+      }
+      document.getElementById('signin')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      showSigninMessage('Sign in to open your Lexorium workspace.');
+    } catch (error) {
+      showSigninMessage(error.message || 'Sign in to open your Lexorium workspace.', true);
+    }
+  }
+
   function updateSigninStatus(profile) {
-    if (!signinButton) return;
     if (profile) {
-      signinButton.textContent = `Open Lexorium as ${profile.name || profile.email || 'your account'}`;
+      if (signinButton) signinButton.textContent = `Open Lexorium as ${profile.name || profile.email || 'your account'}`;
+      if (navLaunchBtn) navLaunchBtn.textContent = 'Open Workspace';
       showSigninMessage(`Signed in as ${profile.name || profile.email || 'your account'}.`);
       return;
     }
-    signinButton.textContent = 'Sign in to Lexorium';
+    if (signinButton) signinButton.textContent = 'Sign in to Lexorium';
+    if (navLaunchBtn) navLaunchBtn.textContent = 'Launch App';
   }
 
   function showSigninMessage(message, isError) {
@@ -3253,6 +3436,7 @@ footer {
 
   window.addEventListener('load', () => {
     bootstrapAuth();
+    registerPwaSupport();
     initScrollChrome();
     initCookieBanner();
     initPremiumCursor();

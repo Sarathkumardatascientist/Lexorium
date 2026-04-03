@@ -1,0 +1,32 @@
+{
+  "name": "Lexorium",
+  "short_name": "Lexorium",
+  "description": "Lexorium is the premium legal intelligence workspace by Sprezzatura AI for structured legal answers, drafting, analysis, and predictive risk scoring.",
+  "start_url": "/app.html",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#0A0A0A",
+  "theme_color": "#0A0A0A",
+  "categories": ["business", "productivity", "finance"],
+  "icons": [
+    {
+      "src": "assets/lexorium-logo-square.png",
+      "sizes": "1024x1024",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Open Workspace",
+      "short_name": "Workspace",
+      "url": "/app.html"
+    },
+    {
+      "name": "Pricing",
+      "short_name": "Pricing",
+      "url": "/index.html#pricing"
+    }
+  ]
+}

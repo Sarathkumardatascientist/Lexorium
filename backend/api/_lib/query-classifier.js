@@ -10,6 +10,7 @@ function detectTaskType(text, mode, hasAttachments) {
   if (mode === 'draft') return 'legal_drafting';
   if (mode === 'summarize') return 'summarization';
   if (mode === 'research') return 'legal_research';
+  if (mode === 'risk') return 'predictive_risk_scoring';
   if (mode === 'analyse' && hasAttachments) return 'document_analysis';
 
   const complianceChecklistIntent = hasAny(text, [
@@ -34,6 +35,15 @@ function detectTaskType(text, mode, hasAttachments) {
     /\bcase law\b/i,
     /\bcitations?\b/i,
     /\bprecedents?\b/i,
+  ]);
+  const predictiveRiskIntent = hasAny(text, [
+    /\bpredictive risk scoring\b/i,
+    /\brisk scoring\b/i,
+    /\bpredict(?:ive)? legal risk\b/i,
+    /\bscore the legal risk\b/i,
+    /\bexposure score\b/i,
+    /\bprobability of litigation\b/i,
+    /\blikelihood of dispute\b/i,
   ]);
 
   const draftingIntent = hasAny(text, [
@@ -66,6 +76,9 @@ function detectTaskType(text, mode, hasAttachments) {
   }
   if (researchIntent) {
     return 'legal_research';
+  }
+  if (predictiveRiskIntent) {
+    return 'predictive_risk_scoring';
   }
   if (complianceChecklistIntent) {
     return 'compliance_checklist';
@@ -103,6 +116,7 @@ function detectComplexity(text, taskType, hasAttachments) {
     (taskType === 'case_law_style_analysis' ? 2 : 0) +
     (taskType === 'document_analysis' ? 2 : 0) +
     (taskType === 'legal_research' ? 2 : 0) +
+    (taskType === 'predictive_risk_scoring' ? 2 : 0) +
     (taskType === 'compliance_checklist' ? 2 : 0) +
     (taskType === 'comparison' ? 2 : 0) +
     (taskType === 'legal_reasoning' ? 1 : 0);
@@ -116,6 +130,7 @@ function getRequiredFeature(taskType, mode) {
   if (mode === 'draft' || taskType === 'legal_drafting') return 'draftMode';
   if (mode === 'summarize' || taskType === 'summarization') return 'summarizeMode';
   if (mode === 'research') return 'researchTool';
+  if (mode === 'risk' || taskType === 'predictive_risk_scoring') return 'predictiveRiskScoring';
   return null;
 }
 
@@ -133,7 +148,7 @@ function classifyQuery(options) {
     taskType,
     complexity,
     hasAttachments,
-    requiresStrongReasoning: complexity === 'complex' || ['legal_reasoning', 'case_law_style_analysis', 'comparison', 'document_analysis', 'legal_research', 'compliance_checklist'].includes(taskType),
+    requiresStrongReasoning: complexity === 'complex' || ['legal_reasoning', 'case_law_style_analysis', 'comparison', 'document_analysis', 'legal_research', 'predictive_risk_scoring', 'compliance_checklist'].includes(taskType),
     prefersStructuredOutput: true,
     acceptsFastResponse: complexity === 'simple' && ['quick_qa', 'summarization', 'translation_of_legal_text'].includes(taskType),
     assumesJurisdiction: 'india',

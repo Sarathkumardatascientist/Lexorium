@@ -3,6 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#0A0A0A">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Lexorium">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="assets/lexorium-logo-square.png">
 <title>Lexorium</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;1,9..144,300;1,9..144,400&family=Jost:wght@200;300;400;500&family=Playfair+Display:ital,wght@0,400;0,500;1,400;1,500&display=swap');
@@ -965,6 +971,23 @@
     margin-bottom: 8px;
   }
 
+  .settings-scroll-hint {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0 0 14px;
+    color: rgba(255,255,255,0.38);
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+  }
+
+  .settings-scroll-hint::after {
+    content: '↓';
+    font-size: 12px;
+    line-height: 1;
+  }
+
   .settings-title {
     font-family: 'Jost', sans-serif;
     font-size: 15px;
@@ -1423,6 +1446,8 @@
     flex-direction: column;
     align-items: center;
     gap: 4px;
+    width: min(100%, 560px);
+    padding: 0 12px;
     text-align: center;
     font-family: 'Jost', sans-serif;
     font-size: 10px;
@@ -1433,10 +1458,12 @@
 
   .plan-status-primary {
     text-transform: uppercase;
+    line-height: 1.5;
+    white-space: normal;
   }
 
   .plan-status-note {
-    max-width: 420px;
+    max-width: 480px;
     font-size: 10px;
     letter-spacing: 0.04em;
     text-transform: none;
@@ -1548,6 +1575,7 @@
     line-height: 1.85;
     color: #FFFFFF;
     word-break: break-word;
+    overflow-wrap: anywhere;
     min-width: 0;
     box-shadow: var(--assistant-shadow);
     overflow: hidden;
@@ -1900,6 +1928,8 @@
 
   .assistant-content {
     min-width: 0;
+    display: grid;
+    gap: 2px;
   }
 
   .msg-upgrade-note {
@@ -2132,6 +2162,47 @@
     line-height: 1.55;
   }
 
+  .thinking-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    padding-top: 2px;
+  }
+
+  .thinking-action-btn {
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 999px;
+    background: rgba(255,255,255,0.04);
+    color: #FFFFFF;
+    padding: 9px 14px;
+    font-family: 'Jost', sans-serif;
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: border-color 0.18s ease, background 0.18s ease, transform 0.18s ease;
+  }
+
+  .thinking-action-btn:hover {
+    border-color: rgba(255,255,255,0.2);
+    background: rgba(255,255,255,0.08);
+    transform: translateY(-1px);
+  }
+
+  .thinking-action-btn.is-on {
+    background: rgba(255,255,255,0.92);
+    color: #111111;
+    border-color: rgba(255,255,255,0.92);
+  }
+
+  .thinking-action-note {
+    color: rgba(255,255,255,0.54);
+    font-size: 11px;
+    line-height: 1.6;
+    max-width: 420px;
+  }
+
   .thinking-dots {
     display: flex;
     align-items: center;
@@ -2344,6 +2415,7 @@
   @media (max-width: 780px) {
     .plan-status-note {
       max-width: 100%;
+      font-size: 9.5px;
     }
 
     .empty-habit {
@@ -3091,7 +3163,7 @@
     }
 
     .settings-content {
-      padding: 18px 16px 24px;
+      padding: 18px 16px 28px;
     }
 
     .settings-header {
@@ -3120,7 +3192,7 @@
     }
 
     .msg.assistant .msg-body {
-      padding: 14px;
+      padding: 15px 14px;
       border-radius: 16px;
       font-size: 13.5px;
       line-height: 1.72;
@@ -3333,11 +3405,11 @@
   <div class="modal-overlay" id="upgradeModal">
     <div class="modal">
       <div class="modal-title" id="upgradeModalTitle">Upgrade to Lexorium</div>
-      <div class="upgrade-modal-copy" id="upgradeModalCopy">Upgrade for 120 legal queries per day, advanced legal reasoning, contract drafting tools, priority response speed, and structured legal analysis.</div>
+      <div class="upgrade-modal-copy" id="upgradeModalCopy">Upgrade for 120 legal queries per day, predictive risk scoring, deeper legal research, contract drafting tools, priority response speed, and structured legal analysis.</div>
       <div class="upgrade-modal-points" id="upgradeModalPoints">
         <div>120 legal queries per day</div>
-        <div>Advanced legal reasoning and contract drafting tools</div>
-        <div>Priority response speed and structured legal analysis</div>
+        <div>Predictive risk scoring, advanced legal reasoning, and contract drafting tools</div>
+        <div>Priority response speed, deeper research, and structured legal analysis</div>
       </div>
       <div class="modal-actions">
         <button class="modal-btn" onclick="closeUpgradeModal()">Not now</button>
@@ -3380,6 +3452,7 @@
             <div class="settings-title" id="settingsSectionTitle">General</div>
             <div class="settings-subtitle" id="settingsSectionSubtitle">Control response style, account preferences, and voice behavior for this Lexorium workspace.</div>
           </div>
+          <div class="settings-scroll-hint">Scroll for more settings</div>
 
           <div class="settings-section active" data-settings-section="general">
             <div class="settings-row">
@@ -3412,6 +3485,13 @@
                 <div class="settings-row-desc">Instant answers reduce the response animation time. Turn it off if you prefer a slower, more cinematic reveal.</div>
               </div>
               <button class="settings-toggle" id="settingsInstantAnswers" type="button" onclick="toggleInstantAnswersSetting()" aria-label="Toggle instant answers"></button>
+            </div>
+            <div class="settings-row">
+              <div class="settings-row-copy">
+                <div class="settings-row-title">Answer notifications</div>
+                <div class="settings-row-desc">Turn on browser notifications so Lexorium can alert you when a response is ready while you are in another tab.</div>
+              </div>
+              <button class="settings-toggle" id="settingsAnswerNotifications" type="button" onclick="toggleAnswerNotificationsSetting()" aria-label="Toggle answer notifications"></button>
             </div>
           </div>
 
@@ -3557,7 +3637,7 @@
             </div>
             <div class="ctx-item" onclick="addToHome(); closeMenu()">
               <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 6.5L8 2l6 4.5V14a1 1 0 01-1 1H3a1 1 0 01-1-1V6.5z"/><rect x="5.5" y="9" width="5" height="6" rx="0.5"/></svg>
-              Add to home
+              Install app
             </div>
             <div class="ctx-item" id="signOutItem" onclick="signOutSession(); closeMenu()" style="display:none">
               <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2H3.5A1.5 1.5 0 002 3.5v9A1.5 1.5 0 003.5 14H6"/><path d="M10 11l3-3-3-3"/><path d="M13 8H6"/></svg>
@@ -3646,6 +3726,10 @@
             <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><circle cx="6" cy="6" r="4"/><line x1="9.5" y1="9.5" x2="14" y2="14"/></svg>
             Analyse a document
           </div>
+          <div class="attach-item" onclick="setMode('risk')">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><path d="M3 12.5h10"/><path d="M4.5 12.5V9.5"/><path d="M8 12.5V6.5"/><path d="M11.5 12.5V4"/><path d="M3.5 5.5l2.2-2 2.2 1.8 4-3.3"/></svg>
+            Predictive Risk Scoring
+          </div>
           <div class="attach-item" onclick="startVoiceCapture(true); closeAttachMenu()">
             <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><path d="M8 10.8A2.8 2.8 0 008 5.2a2.8 2.8 0 000 5.6z"/><path d="M4.8 8.2a3.2 3.2 0 006.4 0"/><path d="M8 11.8V14"/><path d="M5.8 14h4.4"/></svg>
             Voice analysis
@@ -3702,7 +3786,7 @@
       </button>
     </div>
     <div class="error-msg" id="errorMsg"></div>
-    <div class="footer-hint">Enter send &nbsp;|&nbsp; Shift+Enter newline &nbsp;|&nbsp; legal &amp; compliance only &nbsp;|&nbsp; Lexorium By Sprezzatura AI</div>
+    <div class="footer-hint">Enter send &nbsp;|&nbsp; Shift+Enter newline &nbsp;|&nbsp; legal-only workspace</div>
   </footer>
 </div>
 
@@ -3750,6 +3834,7 @@
   const settingsVoicePreferenceEl = document.getElementById('settingsVoicePreference');
   const settingsCustomInstructionsEl = document.getElementById('settingsCustomInstructions');
   const settingsInstantAnswersEl = document.getElementById('settingsInstantAnswers');
+  const settingsAnswerNotificationsEl = document.getElementById('settingsAnswerNotifications');
   const emptyTitleEl = document.getElementById('emptyTitle');
   const emptySubEl = document.getElementById('emptySub');
   const emptyHabitEl = document.getElementById('emptyHabit');
@@ -3819,6 +3904,7 @@
     spokenLanguage: 'auto',
     voicePreference: 'google',
     instantAnswers: true,
+    answerNotifications: false,
     customInstructions: '',
   });
 
@@ -3826,6 +3912,7 @@
     draft: { label: 'Contract Drafting', color: '#a78bfa', placeholder: 'What contract or legal draft would you like prepared? e.g. an NDA, employment contract, or legal notice...' },
     summarize: { label: 'Summarise', color: '#f59e0b', placeholder: 'What legal text would you like summarised? e.g. a clause, notice, or case extract...' },
     analyse: { label: 'Analyse', color: '#60a5fa', placeholder: 'What would you like to analyse? e.g. paste or describe a contract clause...' },
+    risk: { label: 'Predictive Risk Scoring', color: '#fb7185', placeholder: 'What matter would you like risk-scored? e.g. score termination, dispute, regulatory, or litigation risk on these facts...' },
     research: { label: 'Research', color: '#4ade80', placeholder: 'What legal topic would you like to research? e.g. force majeure under Indian law...' },
   };
 
@@ -3869,6 +3956,7 @@
   let renameConversationId = null;
   let hasCustomChatTitle = false;
   let sidebarHidden = false;
+  let deferredInstallPrompt = null;
 
   function getStoredPuterToken() {
     try {
@@ -3899,6 +3987,116 @@
 
   function isAndroidPlayBillingHost() {
     return hasAndroidNativeBridge() && /LexoriumAndroid/i.test(navigator.userAgent || '');
+  }
+
+  function isStandaloneApp() {
+    return window.matchMedia('(display-mode: standalone)').matches || Boolean(window.navigator.standalone);
+  }
+
+  function registerInstallSupport() {
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('service-worker.js').catch(() => null);
+    }
+    window.addEventListener('beforeinstallprompt', (event) => {
+      event.preventDefault();
+      deferredInstallPrompt = event;
+    });
+    window.addEventListener('appinstalled', () => {
+      deferredInstallPrompt = null;
+      showToast('Lexorium installed');
+    });
+  }
+
+  async function promptInstallApp() {
+    if (isStandaloneApp()) {
+      showToast('Lexorium is already installed on this device');
+      return;
+    }
+    if (deferredInstallPrompt) {
+      const promptEvent = deferredInstallPrompt;
+      deferredInstallPrompt = null;
+      await promptEvent.prompt();
+      const result = await promptEvent.userChoice.catch(() => null);
+      showToast(result?.outcome === 'accepted' ? 'Lexorium is being installed' : 'Installation cancelled');
+      return;
+    }
+    showToast('Use your browser menu and choose Install app or Add to Home Screen.');
+  }
+
+  function supportsAnswerNotifications() {
+    return typeof window !== 'undefined' && 'Notification' in window;
+  }
+
+  function hasAnswerNotificationPermission() {
+    return supportsAnswerNotifications() && Notification.permission === 'granted';
+  }
+
+  function wantsAnswerNotifications() {
+    return Boolean(getPersonalizationState().answerNotifications) && hasAnswerNotificationPermission();
+  }
+
+  function buildNotificationPreview(text) {
+    return String(text || '')
+      .replace(/\[SOURCE:\d+\|[^\]]+\]/gi, '')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .slice(0, 160) || 'Your Lexorium answer is ready.';
+  }
+
+  async function requestAnswerNotificationPermission(showNotice = true) {
+    if (!supportsAnswerNotifications()) {
+      showError('Answer notifications are not supported in this browser.');
+      return false;
+    }
+    if (Notification.permission === 'granted') {
+      updatePersonalizationField('answerNotifications', true, showNotice);
+      return true;
+    }
+    if (Notification.permission === 'denied') {
+      updatePersonalizationField('answerNotifications', false, false);
+      showError('Browser notifications are blocked for Lexorium in this browser.');
+      return false;
+    }
+    const permission = await Notification.requestPermission();
+    const allowed = permission === 'granted';
+    updatePersonalizationField('answerNotifications', allowed, false);
+    renderSettingsPanel(activeSettingsSection);
+    if (showNotice) {
+      if (allowed) showToast('Answer notifications enabled');
+      else showError('Browser notifications were not allowed.');
+    }
+    return allowed;
+  }
+
+  function toggleAnswerNotificationsSetting() {
+    if (wantsAnswerNotifications()) {
+      updatePersonalizationField('answerNotifications', false);
+      return;
+    }
+    requestAnswerNotificationPermission(true).catch(() => {
+      showError('Answer notifications could not be enabled right now.');
+    });
+  }
+
+  function promptForAnswerNotifications() {
+    requestAnswerNotificationPermission(true).catch(() => {
+      showError('Answer notifications could not be enabled right now.');
+    });
+  }
+
+  function notifyAnswerReady(text) {
+    if (!wantsAnswerNotifications() || !document.hidden) return;
+    try {
+      new Notification('Lexorium answer ready', {
+        body: buildNotificationPreview(text),
+        icon: 'assets/lexorium-logo-square.png',
+        badge: 'assets/lexorium-logo-square.png',
+        tag: 'lexorium-answer-ready',
+        renotify: true,
+      });
+    } catch (_error) {
+      // Ignore notification failures and keep the answer flow running.
+    }
   }
 
   async function syncPlanFromSession() {
@@ -4115,6 +4313,7 @@
       spokenLanguage: pick('spokenLanguage', ['auto', 'en-IN', 'en-US', 'en-GB']),
       voicePreference: pick('voicePreference', ['google', 'system']),
       instantAnswers: typeof source.instantAnswers === 'boolean' ? source.instantAnswers : PERSONALIZATION_DEFAULTS.instantAnswers,
+      answerNotifications: typeof source.answerNotifications === 'boolean' ? source.answerNotifications : PERSONALIZATION_DEFAULTS.answerNotifications,
       customInstructions: String(source.customInstructions || '').trim().slice(0, 320),
     };
   }
@@ -4175,11 +4374,19 @@
       settingsInstantAnswersEl.classList.toggle('is-on', Boolean(state.instantAnswers));
       settingsInstantAnswersEl.setAttribute('aria-pressed', state.instantAnswers ? 'true' : 'false');
     }
+    if (settingsAnswerNotificationsEl) {
+      const notificationToggleOn = Boolean(state.answerNotifications) && hasAnswerNotificationPermission();
+      settingsAnswerNotificationsEl.classList.toggle('is-on', notificationToggleOn);
+      settingsAnswerNotificationsEl.setAttribute('aria-pressed', notificationToggleOn ? 'true' : 'false');
+      settingsAnswerNotificationsEl.title = supportsAnswerNotifications()
+        ? (notificationToggleOn ? 'Answer notifications enabled' : 'Enable answer notifications')
+        : 'Answer notifications are not supported in this browser';
+    }
 
     if (settingsAccountNameEl) settingsAccountNameEl.textContent = currentProfileName || authName.textContent || 'Lexorium User';
     if (settingsAccountMetaEl) {
       const remaining = currentPlan?.unmetered
-        ? 'Unlimited queries'
+        ? 'Priority access enabled'
         : `${currentUsage?.remaining ?? currentPlan?.dailyLimit ?? 0} queries left today`;
       settingsAccountMetaEl.textContent = `${currentPlan?.name || 'Free'} plan • ${remaining}`;
     }
@@ -4286,7 +4493,7 @@
     }
     openUpgradeModal({
       title: `Upgrade to Lexorium ${formatPlanName(currentPlan?.upgradeTarget || 'pro')}`,
-      message: 'Upgrade this account for 120 legal queries per day, advanced legal reasoning, contract drafting tools, priority response speed, voice analysis, and structured legal analysis.',
+      message: 'Upgrade this account for 120 legal queries per day, predictive risk scoring, deeper legal research, contract drafting tools, voice analysis, priority response speed, and structured legal analysis.',
       reason: 'sidebar_upgrade',
       planId: currentPlan?.upgradeTarget || 'pro',
     });
@@ -4764,7 +4971,7 @@
     inputEl.disabled = true;
     sendBtn.disabled = true;
     inputEl.placeholder = reason === 'limit_reached'
-      ? 'Daily plan limit reached. Upgrade to continue using Lexorium.'
+      ? 'Daily plan limit reached. Upgrade to Pro for more research and premium legal tools.'
       : 'Upgrade to use this premium legal workflow.';
   }
 
@@ -4779,7 +4986,7 @@
   function openUpgradeModal(options) {
     pendingUpgradePlan = getUpgradeTargetPlan(currentPlan.id, options?.planId || options?.requiredPlan || 'pro');
     document.getElementById('upgradeModalTitle').textContent = options?.title || `Upgrade to Lexorium ${formatPlanName(pendingUpgradePlan)}`;
-    document.getElementById('upgradeModalCopy').textContent = options?.message || 'Upgrade for 120 legal queries per day, advanced legal reasoning, contract drafting tools, priority response speed, and structured legal analysis.';
+    document.getElementById('upgradeModalCopy').textContent = options?.message || 'Upgrade for 120 legal queries per day, predictive risk scoring, deeper legal research, contract drafting tools, priority response speed, and structured legal analysis.';
     const action = document.getElementById('upgradeModalAction');
     action.textContent = options?.ctaLabel || `Upgrade to ${formatPlanName(pendingUpgradePlan)}`;
     document.getElementById('upgradeModal').classList.add('open');
@@ -5002,16 +5209,24 @@
 
   function setMode(mode) {
     closeAttachMenu();
-    const premiumMode = ['draft', 'summarize', 'research'].includes(mode);
+    const premiumMode = ['draft', 'summarize', 'research', 'risk'].includes(mode);
     const featureMap = {
       draft: 'Contract Drafting is available on Lexorium Pro.',
       summarize: 'Summarise is available on Lexorium Pro.',
       research: 'Research Tool is available on Lexorium Pro.',
+      risk: 'Predictive Risk Scoring is available on Lexorium Pro.',
     };
-    if (premiumMode && !currentPlan?.features?.[`${mode === 'summarize' ? 'summarizeMode' : mode === 'draft' ? 'draftMode' : 'researchTool'}`]) {
+    const featureKey = mode === 'summarize'
+      ? 'summarizeMode'
+      : mode === 'draft'
+        ? 'draftMode'
+        : mode === 'risk'
+          ? 'predictiveRiskScoring'
+          : 'researchTool';
+    if (premiumMode && !currentPlan?.features?.[featureKey]) {
       openUpgradeModal({
         title: featureMap[mode],
-        message: 'Upgrade to Lexorium Pro for 120 legal queries per day, advanced legal reasoning, contract drafting tools, priority response speed, and structured legal analysis.',
+        message: 'Upgrade to Lexorium Pro for 120 legal queries per day, predictive risk scoring, deeper legal research, contract drafting tools, priority response speed, and structured legal analysis.',
         reason: 'feature_gate',
         planId: currentPlan.id === 'free' ? 'pro' : 'enterprise',
       });
@@ -5309,7 +5524,11 @@
     persistChatState();
   }
 
-  function addToHome() { showToast('Added to home screen'); }
+  function addToHome() {
+    promptInstallApp().catch(() => {
+      showError('Lexorium could not open the install prompt right now.');
+    });
+  }
 
   function newChat() {
     if (history.length > 0 && !confirm('Start a new chat? Current conversation will be cleared.')) return;
@@ -6239,6 +6458,15 @@
 
   function buildThinkingHtml(attachments) {
     const hasAttachments = Array.isArray(attachments) && attachments.length > 0;
+    const notificationCta = supportsAnswerNotifications()
+      ? `
+        <div class="thinking-actions">
+          <button class="thinking-action-btn${wantsAnswerNotifications() ? ' is-on' : ''}" type="button" onclick="promptForAnswerNotifications()">
+            ${wantsAnswerNotifications() ? 'Answer notifications on' : 'Notify me when ready'}
+          </button>
+          <span class="thinking-action-note">${wantsAnswerNotifications() ? 'Lexorium will alert you when this answer is ready while the tab is in the background.' : 'Turn on browser notifications to be alerted when the answer is complete.'}</span>
+        </div>`
+      : '';
     return `
       <div class="analysis-thinking">
         <div class="thinking-card">
@@ -6249,6 +6477,7 @@
             <div class="thinking-dots"><span class="thinking-dot"></span><span class="thinking-dot"></span><span class="thinking-dot"></span></div>
           </div>
         </div>
+        ${notificationCta}
         ${hasAttachments ? `<div class="analysis-thinking-copy">Your uploaded files and images are being analysed inside this response flow before the final answer is returned.</div>${buildAttachmentCardsHtml(attachments, 'analysis')}` : ''}
       </div>`;
   }
@@ -6415,12 +6644,12 @@
     const body = msgDiv.querySelector('.msg-body');
     if (!body) return;
     const tier = String(plan?.routeTier || plan?.id || currentPlan?.routeTier || currentPlan?.id || 'free').trim().toLowerCase();
-    const meta = document.createElement('div');
-    meta.className = 'msg-meta';
-    meta.innerHTML = `
-      <span class="msg-model-chip accent">${escapeHtml(getWorkspaceChipLabel(plan))}</span>
-      <span class="msg-model-chip">${escapeHtml(tier === 'enterprise' ? 'Unlimited legal workspace' : tier === 'pro' ? 'Premium legal reasoning enabled' : 'Legal-only answer format')}</span>
-    `;
+      const meta = document.createElement('div');
+      meta.className = 'msg-meta';
+      meta.innerHTML = `
+        <span class="msg-model-chip accent">${escapeHtml(getWorkspaceChipLabel(plan))}</span>
+        <span class="msg-model-chip">${escapeHtml(tier === 'enterprise' ? 'Priority legal workspace' : tier === 'pro' ? 'Premium legal reasoning enabled' : 'Legal-only answer format')}</span>
+      `;
     body.insertAdjacentElement('beforebegin', meta);
   }
 
@@ -6481,6 +6710,9 @@
 
   function buildDirectPuterMessages(historyMsgs, attachments, mode) {
     const modeLabel = MODES[mode]?.label || 'Chat';
+    const modeSpecificPrompt = mode === 'risk'
+      ? 'When the workflow is Predictive Risk Scoring, include a clear risk score from 1 to 100, state the risk band as Low, Moderate, High, or Severe, identify the legal drivers behind that score, and explain what facts could materially change the result.'
+      : '';
     const personalizationLines = getPersonalizationPromptLines();
     const systemPrompt = [
       'You are Lexorium, a legal intelligence engine by Sprezzatura AI.',
@@ -6493,6 +6725,7 @@
       'Use these exact headings in this exact order for every response: ## Issue, ## Applicable Law, ## Analysis, ## Conclusion, ## Practical Note, ## Disclaimer.',
       'Complete every heading with full sentences. Do not leave any section or final sentence unfinished.',
       `The current workflow is ${modeLabel}. Adapt the analysis and practical note to that workflow while keeping the exact response structure.`,
+      modeSpecificPrompt,
       'In ## Disclaimer, state that Lexorium provides legal information and not legal advice, and note when primary-source verification or local counsel is needed.',
       ...personalizationLines,
     ].filter(Boolean).join(' ');
@@ -6781,8 +7014,8 @@
       openUpgradeModal({
         title: 'Upgrade to continue using Lexorium',
         message: composerLockedReason === 'limit_reached'
-          ? 'Daily plan limit reached. Upgrade to continue using Lexorium.'
-          : 'Upgrade to Lexorium Pro to unlock this legal workflow.',
+          ? 'Daily plan limit reached. Upgrade to Lexorium Pro for predictive risk scoring, deeper research, contract drafting tools, and priority response speed.'
+          : 'Upgrade to Lexorium Pro to unlock this premium legal workflow.',
         reason: composerLockedReason,
         planId: 'pro',
         ctaLabel: 'Upgrade to Pro',
@@ -6798,6 +7031,7 @@
       draft:    'Prepare the following contract or legal draft for me: ',
       summarize: 'Summarise the following legal text in a structured manner: ',
       analyse:  'Analyse the following and provide a detailed legal assessment: ',
+      risk: 'Provide predictive risk scoring on the following legal matter: ',
       research: 'Research the following legal topic thoroughly: ',
     };
     const attachmentModePrompts = {
@@ -6810,6 +7044,9 @@
       analyse: text
         ? `Analyse the attached ${attachmentContext.noun} and answer this legal request: ${text}`
         : `Analyse the attached ${attachmentContext.noun} and provide a structured legal assessment covering the issue, applicable law, analysis, conclusion, practical note, and disclaimer.`,
+      risk: text
+        ? `Analyse the attached ${attachmentContext.noun} and provide predictive risk scoring for this legal matter: ${text}`
+        : `Analyse the attached ${attachmentContext.noun} and provide predictive legal risk scoring with a structured issue, applicable law, analysis, conclusion, practical note, and disclaimer.`,
       research: text
         ? `Use the attached ${attachmentContext.noun} as context and research this legal issue: ${text}`
         : `Use the attached ${attachmentContext.noun} as context and provide structured legal research on the most relevant issues.`,
@@ -6868,6 +7105,7 @@
       const roleNode = msgDiv.querySelector('.msg-role');
       if (roleNode) roleNode.textContent = label;
       await animateResponse(msgDiv, replyText);
+      notifyAnswerReady(replyText);
       syncAssistantModelMeta(msgDiv, lastRoutedModel, reply?.meta?.plan || currentPlan);
       if (reply?.upgradePrompt && reply?.upgradePromptText) {
         appendUpgradeBanner(msgDiv, reply.upgradePromptText, currentPlan?.id === 'free' ? 'pro' : 'enterprise');
@@ -6905,14 +7143,9 @@
         const limitMessage = 'Daily plan limit reached. Upgrade to continue using Lexorium.';
         await animateResponse(msgDiv, limitMessage);
         const limitUpgradePlan = 'pro';
-        appendUpgradeBanner(
-          msgDiv,
-          'Daily plan limit reached. Upgrade to continue using Lexorium.',
-          limitUpgradePlan
-        );
         openUpgradeModal({
           title: 'Daily plan limit reached.',
-          message: 'Upgrade to continue using Lexorium with 120 legal queries per day, advanced legal reasoning, contract drafting tools, priority response speed, and structured legal analysis.',
+          message: 'Upgrade to Lexorium Pro for 120 legal queries per day, predictive risk scoring, deeper legal research, contract drafting tools, priority response speed, and structured legal analysis.',
           reason: 'limit_reached',
           planId: limitUpgradePlan,
           ctaLabel: 'Upgrade to Pro',
@@ -6926,7 +7159,7 @@
         syncVoiceUi();
         openUpgradeModal({
           title: err.payload?.title || `Upgrade to Lexorium ${formatPlanName(targetPlan)}`,
-          message: err.message || err.payload?.message || `Upgrade to Lexorium ${formatPlanName(targetPlan)} for 120 legal queries per day, advanced legal reasoning, contract drafting tools, priority response speed, and structured legal analysis.`,
+          message: err.message || err.payload?.message || `Upgrade to Lexorium ${formatPlanName(targetPlan)} for 120 legal queries per day, predictive risk scoring, deeper legal research, contract drafting tools, priority response speed, and structured legal analysis.`,
           reason: 'upgrade_required',
           planId: targetPlan,
         });
@@ -6959,6 +7192,7 @@
           const roleNode = msgDiv.querySelector('.msg-role');
           if (roleNode) roleNode.textContent = label;
           await animateResponse(msgDiv, directText);
+          notifyAnswerReady(directText);
           history.push({
             role: 'assistant',
             content: directText,
@@ -7112,6 +7346,7 @@
   }
 
   async function bootstrapApp() {
+    registerInstallSupport();
     await fetchAuthConfig();
     const authenticated = await renderAuthProfile();
     if (!authenticated) return;

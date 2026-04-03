@@ -166,6 +166,9 @@ function getTaskSpecificInstruction(taskType) {
   if (taskType === 'legal_research') {
     return 'In ## Applicable Law and ## Analysis, distinguish governing rule, unsettled areas, and what should be verified against primary sources.';
   }
+  if (taskType === 'predictive_risk_scoring') {
+    return 'In ## Analysis, assess the stated facts using a clearly labelled predictive risk score from 1 to 100, give a risk band of Low, Moderate, High, or Severe, explain the main legal drivers of the score, and identify what additional facts could materially change the assessment. Do not present the score as certain or actuarial.';
+  }
   if (taskType === 'compliance_checklist') {
     return 'In ## Analysis, provide a practical compliance checklist using short bullet points.';
   }
