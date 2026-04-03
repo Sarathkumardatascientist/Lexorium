@@ -3970,6 +3970,7 @@
   let hasCustomChatTitle = false;
   let sidebarHidden = false;
   let deferredInstallPrompt = null;
+  let usageRefreshTimer = null;
 
   function getStoredPuterToken() {
     try {
@@ -5029,6 +5030,7 @@
       unlockComposer();
     }
     renderPlanStatus();
+    if (settingsModalEl?.classList.contains('open')) renderSettingsPanel(activeSettingsSection);
   }
 
   async function refreshUsageCounter(options = {}) {
@@ -5038,13 +5040,24 @@
     if (session?.retention) retentionState = session.retention;
     if (session?.usage) {
       syncUsageCounter(session.usage);
+      renderSidebarAccount();
+      syncVoiceUi();
       return;
     }
     if (consumeOnMissing) {
       syncUsageCounter(null, { consumeOnMissing: true });
+      renderSidebarAccount();
+      syncVoiceUi();
       return;
     }
     renderPlanStatus();
+  }
+
+  function scheduleUsageRefresh(options = {}) {
+    if (usageRefreshTimer) window.clearTimeout(usageRefreshTimer);
+    usageRefreshTimer = window.setTimeout(() => {
+      refreshUsageCounter(options).catch(() => null);
+    }, 120);
   }
 
   function renderModelDropdown() {
@@ -7304,7 +7317,7 @@
         attachments: [],
       });
       persistChatState();
-      void refreshUsageCounter();
+      scheduleUsageRefresh();
     } catch (err) {
       const pendingAssistantMsg = assistantMsgDiv && assistantMsgDiv.isConnected ? assistantMsgDiv : null;
       const providerCode = String(err.code || '').trim().toUpperCase();
@@ -7387,7 +7400,7 @@
             attachments: [],
           });
           persistChatState();
-          void refreshUsageCounter();
+          scheduleUsageRefresh();
           hideError();
           return;
         } catch (directError) {
@@ -7542,6 +7555,16 @@
 
   window.addEventListener('lexorium:play-billing-result', (event) => {
     handleAndroidBillingResult(event?.detail || {}).catch(() => null);
+  });
+
+  window.addEventListener('focus', () => {
+    if (!currentUserUid) return;
+    scheduleUsageRefresh();
+  });
+
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState !== 'visible' || !currentUserUid) return;
+    scheduleUsageRefresh();
   });
 
   bootstrapApp();
