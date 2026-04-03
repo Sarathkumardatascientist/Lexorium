@@ -2874,6 +2874,10 @@ footer {
   const DEPLOYMENT_BACKEND_ERROR = 'This deployment is frontend-only right now. Lexorium needs live backend API routes under /api/* for sign-in, chat, billing, and history. Deploy it on a full-stack host like Vercel, Render, or Railway instead of GitHub Pages or other static-only hosting.';
   const signinButton = document.getElementById('puterSignInBtn');
   const switchAccountButton = document.getElementById('puterSwitchAccountBtn');
+  const signinFormEl = document.querySelector('.signin-section .signin-form');
+  const signinNoteEl = document.querySelector('.signin-section .signin-note');
+  const signinTitleEl = document.querySelector('.signin-section .signin-title');
+  const signinSubEl = document.querySelector('.signin-section .signin-sub');
   const navLaunchBtn = document.getElementById('navLaunchBtn');
   const installWebAppBtn = document.getElementById('installWebAppBtn');
   const installWebAppNoteEl = document.getElementById('installWebAppNote');
@@ -3029,8 +3033,7 @@ footer {
         profile = await ensureSessionFromPuter(false).catch(() => null);
       }
       if (profile) {
-        updateSigninStatus(profile);
-        window.location.replace(APP_URL);
+        redirectToWorkspace(profile);
         return;
       }
       document.getElementById('signin')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -3042,14 +3045,26 @@ footer {
 
   function updateSigninStatus(profile) {
     if (profile) {
-      const displayName = normalizeSignedInDisplayName(profile);
-      if (signinButton) signinButton.textContent = `Open Lexorium as ${displayName}`;
+      if (signinFormEl) signinFormEl.style.display = 'none';
+      if (signinNoteEl) signinNoteEl.style.display = 'none';
+      if (signinTitleEl) signinTitleEl.textContent = 'Opening your Lexorium workspace';
+      if (signinSubEl) signinSubEl.textContent = 'Your secure session is active. Redirecting you into the workspace now.';
       if (navLaunchBtn) navLaunchBtn.textContent = 'Open Workspace';
-      showSigninMessage(`Signed in as ${displayName}.`);
+      showSigninMessage('');
       return;
     }
+    if (signinFormEl) signinFormEl.style.display = '';
+    if (signinNoteEl) signinNoteEl.style.display = '';
+    if (signinTitleEl) signinTitleEl.textContent = 'Sign in to Lexorium';
+    if (signinSubEl) signinSubEl.textContent = 'Use one secure sign-in and Lexorium will automatically create your session, sync your app access, and open the right workspace.';
     if (signinButton) signinButton.textContent = 'Sign in to Lexorium';
+    if (switchAccountButton) switchAccountButton.textContent = 'Use another account';
     if (navLaunchBtn) navLaunchBtn.textContent = 'Launch App';
+  }
+
+  function redirectToWorkspace(profile) {
+    updateSigninStatus(profile);
+    window.location.replace(APP_URL);
   }
 
   function openSigninSection(event) {
@@ -3389,8 +3404,7 @@ footer {
       if (!profile) {
         throw new Error('Sign-in did not complete.');
       }
-      updateSigninStatus(profile);
-      window.location.replace(APP_URL);
+      redirectToWorkspace(profile);
     } catch (error) {
       showSigninMessage(error.message || 'Sign-in could not be completed.', true);
     }
@@ -3404,8 +3418,7 @@ footer {
       if (!profile) {
         throw new Error('A different account was not selected.');
       }
-      updateSigninStatus(profile);
-      window.location.replace(APP_URL);
+      redirectToWorkspace(profile);
     } catch (error) {
       showSigninMessage(error.message || 'Could not switch accounts right now.', true);
     }
@@ -3530,7 +3543,11 @@ footer {
       if (!profile) {
         profile = await ensureSessionFromPuter(false).catch(() => null);
       }
-      updateSigninStatus(profile);
+      if (profile) {
+        redirectToWorkspace(profile);
+        return;
+      }
+      updateSigninStatus(null);
     } catch (error) {
       showSigninMessage(error.message || 'Authentication configuration could not be loaded.');
     }
