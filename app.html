@@ -4310,6 +4310,18 @@
     return payload?.profile || null;
   }
 
+  function applyResolvedSessionPayload(payload) {
+    const profile = payload?.profile || null;
+    if (!profile) return false;
+    return applyAuthSession({
+      ...payload,
+      profile,
+      plan: payload?.plan || currentPlan,
+      usage: payload?.usage || currentUsage,
+      retention: payload?.retention || retentionState,
+    }, profile);
+  }
+
   async function getRequiredPuterToken() {
     let token = getStoredPuterToken();
     if (token) return token;
@@ -5189,12 +5201,13 @@
   async function resumeWorkspaceSignIn() {
     hideError();
     try {
-      const profile = await syncSessionWithPuter(true);
+      const payload = await syncSessionPayloadWithPuter(true);
+      const profile = payload?.profile || null;
       if (!profile) {
         throw new Error('Sign-in did not complete.');
       }
-      const authenticated = await renderAuthProfile();
-      if (!authenticated) {
+      const applied = applyResolvedSessionPayload(payload);
+      if (!applied) {
         throw new Error('Lexorium could not restore this workspace yet.');
       }
       await syncPlanFromSession().catch(() => null);
@@ -5284,12 +5297,20 @@
       return false;
     }
     if (!session?.profile) {
-      await syncSessionWithPuter(false).catch(() => null);
-      session = await fetchSessionProfile().catch(() => null);
+      const syncedSession = await syncSessionPayloadWithPuter(false).catch(() => null);
+      if (syncedSession?.profile) {
+        session = syncedSession;
+      } else {
+        session = await fetchSessionProfile().catch(() => null);
+      }
       if (!session?.profile) {
         await waitForPuterAuth(1800);
-        await syncSessionWithPuter(false).catch(() => null);
-        session = await fetchSessionProfile().catch(() => null);
+        const retrySession = await syncSessionPayloadWithPuter(false).catch(() => null);
+        if (retrySession?.profile) {
+          session = retrySession;
+        } else {
+          session = await fetchSessionProfile().catch(() => null);
+        }
       }
     }
     const profile = session?.profile || null;
@@ -5298,7 +5319,7 @@
       renderSignedOutWorkspace('Sign in to continue inside the Lexorium app.');
       return false;
     }
-    applyAuthSession(session, profile);
+    applyResolvedSessionPayload(session);
     await trackEvent('greeting_rendered', { planId: currentPlan.id }).catch(() => null);
     return true;
   }

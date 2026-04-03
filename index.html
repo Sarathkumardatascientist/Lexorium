@@ -3031,10 +3031,9 @@ footer {
         redirectToWorkspace(profile);
         return;
       }
-      document.getElementById('signin')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      showSigninMessage('Sign in to open your Lexorium workspace.');
+      await startPuterSignIn();
     } catch (error) {
-      showSigninMessage(error.message || 'Sign in to open your Lexorium workspace.', true);
+      showSigninMessage(error.message || 'Sign in to open the Lexorium app.', true);
     }
   }
 
@@ -3044,7 +3043,7 @@ footer {
       if (signinNoteEl) signinNoteEl.style.display = 'none';
       if (signinTitleEl) signinTitleEl.textContent = 'Opening your Lexorium workspace';
       if (signinSubEl) signinSubEl.textContent = 'Your secure session is active. Redirecting you into the workspace now.';
-      if (navLaunchBtn) navLaunchBtn.textContent = 'Open Workspace';
+      if (navLaunchBtn) navLaunchBtn.textContent = 'Launch App';
       showSigninMessage('');
       return;
     }
@@ -3062,9 +3061,7 @@ footer {
   }
 
   function openSigninSection(event) {
-    if (event) event.preventDefault();
-    document.getElementById('signin')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    showSigninMessage('Sign in to start your Lexorium workspace.');
+    return startPuterSignIn(event);
   }
 
   function showSigninMessage(message, isError) {
@@ -3392,7 +3389,8 @@ footer {
 
   async function startPuterSignIn(event) {
     if (event) event.preventDefault();
-    showSigninMessage('Signing you in...');
+    document.getElementById('signin')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    showSigninMessage('Signing you in with Puter...');
     try {
       const profile = await ensureSessionFromPuter(true);
       if (!profile) {
