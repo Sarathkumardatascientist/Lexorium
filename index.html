@@ -3543,11 +3543,7 @@ footer {
       if (!profile) {
         profile = await ensureSessionFromPuter(false).catch(() => null);
       }
-      if (profile) {
-        redirectToWorkspace(profile);
-        return;
-      }
-      updateSigninStatus(null);
+      updateSigninStatus(profile || null);
     } catch (error) {
       showSigninMessage(error.message || 'Authentication configuration could not be loaded.');
     }
