@@ -10,6 +10,12 @@ function hasRealValue(value) {
   return Boolean(normalized) && !/^your_/i.test(normalized) && !/xxxxx/i.test(normalized);
 }
 
+const FIXED_DAILY_LIMITS = {
+  free: 20,
+  pro: 150,
+  enterprise: 250,
+};
+
 module.exports = async (_req, res) => {
   const paymentProvider = String(process.env.PAYMENT_PROVIDER || 'cashfree').toLowerCase();
   const paymentAppId = String(process.env.CASHFREE_APP_ID || process.env.APP_ID || process.env.RAZORPAY_KEY_ID || '').trim();
@@ -30,9 +36,9 @@ module.exports = async (_req, res) => {
     cashfreeMode,
     razorpayEnabled: paymentEnabled,
     razorpayKeyId: paymentAppId,
-    freeDailyLimit: Number.parseInt(process.env.FREE_DAILY_LIMIT || '20', 10) || 20,
-    proDailyLimit: Number.parseInt(process.env.PRO_DAILY_LIMIT || '150', 10) || 150,
-    enterpriseDailyLimit: Number.parseInt(process.env.ENTERPRISE_DAILY_LIMIT || '100000', 10) || 100000,
+    freeDailyLimit: FIXED_DAILY_LIMITS.free,
+    proDailyLimit: FIXED_DAILY_LIMITS.pro,
+    enterpriseDailyLimit: FIXED_DAILY_LIMITS.enterprise,
     proPlanPricePaise: Number.parseInt(process.env.PRO_PLAN_PRICE_PAISE || '89900', 10) || 89900,
     planDurationDays: Number.parseInt(process.env.PLAN_DURATION_DAYS || process.env.PRO_PLAN_DURATION_DAYS || '30', 10) || 30,
     contactSalesEmail: String(process.env.CONTACT_SALES_EMAIL || 'aisprezzatura@gmail.com').trim(),

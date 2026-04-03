@@ -3869,6 +3869,7 @@
   const CONVERSATION_CLEAR_API_URL = 'api/conversations/clear';
   const CREATE_ORDER_URL = 'api/billing/create-order';
   const VERIFY_PAYMENT_URL = 'api/billing/verify-payment';
+  const CHECKOUT_PHONE_STORAGE_KEY = 'lexorium.checkout.phone.v1';
   const ANALYTICS_API_URL = 'api/analytics/track';
   const CHAT_STATE_STORAGE = 'lexorium_chat_state_v1';
   const CHAT_HISTORY_STORAGE = 'lexorium_chat_history_v1';
@@ -3942,6 +3943,7 @@
   let retentionState = null;
   let currentUserUid = null;
   let currentProfileName = '';
+  let currentProfilePhone = '';
   let composerLockedReason = null;
   let onboardingPending = false;
   let authConfig = {
@@ -4878,6 +4880,7 @@
   function renderSignedOutWorkspace(message) {
     currentUserUid = null;
     currentProfileName = '';
+    currentProfilePhone = '';
     authPill.style.display = 'none';
     if (authName) authName.textContent = 'Lexorium';
     if (sidebarAccountNameEl) sidebarAccountNameEl.textContent = 'Sign in to Lexorium';
@@ -5137,14 +5140,22 @@
 
     try {
       await trackEvent('paywall_cta_clicked', { source: 'app', planId: currentPlan.id, targetPlanId: targetPlan });
+      const savedCheckoutPhone = String(localStorage.getItem(CHECKOUT_PHONE_STORAGE_KEY) || currentProfilePhone || '').replace(/\D/g, '').slice(-10);
+      const enteredCheckoutPhone = window.prompt('Enter your 10-digit mobile number for secure checkout.', savedCheckoutPhone);
+      if (enteredCheckoutPhone === null) return;
+      const customerPhone = String(enteredCheckoutPhone || '').replace(/\D/g, '').slice(-10);
+      if (!/^\d{10}$/.test(customerPhone)) {
+        throw new Error('Enter a valid 10-digit mobile number to continue checkout.');
+      }
       const response = await fetch(CREATE_ORDER_URL, {
         method: 'POST',
         credentials: 'same-origin',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ plan: targetPlan, source: 'app' }),
+        body: JSON.stringify({ plan: targetPlan, source: 'app', customerPhone }),
       });
       const order = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(order?.message || 'Could not start checkout.');
+      localStorage.setItem(CHECKOUT_PHONE_STORAGE_KEY, customerPhone);
       const cashfree = window.Cashfree({ mode: order.cashfreeMode || authConfig.cashfreeMode });
       closeUpgradeModal();
       showToast('Redirecting to secure payment...');
@@ -5195,6 +5206,7 @@
     if (signOutItem) signOutItem.style.display = 'flex';
     currentUserUid = profile.uid || null;
     currentProfileName = displayName;
+    currentProfilePhone = String(profile?.phone || '').trim();
     currentPlan = session?.plan || currentPlan;
     currentUsage = session?.usage || null;
     retentionState = session?.retention || profile?.retention || retentionState;

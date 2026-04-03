@@ -10,12 +10,20 @@ function isPro(user) {
   return isPlanAtLeast(getPlanIdFromUser(user), 'pro');
 }
 
+function normalizePhone(value) {
+  const digits = String(value || '').replace(/\D/g, '');
+  if (digits.length === 10) return digits;
+  if (digits.length > 10) return digits.slice(-10);
+  return '';
+}
+
 function normalize(uid, data) {
   data = data || {};
   return {
     uid,
     name: data.name || '',
     email: String(data.email || '').toLowerCase(),
+    phone: normalizePhone(data.phone || data.mobile || data.customerPhone),
     avatar: data.avatar || '',
     authProvider: data.authProvider || 'puter',
     accountStatus: data.accountStatus || 'active',
@@ -231,11 +239,12 @@ async function upsertUser(profile) {
   const ref = getDb().collection('users').doc(profile.uid);
   const base = (await getUser(profile.uid)) || normalize(profile.uid, {});
   const currentTime = now();
-  const payload = {
-    ...base,
-    name: profile.name || base.name,
-    email: String(profile.email || base.email || '').toLowerCase(),
-    avatar: profile.avatar || base.avatar,
+    const payload = {
+      ...base,
+      name: profile.name || base.name,
+      email: String(profile.email || base.email || '').toLowerCase(),
+      phone: normalizePhone(profile.phone || base.phone),
+      avatar: profile.avatar || base.avatar,
     authProvider: profile.authProvider || base.authProvider || 'puter',
     accountStatus: 'active',
     lastActiveAt: currentTime,
@@ -254,10 +263,19 @@ async function track(uid, eventName, meta) {
 
 async function updateUserProfile(uid, updates) {
   const payload = {};
+  let affectsOnboarding = false;
   if (Object.prototype.hasOwnProperty.call(updates || {}, 'persona')) payload.persona = normalizePersona(updates.persona);
-  if (Object.prototype.hasOwnProperty.call(updates || {}, 'primaryUseCase')) payload.primaryUseCase = String(updates.primaryUseCase || '').trim();
-  if (updates?.onboardingCompleted) payload.onboardingCompletedAt = now();
-  if (Object.keys(payload).length) payload.onboardingUpdatedAt = now();
+  if (Object.prototype.hasOwnProperty.call(updates || {}, 'persona')) affectsOnboarding = true;
+  if (Object.prototype.hasOwnProperty.call(updates || {}, 'primaryUseCase')) {
+    payload.primaryUseCase = String(updates.primaryUseCase || '').trim();
+    affectsOnboarding = true;
+  }
+  if (Object.prototype.hasOwnProperty.call(updates || {}, 'phone')) payload.phone = normalizePhone(updates.phone);
+  if (updates?.onboardingCompleted) {
+    payload.onboardingCompletedAt = now();
+    affectsOnboarding = true;
+  }
+  if (affectsOnboarding) payload.onboardingUpdatedAt = now();
   payload.updatedAt = now();
   await getDb().collection('users').doc(uid).set(payload, { merge: true });
   return getUser(uid);
@@ -516,6 +534,7 @@ async function activatePaidPlan(uid, planId, payment) {
     billingCustomerId: payment.customerId || null,
     billingSubscriptionId: payment.subscriptionId || payment.orderId || null,
     billingPaymentId: payment.paymentId || null,
+    phone: normalizePhone(payment.customerPhone || current.phone),
     authProvider: current.authProvider || 'puter',
     accountStatus: 'active',
     dailyFreeUsageCount: 0,

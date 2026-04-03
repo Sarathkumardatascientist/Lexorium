@@ -2844,6 +2844,7 @@ footer {
   const SESSION_URL = 'api/auth/session';
   const CREATE_ORDER_URL = 'api/billing/create-order';
   const ENTERPRISE_CONTACT_URL = 'api/contact/enterprise';
+  const CHECKOUT_PHONE_STORAGE_KEY = 'lexorium.checkout.phone.v1';
   const LEXORIUM_PUTER_TOKEN_STORAGE_KEY = 'lexorium.puter.token';
   let contactSalesEmail = 'aisprezzatura@gmail.com';
   let paymentEnabled = false;
@@ -3370,13 +3371,23 @@ footer {
       return;
     }
 
+    const savedCheckoutPhone = String(localStorage.getItem(CHECKOUT_PHONE_STORAGE_KEY) || '').replace(/\D/g, '').slice(-10);
+    const enteredCheckoutPhone = window.prompt('Enter your 10-digit mobile number for secure checkout.', savedCheckoutPhone);
+    if (enteredCheckoutPhone === null) return;
+    const customerPhone = String(enteredCheckoutPhone || '').replace(/\D/g, '').slice(-10);
+    if (!/^\d{10}$/.test(customerPhone)) {
+      alert('Enter a valid 10-digit mobile number to continue checkout.');
+      return;
+    }
+
     try {
       const order = await fetchJson(CREATE_ORDER_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'same-origin',
-        body: JSON.stringify({ plan }),
+        body: JSON.stringify({ plan, customerPhone }),
       });
+      localStorage.setItem(CHECKOUT_PHONE_STORAGE_KEY, customerPhone);
 
       const cashfree = window.Cashfree({ mode: order.cashfreeMode || cashfreeMode });
       const result = await cashfree.checkout({

@@ -20,12 +20,20 @@ function isPro(user) {
   return isPlanAtLeast(getPlanIdFromUser(user), 'pro');
 }
 
+function normalizePhone(value) {
+  const digits = String(value || '').replace(/\D/g, '');
+  if (digits.length === 10) return digits;
+  if (digits.length > 10) return digits.slice(-10);
+  return '';
+}
+
 function normalize(uid, data) {
   data = data || {};
   return {
     uid,
     name: data.name || '',
     email: String(data.email || '').toLowerCase(),
+    phone: normalizePhone(data.phone || data.mobile || data.customerPhone),
     avatar: data.avatar || '',
     authProvider: data.authProvider || 'puter',
     accountStatus: data.accountStatus || 'active',
@@ -270,11 +278,12 @@ async function upsertUser(profile) {
   const state = readState();
   const base = refreshUser(state, profile.uid) || normalize(profile.uid, {});
   const currentTime = now();
-  const user = {
-    ...base,
-    name: profile.name || base.name,
-    email: String(profile.email || base.email || '').toLowerCase(),
-    avatar: profile.avatar || base.avatar,
+    const user = {
+      ...base,
+      name: profile.name || base.name,
+      email: String(profile.email || base.email || '').toLowerCase(),
+      phone: normalizePhone(profile.phone || base.phone),
+      avatar: profile.avatar || base.avatar,
     authProvider: profile.authProvider || base.authProvider || 'puter',
     accountStatus: 'active',
     lastActiveAt: currentTime,
@@ -337,10 +346,19 @@ async function updateUserProfile(uid, updates) {
   const user = refreshUser(state, uid);
   if (!user) throw new Error('User record not found.');
 
+  let affectsOnboarding = false;
   if (Object.prototype.hasOwnProperty.call(updates || {}, 'persona')) user.persona = normalizePersona(updates.persona);
-  if (Object.prototype.hasOwnProperty.call(updates || {}, 'primaryUseCase')) user.primaryUseCase = String(updates.primaryUseCase || '').trim();
-  if (updates?.onboardingCompleted) user.onboardingCompletedAt = user.onboardingCompletedAt || now();
-  if (updates?.onboardingCompleted || Object.prototype.hasOwnProperty.call(updates || {}, 'persona') || Object.prototype.hasOwnProperty.call(updates || {}, 'primaryUseCase')) {
+  if (Object.prototype.hasOwnProperty.call(updates || {}, 'persona')) affectsOnboarding = true;
+  if (Object.prototype.hasOwnProperty.call(updates || {}, 'primaryUseCase')) {
+    user.primaryUseCase = String(updates.primaryUseCase || '').trim();
+    affectsOnboarding = true;
+  }
+  if (Object.prototype.hasOwnProperty.call(updates || {}, 'phone')) user.phone = normalizePhone(updates.phone);
+  if (updates?.onboardingCompleted) {
+    user.onboardingCompletedAt = user.onboardingCompletedAt || now();
+    affectsOnboarding = true;
+  }
+  if (affectsOnboarding) {
     user.onboardingUpdatedAt = now();
   }
   user.updatedAt = now();
@@ -533,6 +551,7 @@ async function activatePaidPlan(uid, planId, payment) {
   user.billingCustomerId = payment.customerId || null;
   user.billingSubscriptionId = payment.subscriptionId || payment.orderId || null;
   user.billingPaymentId = payment.paymentId || null;
+  user.phone = normalizePhone(payment.customerPhone || user.phone);
   user.authProvider = user.authProvider || 'puter';
   user.accountStatus = 'active';
   user.dailyFreeUsageCount = 0;

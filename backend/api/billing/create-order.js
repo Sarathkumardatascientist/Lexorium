@@ -2,7 +2,7 @@ const { getSessionFromRequest } = require('../auth/_session');
 const db = require('../_lib/db');
 const devStore = require('../_lib/dev-store');
 const store = devStore.isLocalDevStoreEnabled() ? devStore : db;
-const { getUser, recordCheckoutIntent, track } = store;
+const { getUser, recordCheckoutIntent, track, updateUserProfile } = store;
 const { parseJsonBody, requireMethod, sendError, sendJson } = require('../_lib/http');
 const { createHeaders, getCashfreeConfig } = require('./_cashfree');
 const { comparePlanIds, getCheckoutPlan, getPlanForProfile } = require('../_lib/plan-access');
@@ -66,6 +66,13 @@ function toCashfreeCustomerId(uid) {
   return `lexorium_${Date.now()}`;
 }
 
+function normalizeCustomerPhone(value) {
+  const digits = String(value || '').replace(/\D/g, '');
+  if (digits.length === 10) return digits;
+  if (digits.length > 10) return digits.slice(-10);
+  return '';
+}
+
 module.exports = async (req, res) => {
   if (!requireMethod(req, res, 'POST')) return;
 
@@ -104,7 +111,13 @@ module.exports = async (req, res) => {
     return sendError(res, error.statusCode || 400, error.message || 'A valid return URL could not be prepared for checkout.');
   }
   const orderId = `lexorium-${checkoutPlan.id}-${Date.now()}`;
-  const customerPhone = String(process.env.CASHFREE_DEFAULT_PHONE || '9999999999').replace(/\D/g, '').slice(-10) || '9999999999';
+  const customerPhone = normalizeCustomerPhone(body.customerPhone || body.phone || user.phone || '');
+  if (!customerPhone) {
+    return sendError(res, 400, 'Enter a valid 10-digit mobile number to continue checkout.');
+  }
+  if (updateUserProfile && customerPhone !== String(user.phone || '')) {
+    await updateUserProfile(user.uid, { phone: customerPhone }).catch(() => null);
+  }
   const cashfreeCustomerId = toCashfreeCustomerId(user.uid);
 
   const upstream = await fetch(`${cashfree.baseUrl}/orders`, {
@@ -144,6 +157,7 @@ module.exports = async (req, res) => {
     status: 'initiated',
     amountPaise: checkoutPlan.pricePaise,
     currency: data.order_currency || 'INR',
+    customerPhone,
     raw: data,
   }).catch(() => null);
 
@@ -159,6 +173,7 @@ module.exports = async (req, res) => {
     profile: {
       name: user.name,
       email: user.email,
+      phone: customerPhone,
     },
   });
 };

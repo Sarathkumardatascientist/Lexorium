@@ -49,6 +49,7 @@ module.exports = async (req, res) => {
       uid: user.uid,
       persona: user.persona,
       primaryUseCase: user.primaryUseCase,
+      phone: user.phone || '',
       retention,
     },
   });

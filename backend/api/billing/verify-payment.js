@@ -88,6 +88,7 @@ module.exports = async (req, res) => {
     orderId,
     paymentId,
     customerId: data?.customer_details?.customer_id || user.uid,
+    customerPhone: data?.customer_details?.customer_phone || user.phone || '',
     status: data.order_status,
     eventType: 'payment_success',
     raw: data,

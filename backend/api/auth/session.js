@@ -112,6 +112,7 @@ module.exports = async (req, res) => {
       uid: user.uid,
       name: user.name,
       email: user.email,
+      phone: user.phone || '',
       avatar: user.avatar,
       picture: user.avatar,
       provider: session.provider || 'puter',

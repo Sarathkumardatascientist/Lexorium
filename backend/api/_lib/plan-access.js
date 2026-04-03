@@ -13,6 +13,12 @@ function parsePositiveInt(value, fallback) {
   return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
 }
 
+const FIXED_DAILY_LIMITS = {
+  free: 20,
+  pro: 150,
+  enterprise: 250,
+};
+
 function normalizePlanId(value) {
   const candidate = String(value || '').trim().toLowerCase();
   if (PLAN_ALIASES[candidate]) return PLAN_ALIASES[candidate];
@@ -44,7 +50,7 @@ const PLAN_CONFIG = {
     description: '20 legal queries per day with standard legal responses, basic reasoning, and community-level access for everyday legal clarity.',
     shortDescription: 'Community legal access',
     routeTier: 'free',
-    dailyLimit: parsePositiveInt(process.env.FREE_DAILY_LIMIT, 20),
+    dailyLimit: FIXED_DAILY_LIMITS.free,
     pricePaise: 0,
     priceDisplay: 'INR 0 / month',
     upgradeTarget: 'pro',
@@ -75,7 +81,7 @@ const PLAN_CONFIG = {
     description: '150 legal queries per day with predictive risk scoring, advanced legal reasoning, contract drafting tools, priority response speed, and structured legal analysis.',
     shortDescription: 'Premium legal intelligence',
     routeTier: 'pro',
-    dailyLimit: parsePositiveInt(process.env.PRO_DAILY_LIMIT, 150),
+    dailyLimit: FIXED_DAILY_LIMITS.pro,
     pricePaise: parsePositiveInt(process.env.PRO_PLAN_PRICE_PAISE, 89900),
     priceDisplay: 'INR 899 / month',
     priceNote: '+ applicable charges',
@@ -107,7 +113,7 @@ const PLAN_CONFIG = {
     description: 'High-priority usage capacity, top-tier models, fastest response priority, advanced legal drafting, structured case-law analysis, bulk query handling, and priority support.',
     shortDescription: 'Enterprise legal intelligence',
     routeTier: 'enterprise',
-    dailyLimit: parsePositiveInt(process.env.ENTERPRISE_DAILY_LIMIT, 100000),
+    dailyLimit: FIXED_DAILY_LIMITS.enterprise,
     pricePaise: 0,
     priceDisplay: 'Contact sales',
     upgradeTarget: 'enterprise',
