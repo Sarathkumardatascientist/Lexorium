@@ -3349,7 +3349,7 @@ footer {
     return Boolean(window.puter?.auth?.signIn && window.puter?.auth?.getUser);
   }
 
-  function beginInteractivePuterSignIn(forceFresh = false) {
+  function beginInteractivePuterSignIn(forceFresh = false, forcePrompt = false) {
     if (forceFresh) {
       try {
         if (window.puter?.auth?.signOut) {
@@ -3360,10 +3360,14 @@ footer {
       }
       clearStoredPuterArtifacts();
     }
+    if (forcePrompt && window.puter?.ui?.authenticateWithPuter) {
+      return Promise.resolve(window.puter.ui.authenticateWithPuter())
+        .then(() => window.puter.auth.signIn());
+    }
     return window.puter.auth.signIn();
   }
 
-  async function ensureSessionFromPuter(interactive, forceFresh = false) {
+  async function ensureSessionFromPuter(interactive, forceFresh = false, forcePrompt = false) {
     if (!window.puter?.auth?.signIn || !window.puter?.auth?.getUser) {
       await waitForPuterAuth(interactive ? 5200 : 2400);
     }
@@ -3371,9 +3375,9 @@ footer {
       throw new Error('Secure sign-in is still loading. Please try again.');
     }
 
-    let token = getStoredPuterToken();
+    let token = forceFresh ? '' : getStoredPuterToken();
     if (!token && interactive) {
-      const signInResult = await beginInteractivePuterSignIn(forceFresh);
+      const signInResult = await beginInteractivePuterSignIn(forceFresh, forcePrompt || forceFresh);
       token = String(signInResult?.token || '').trim();
       if (token) setStoredPuterToken(token);
     }
@@ -3400,7 +3404,7 @@ footer {
     if (event) event.preventDefault();
     showSigninMessage('Signing you in...');
     try {
-      const profile = await ensureSessionFromPuter(true);
+      const profile = await ensureSessionFromPuter(true, false, true);
       if (!profile) {
         throw new Error('Sign-in did not complete.');
       }
@@ -3414,7 +3418,7 @@ footer {
     if (event) event.preventDefault();
     showSigninMessage('Opening secure sign-in for another account...');
     try {
-      const profile = await ensureSessionFromPuter(true, true);
+      const profile = await ensureSessionFromPuter(true, true, true);
       if (!profile) {
         throw new Error('A different account was not selected.');
       }
@@ -3440,7 +3444,7 @@ footer {
 
     let profile = await getSessionProfile().catch(() => null);
     if (!profile) {
-      profile = await ensureSessionFromPuter(true).catch(() => null);
+      profile = await ensureSessionFromPuter(true, false, true).catch(() => null);
     }
     if (!profile) {
       window.location.href = '#signin';

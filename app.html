@@ -4254,7 +4254,7 @@
     await wait(180);
   }
 
-  function beginInteractivePuterSignIn(forceFresh = false) {
+  function beginInteractivePuterSignIn(forceFresh = false, forcePrompt = false) {
     if (forceFresh) {
       try {
         if (window.puter?.auth?.signOut) {
@@ -4265,19 +4265,23 @@
       }
       clearStoredPuterArtifacts();
     }
+    if (forcePrompt && window.puter?.ui?.authenticateWithPuter) {
+      return Promise.resolve(window.puter.ui.authenticateWithPuter())
+        .then(() => window.puter.auth.signIn());
+    }
     return window.puter.auth.signIn();
   }
 
-  async function syncSessionPayloadWithPuter(interactive, forceFresh = false) {
+  async function syncSessionPayloadWithPuter(interactive, forceFresh = false, forcePrompt = false) {
     if (!window.puter?.auth?.signIn || !window.puter?.auth?.getUser) {
       await waitForPuterAuth(interactive ? 5200 : 2400);
     }
-    let token = getStoredPuterToken();
+    let token = forceFresh ? '' : getStoredPuterToken();
     if (!token && interactive) {
       if (!window.puter?.auth?.signIn) {
         throw new Error('Secure sign-in is still loading. Please try again.');
       }
-      const signInResult = await beginInteractivePuterSignIn(forceFresh);
+      const signInResult = await beginInteractivePuterSignIn(forceFresh, forcePrompt || forceFresh);
       token = String(signInResult?.token || '').trim();
       if (token) setStoredPuterToken(token);
     }
@@ -4309,8 +4313,8 @@
     return payload || null;
   }
 
-  async function syncSessionWithPuter(interactive, forceFresh = false) {
-    const payload = await syncSessionPayloadWithPuter(interactive, forceFresh);
+  async function syncSessionWithPuter(interactive, forceFresh = false, forcePrompt = false) {
+    const payload = await syncSessionPayloadWithPuter(interactive, forceFresh, forcePrompt);
     return payload?.profile || null;
   }
 
@@ -5196,7 +5200,7 @@
   async function resumeWorkspaceSignIn() {
     hideError();
     try {
-      const profile = await syncSessionWithPuter(true);
+      const profile = await syncSessionWithPuter(true, false, true);
       if (!profile) {
         throw new Error('Sign-in did not complete.');
       }
@@ -5221,7 +5225,7 @@
     stopMessageSpeech();
     showToast('Opening secure sign-in for another account...');
     try {
-      const authPayload = await syncSessionPayloadWithPuter(true, true);
+      const authPayload = await syncSessionPayloadWithPuter(true, true, true);
       const profile = authPayload?.profile || null;
       if (!profile) {
         throw new Error('A different account was not selected.');
@@ -5330,10 +5334,6 @@
       if (!session?.profile) {
         await waitForPuterAuth(1800);
         await syncSessionWithPuter(false).catch(() => null);
-        session = await fetchSessionProfile().catch(() => null);
-      }
-      if (!session?.profile) {
-        await syncSessionWithPuter(true).catch(() => null);
         session = await fetchSessionProfile().catch(() => null);
       }
     }
