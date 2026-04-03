@@ -3032,7 +3032,7 @@ footer {
     showSigninMessage('Checking your Lexorium workspace...');
     try {
       let profile = await getSessionProfile().catch(() => null);
-      if (!profile && getStoredPuterToken()) {
+      if (!profile) {
         profile = await ensureSessionFromPuter(false).catch(() => null);
       }
       if (profile) {
@@ -3279,6 +3279,16 @@ footer {
     }
   }
 
+  async function getLivePuterProfile() {
+    if (!window.puter?.auth?.getUser) return null;
+    try {
+      const profile = await window.puter.auth.getUser();
+      return profile && typeof profile === 'object' ? profile : null;
+    } catch (_error) {
+      return null;
+    }
+  }
+
   async function ensureSessionFromPuter(interactive) {
     if (!window.puter?.auth?.signIn) {
       throw new Error('Secure sign-in is still loading. Please try again.');
@@ -3290,7 +3300,7 @@ footer {
       token = String(signInResult?.token || '').trim();
       if (token) setStoredPuterToken(token);
     }
-    const liveProfile = await window.puter.auth.getUser().catch(() => null);
+    const liveProfile = await getLivePuterProfile();
     if (!token && !liveProfile) return null;
 
     const data = await fetchJson(SESSION_URL, {
@@ -3425,7 +3435,7 @@ footer {
     try {
       await loadAuthConfig();
       let profile = await getSessionProfile().catch(() => null);
-      if (!profile && getStoredPuterToken()) {
+      if (!profile) {
         profile = await ensureSessionFromPuter(false).catch(() => null);
       }
       updateSigninStatus(profile);

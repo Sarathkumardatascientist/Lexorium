@@ -3979,6 +3979,16 @@
     }
   }
 
+  async function getLivePuterProfile() {
+    if (!window.puter?.auth?.getUser) return null;
+    try {
+      const profile = await window.puter.auth.getUser();
+      return profile && typeof profile === 'object' ? profile : null;
+    } catch (_error) {
+      return null;
+    }
+  }
+
   function hasAndroidNativeBridge() {
     return typeof window !== 'undefined'
       && typeof window.LexoriumAndroidBridge !== 'undefined'
@@ -4173,7 +4183,7 @@
       token = String(signInResult?.token || '').trim();
       if (token) setStoredPuterToken(token);
     }
-    const liveProfile = await window.puter.auth.getUser().catch(() => null);
+    const liveProfile = await getLivePuterProfile();
     if (!token && !liveProfile) return null;
 
     const response = await fetch(SESSION_API_URL, {
@@ -5049,7 +5059,7 @@
       showError(session.message);
       return false;
     }
-    if (!session?.profile && getStoredPuterToken()) {
+    if (!session?.profile) {
       await syncSessionWithPuter(false).catch(() => null);
       session = await fetchSessionProfile().catch(() => null);
     }
@@ -5893,11 +5903,53 @@
     messageEl.insertAdjacentHTML('beforeend', buildMessageActions('assistant', true));
   }
 
+  function isShareCancelled(error) {
+    const name = String(error?.name || '').toLowerCase();
+    const message = String(error?.message || '').toLowerCase();
+    return name === 'aborterror'
+      || message.includes('abort')
+      || message.includes('cancel')
+      || message.includes('dismiss');
+  }
+
+  async function writeTextToClipboard(text) {
+    if (navigator.clipboard?.writeText) {
+      try {
+        await navigator.clipboard.writeText(text);
+        return true;
+      } catch (_error) {
+        // Fall through to the textarea fallback.
+      }
+    }
+
+    const helper = document.createElement('textarea');
+    helper.value = text;
+    helper.setAttribute('readonly', '');
+    helper.style.position = 'fixed';
+    helper.style.top = '-9999px';
+    helper.style.left = '-9999px';
+    helper.style.opacity = '0';
+    document.body.appendChild(helper);
+    helper.focus();
+    helper.select();
+    helper.setSelectionRange(0, helper.value.length);
+    let copied = false;
+    try {
+      copied = document.execCommand('copy');
+    } finally {
+      helper.remove();
+    }
+    if (!copied) {
+      throw new Error('Clipboard is not available.');
+    }
+    return true;
+  }
+
   async function copyMessageText(button) {
     const text = getMessageText(button.closest('.msg'));
     if (!text) return;
     try {
-      await navigator.clipboard.writeText(text);
+      await writeTextToClipboard(text);
       showToast('Copied');
     } catch (err) {
       showError('Copy failed in this browser.');
@@ -5910,11 +5962,13 @@
     try {
       if (navigator.share) {
         await navigator.share({ text });
+        showToast('Shared');
         return;
       }
-      await navigator.clipboard.writeText(text);
+      await writeTextToClipboard(text);
       showToast('Copied for sharing');
     } catch (err) {
+      if (isShareCancelled(err)) return;
       showError('Share failed in this browser.');
     }
   }
@@ -5955,7 +6009,10 @@
 
   function downloadMessageDoc(button) {
     const text = getMessageText(button.closest('.msg'));
-    if (!text) return;
+    if (!text) {
+      showError('There is no answer text to export yet.');
+      return;
+    }
     const title = extractTitleFromText(text);
     const html = buildStructuredDocumentHtml(text, title);
     downloadBlob(`${safeFileName(title)}.docx`, new Blob([html], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' }));
@@ -5964,7 +6021,14 @@
 
   function downloadMessagePdf(button) {
     const text = getMessageText(button.closest('.msg'));
-    if (!text || !window.jspdf?.jsPDF) return;
+    if (!text) {
+      showError('There is no answer text to export yet.');
+      return;
+    }
+    if (!window.jspdf?.jsPDF) {
+      showError('PDF export is still loading. Please try again.');
+      return;
+    }
     const title = extractTitleFromText(text);
     const pdf = new window.jspdf.jsPDF({ unit: 'pt', format: 'a4' });
     const lines = pdf.splitTextToSize(buildStructuredExportText(text), 520);
