@@ -27,7 +27,7 @@ const TASK_LABELS = {
   translation_of_legal_text: 'Legal translation',
 };
 
-const PRO_UPGRADE_HINT = 'Upgrade to Pro for 120 legal queries per day, predictive risk scoring, advanced legal reasoning, contract drafting tools, priority response speed, and structured legal analysis.';
+const PRO_UPGRADE_HINT = 'Upgrade to Pro for 150 legal queries per day, predictive risk scoring, advanced legal reasoning, contract drafting tools, priority response speed, and structured legal analysis.';
 
 const PERSONA_PROMPTS = {
   law_student: [

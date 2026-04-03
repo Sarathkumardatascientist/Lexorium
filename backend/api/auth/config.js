@@ -31,7 +31,7 @@ module.exports = async (_req, res) => {
     razorpayEnabled: paymentEnabled,
     razorpayKeyId: paymentAppId,
     freeDailyLimit: Number.parseInt(process.env.FREE_DAILY_LIMIT || '20', 10) || 20,
-    proDailyLimit: Number.parseInt(process.env.PRO_DAILY_LIMIT || '120', 10) || 120,
+    proDailyLimit: Number.parseInt(process.env.PRO_DAILY_LIMIT || '150', 10) || 150,
     enterpriseDailyLimit: Number.parseInt(process.env.ENTERPRISE_DAILY_LIMIT || '100000', 10) || 100000,
     proPlanPricePaise: Number.parseInt(process.env.PRO_PLAN_PRICE_PAISE || '89900', 10) || 89900,
     planDurationDays: Number.parseInt(process.env.PLAN_DURATION_DAYS || process.env.PRO_PLAN_DURATION_DAYS || '30', 10) || 30,

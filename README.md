@@ -36,7 +36,7 @@ npm run dev
 ## Plans
 
 - Free: 20 legal queries per day with standard legal responses, basic reasoning, and community-level access.
-- Pro: INR 899/month (+ applicable charges), 120 legal queries per day, advanced legal reasoning, contract drafting tools, priority response speed, structured legal analysis, and premium tools.
+- Pro: INR 899/month (+ applicable charges), 150 legal queries per day, advanced legal reasoning, contract drafting tools, priority response speed, structured legal analysis, and premium tools.
 - Enterprise: custom commercial plan with high-priority usage capacity, top-tier model access, structured case-law workflows, bulk handling, and priority support.
 
 ## Routing
