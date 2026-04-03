@@ -2867,6 +2867,9 @@ footer {
   let planCatalog = [];
   let deferredInstallPrompt = null;
   const COOKIE_CONSENT_KEY = 'lexorium.cookie.consent.v1';
+  const CLIENT_BUILD_VERSION = '2026-04-03-auth-refresh-1';
+  const CLIENT_BUILD_STORAGE_KEY = 'lexorium.client.build';
+  const CLIENT_REFRESH_FLAG = 'lexorium.client.refreshing';
   const DEPLOYMENT_BACKEND_ERROR = 'This deployment is frontend-only right now. Lexorium needs live backend API routes under /api/* for sign-in, chat, billing, and history. Deploy it on a full-stack host like Vercel, Render, or Railway instead of GitHub Pages or other static-only hosting.';
   const signinButton = document.getElementById('puterSignInBtn');
   const signinFormEl = document.querySelector('.signin-section .signin-form');
@@ -3308,6 +3311,49 @@ footer {
     setStoredPuterToken('');
   }
 
+  async function refreshClientShellIfNeeded() {
+    let storedVersion = '';
+    let refreshFlag = '';
+    try {
+      storedVersion = localStorage.getItem(CLIENT_BUILD_STORAGE_KEY) || '';
+      refreshFlag = sessionStorage.getItem(CLIENT_REFRESH_FLAG) || '';
+    } catch (_error) {
+      storedVersion = '';
+      refreshFlag = '';
+    }
+    if (storedVersion === CLIENT_BUILD_VERSION || refreshFlag === CLIENT_BUILD_VERSION) return false;
+
+    try {
+      sessionStorage.setItem(CLIENT_REFRESH_FLAG, CLIENT_BUILD_VERSION);
+      localStorage.setItem(CLIENT_BUILD_STORAGE_KEY, CLIENT_BUILD_VERSION);
+    } catch (_error) {
+      // Ignore storage failures and continue with cache cleanup.
+    }
+
+    clearStoredPuterArtifacts();
+
+    if ('serviceWorker' in navigator) {
+      try {
+        const registrations = await navigator.serviceWorker.getRegistrations();
+        await Promise.all(registrations.map((registration) => registration.unregister()));
+      } catch (_error) {
+        // Ignore service worker cleanup failures.
+      }
+    }
+
+    if (window.caches?.keys) {
+      try {
+        const keys = await window.caches.keys();
+        await Promise.all(keys.filter((key) => key.startsWith('lexorium-shell-')).map((key) => window.caches.delete(key)));
+      } catch (_error) {
+        // Ignore cache cleanup failures.
+      }
+    }
+
+    window.location.reload();
+    return true;
+  }
+
   function isGenericAccountName(value) {
     return /^lexorium user$/i.test(String(value || '').trim());
   }
@@ -3515,6 +3561,8 @@ footer {
 
   async function bootstrapAuth() {
     try {
+      const refreshed = await refreshClientShellIfNeeded();
+      if (refreshed) return;
       await loadAuthConfig();
       let profile = await getSessionProfile().catch(() => null);
       if (!profile) {

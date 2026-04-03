@@ -3876,6 +3876,9 @@
   const PERSONALIZATION_STORAGE = 'lexorium_personalization_v1';
   const SIDEBAR_PREFERENCE_STORAGE = 'lexorium_sidebar_preference_v1';
   const LEXORIUM_PUTER_TOKEN_STORAGE_KEY = 'lexorium.puter.token';
+  const CLIENT_BUILD_VERSION = '2026-04-03-auth-refresh-1';
+  const CLIENT_BUILD_STORAGE_KEY = 'lexorium.client.build';
+  const CLIENT_REFRESH_FLAG = 'lexorium.client.refreshing';
   const DEPLOYMENT_BACKEND_ERROR = 'This deployment is missing live backend API support. Lexorium needs working /api/* routes for sign-in, chat, billing, and history. Deploy it on a full-stack host like Vercel, Render, or Railway instead of GitHub Pages or other static-only hosting.';
   const ROUTE_RANK = { free: 0, pro: 1, enterprise: 2 };
   const NEXT_PLAN_BY_TIER = { free: 'pro', pro: 'enterprise', enterprise: 'enterprise' };
@@ -4014,6 +4017,49 @@
     clearStorage(window.localStorage);
     clearStorage(window.sessionStorage);
     setStoredPuterToken('');
+  }
+
+  async function refreshClientShellIfNeeded() {
+    let storedVersion = '';
+    let refreshFlag = '';
+    try {
+      storedVersion = localStorage.getItem(CLIENT_BUILD_STORAGE_KEY) || '';
+      refreshFlag = sessionStorage.getItem(CLIENT_REFRESH_FLAG) || '';
+    } catch (_error) {
+      storedVersion = '';
+      refreshFlag = '';
+    }
+    if (storedVersion === CLIENT_BUILD_VERSION || refreshFlag === CLIENT_BUILD_VERSION) return false;
+
+    try {
+      sessionStorage.setItem(CLIENT_REFRESH_FLAG, CLIENT_BUILD_VERSION);
+      localStorage.setItem(CLIENT_BUILD_STORAGE_KEY, CLIENT_BUILD_VERSION);
+    } catch (_error) {
+      // Ignore storage failures and continue with cache cleanup.
+    }
+
+    clearStoredPuterArtifacts();
+
+    if ('serviceWorker' in navigator) {
+      try {
+        const registrations = await navigator.serviceWorker.getRegistrations();
+        await Promise.all(registrations.map((registration) => registration.unregister()));
+      } catch (_error) {
+        // Ignore service worker cleanup failures.
+      }
+    }
+
+    if (window.caches?.keys) {
+      try {
+        const keys = await window.caches.keys();
+        await Promise.all(keys.filter((key) => key.startsWith('lexorium-shell-')).map((key) => window.caches.delete(key)));
+      } catch (_error) {
+        // Ignore cache cleanup failures.
+      }
+    }
+
+    window.location.reload();
+    return true;
   }
 
   async function getLivePuterProfile() {
@@ -7628,6 +7674,8 @@
   }
 
   async function bootstrapApp() {
+    const refreshed = await refreshClientShellIfNeeded();
+    if (refreshed) return;
     registerInstallSupport();
     await fetchAuthConfig();
     const authenticated = await renderAuthProfile();
