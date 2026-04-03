@@ -1034,6 +1034,22 @@
     border-bottom: none;
   }
 
+  .settings-row-stack {
+    display: block;
+  }
+
+  .settings-row-stack .settings-row-copy {
+    max-width: 100%;
+  }
+
+  .settings-row-stack .settings-row-desc {
+    max-width: 100%;
+  }
+
+  .settings-row-stack .settings-textarea {
+    width: 100%;
+  }
+
   .settings-row-copy {
     min-width: 0;
     flex: 1;
@@ -1126,7 +1142,7 @@
   .settings-textarea {
     width: 100%;
     min-height: 108px;
-    margin-top: 12px;
+    margin-top: 14px;
     border: 1px solid rgba(255,255,255,0.1);
     border-radius: 14px;
     background: rgba(255,255,255,0.04);
@@ -3405,12 +3421,7 @@
   <div class="modal-overlay" id="upgradeModal">
     <div class="modal">
       <div class="modal-title" id="upgradeModalTitle">Upgrade to Lexorium</div>
-      <div class="upgrade-modal-copy" id="upgradeModalCopy">Upgrade for 120 legal queries per day, predictive risk scoring, deeper legal research, contract drafting tools, priority response speed, and structured legal analysis.</div>
-      <div class="upgrade-modal-points" id="upgradeModalPoints">
-        <div>120 legal queries per day</div>
-        <div>Predictive risk scoring, advanced legal reasoning, and contract drafting tools</div>
-        <div>Priority response speed, deeper research, and structured legal analysis</div>
-      </div>
+      <div class="upgrade-modal-copy" id="upgradeModalCopy">Upgrade this account to Lexorium Pro.</div>
       <div class="modal-actions">
         <button class="modal-btn" onclick="closeUpgradeModal()">Not now</button>
         <button class="modal-btn primary" id="upgradeModalAction" onclick="startUpgradeFlow()">Upgrade</button>
@@ -3534,7 +3545,7 @@
               </select>
             </div>
             <div class="settings-group-title">Custom instructions</div>
-            <div class="settings-row" style="display:block">
+            <div class="settings-row settings-row-stack">
               <div class="settings-row-copy">
                 <div class="settings-row-title">Additional behavior, style, and tone preferences</div>
                 <div class="settings-row-desc">These instructions shape presentation only. Lexorium will still stay legal-only and retain the required legal response structure.</div>
@@ -4534,7 +4545,7 @@
     }
     openUpgradeModal({
       title: `Upgrade to Lexorium ${formatPlanName(currentPlan?.upgradeTarget || 'pro')}`,
-      message: 'Upgrade this account for 120 legal queries per day, predictive risk scoring, deeper legal research, contract drafting tools, voice analysis, priority response speed, and structured legal analysis.',
+      message: 'Upgrade this account to Lexorium Pro.',
       reason: 'sidebar_upgrade',
       planId: currentPlan?.upgradeTarget || 'pro',
     });
@@ -5092,7 +5103,7 @@
   function openUpgradeModal(options) {
     pendingUpgradePlan = getUpgradeTargetPlan(currentPlan.id, options?.planId || options?.requiredPlan || 'pro');
     document.getElementById('upgradeModalTitle').textContent = options?.title || `Upgrade to Lexorium ${formatPlanName(pendingUpgradePlan)}`;
-    document.getElementById('upgradeModalCopy').textContent = options?.message || 'Upgrade for 120 legal queries per day, predictive risk scoring, deeper legal research, contract drafting tools, priority response speed, and structured legal analysis.';
+    document.getElementById('upgradeModalCopy').textContent = options?.message || 'Upgrade this account to Lexorium Pro.';
     const action = document.getElementById('upgradeModalAction');
     action.textContent = options?.ctaLabel || `Upgrade to ${formatPlanName(pendingUpgradePlan)}`;
     document.getElementById('upgradeModal').classList.add('open');
@@ -5342,7 +5353,7 @@
     if (premiumMode && !currentPlan?.features?.[featureKey]) {
       openUpgradeModal({
         title: featureMap[mode],
-        message: 'Upgrade to Lexorium Pro for 120 legal queries per day, predictive risk scoring, deeper legal research, contract drafting tools, priority response speed, and structured legal analysis.',
+        message: 'Upgrade this account to Lexorium Pro.',
         reason: 'feature_gate',
         planId: currentPlan.id === 'free' ? 'pro' : 'enterprise',
       });
@@ -6628,15 +6639,6 @@
 
   function buildThinkingHtml(attachments) {
     const hasAttachments = Array.isArray(attachments) && attachments.length > 0;
-    const notificationCta = supportsAnswerNotifications()
-      ? `
-        <div class="thinking-actions">
-          <button class="thinking-action-btn${wantsAnswerNotifications() ? ' is-on' : ''}" type="button" onclick="promptForAnswerNotifications()">
-            ${wantsAnswerNotifications() ? 'Answer notifications on' : 'Notify me when ready'}
-          </button>
-          <span class="thinking-action-note">${wantsAnswerNotifications() ? 'Lexorium will alert you when this answer is ready while the tab is in the background.' : 'Turn on browser notifications to be alerted when the answer is complete.'}</span>
-        </div>`
-      : '';
     return `
       <div class="analysis-thinking">
         <div class="thinking-card">
@@ -6647,7 +6649,6 @@
             <div class="thinking-dots"><span class="thinking-dot"></span><span class="thinking-dot"></span><span class="thinking-dot"></span></div>
           </div>
         </div>
-        ${notificationCta}
         ${hasAttachments ? `<div class="analysis-thinking-copy">Your uploaded files and images are being analysed inside this response flow before the final answer is returned.</div>${buildAttachmentCardsHtml(attachments, 'analysis')}` : ''}
       </div>`;
   }
@@ -7315,7 +7316,7 @@
         const limitUpgradePlan = 'pro';
         openUpgradeModal({
           title: 'Daily plan limit reached.',
-          message: 'Upgrade to Lexorium Pro for 120 legal queries per day, predictive risk scoring, deeper legal research, contract drafting tools, priority response speed, and structured legal analysis.',
+          message: 'Upgrade this account to Lexorium Pro.',
           reason: 'limit_reached',
           planId: limitUpgradePlan,
           ctaLabel: 'Upgrade to Pro',
@@ -7329,7 +7330,7 @@
         syncVoiceUi();
         openUpgradeModal({
           title: err.payload?.title || `Upgrade to Lexorium ${formatPlanName(targetPlan)}`,
-          message: err.message || err.payload?.message || `Upgrade to Lexorium ${formatPlanName(targetPlan)} for 120 legal queries per day, predictive risk scoring, deeper legal research, contract drafting tools, priority response speed, and structured legal analysis.`,
+          message: err.message || err.payload?.message || `Upgrade this account to Lexorium ${formatPlanName(targetPlan)}.`,
           reason: 'upgrade_required',
           planId: targetPlan,
         });

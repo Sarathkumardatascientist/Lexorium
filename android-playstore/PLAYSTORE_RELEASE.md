@@ -2,6 +2,14 @@
 
 This Android shell wraps the live Lexorium deployment at `https://lexoriumai.com`.
 
+Current release metadata:
+
+- Version code: `2`
+- Version name: `1.0.1`
+- Application ID: `ai.sprezzatura.lexorium`
+- Base URL: `https://lexoriumai.com`
+- Default Play subscription product: `lexorium_pro_monthly`
+
 ## Before building
 
 1. Open `android-playstore/` in Android Studio.
@@ -42,10 +50,9 @@ Use the generated `.aab` for:
 
 Package details:
 
-- Application ID: `ai.sprezzatura.lexorium`
 - Target SDK: `35`
-- Base URL: `https://lexoriumai.com`
-- Default Play subscription product: `lexorium_pro_monthly`
+- Billing flow: Google Play Billing for `lexorium_pro_monthly`
+- Website / privacy policy host: `https://lexoriumai.com`
 
 ## Backend environment for Play Billing
 
@@ -56,3 +63,13 @@ Set these on the deployed backend before testing Android upgrades:
 - `GOOGLE_PLAY_SERVICE_ACCOUNT_PRIVATE_KEY_ID` (optional)
 - `GOOGLE_PLAY_PACKAGE_NAME=ai.sprezzatura.lexorium`
 - `GOOGLE_PLAY_PRO_SUBSCRIPTION_ID=lexorium_pro_monthly`
+
+## Final upload checklist
+
+Before uploading to Google Play:
+
+1. Build a fresh signed `.aab` from `android-playstore`.
+2. Upload that bundle to Internal testing first.
+3. Ensure the Vercel backend has the Google Play Billing environment variables above.
+4. Ensure the Play Console subscription `lexorium_pro_monthly` is created and active.
+5. Use the live privacy policy and terms URLs from `lexoriumai.com`.
