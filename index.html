@@ -3349,7 +3349,7 @@ footer {
     return Boolean(window.puter?.auth?.signIn && window.puter?.auth?.getUser);
   }
 
-  function beginInteractivePuterSignIn(forceFresh = false, forcePrompt = false) {
+  function beginInteractivePuterSignIn(forceFresh = false) {
     if (forceFresh) {
       try {
         if (window.puter?.auth?.signOut) {
@@ -3360,14 +3360,10 @@ footer {
       }
       clearStoredPuterArtifacts();
     }
-    if (forcePrompt && window.puter?.ui?.authenticateWithPuter) {
-      return Promise.resolve(window.puter.ui.authenticateWithPuter())
-        .then(() => window.puter.auth.signIn());
-    }
     return window.puter.auth.signIn();
   }
 
-  async function ensureSessionFromPuter(interactive, forceFresh = false, forcePrompt = false) {
+  async function ensureSessionFromPuter(interactive, forceFresh = false) {
     if (!window.puter?.auth?.signIn || !window.puter?.auth?.getUser) {
       await waitForPuterAuth(interactive ? 5200 : 2400);
     }
@@ -3377,7 +3373,7 @@ footer {
 
     let token = forceFresh ? '' : getStoredPuterToken();
     if (!token && interactive) {
-      const signInResult = await beginInteractivePuterSignIn(forceFresh, forcePrompt || forceFresh);
+      const signInResult = await beginInteractivePuterSignIn(forceFresh);
       token = String(signInResult?.token || '').trim();
       if (token) setStoredPuterToken(token);
     }
@@ -3404,7 +3400,7 @@ footer {
     if (event) event.preventDefault();
     showSigninMessage('Signing you in...');
     try {
-      const profile = await ensureSessionFromPuter(true, false, true);
+      const profile = await ensureSessionFromPuter(true);
       if (!profile) {
         throw new Error('Sign-in did not complete.');
       }
@@ -3418,9 +3414,14 @@ footer {
     if (event) event.preventDefault();
     showSigninMessage('Opening secure sign-in for another account...');
     try {
-      const profile = await ensureSessionFromPuter(true, true, true);
+      const currentProfile = await getSessionProfile().catch(() => null);
+      const previousUid = String(currentProfile?.uid || '').trim();
+      const profile = await ensureSessionFromPuter(true, true);
       if (!profile) {
         throw new Error('A different account was not selected.');
+      }
+      if (previousUid && String(profile.uid || '').trim() === previousUid) {
+        throw new Error('Puter is still using the same browser account. To use another Puter account, sign out of that Puter account in the browser or use a separate browser profile.');
       }
       redirectToWorkspace(profile);
     } catch (error) {
@@ -3444,7 +3445,7 @@ footer {
 
     let profile = await getSessionProfile().catch(() => null);
     if (!profile) {
-      profile = await ensureSessionFromPuter(true, false, true).catch(() => null);
+      profile = await ensureSessionFromPuter(true).catch(() => null);
     }
     if (!profile) {
       window.location.href = '#signin';

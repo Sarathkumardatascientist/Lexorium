@@ -4254,7 +4254,7 @@
     await wait(180);
   }
 
-  function beginInteractivePuterSignIn(forceFresh = false, forcePrompt = false) {
+  function beginInteractivePuterSignIn(forceFresh = false) {
     if (forceFresh) {
       try {
         if (window.puter?.auth?.signOut) {
@@ -4265,14 +4265,10 @@
       }
       clearStoredPuterArtifacts();
     }
-    if (forcePrompt && window.puter?.ui?.authenticateWithPuter) {
-      return Promise.resolve(window.puter.ui.authenticateWithPuter())
-        .then(() => window.puter.auth.signIn());
-    }
     return window.puter.auth.signIn();
   }
 
-  async function syncSessionPayloadWithPuter(interactive, forceFresh = false, forcePrompt = false) {
+  async function syncSessionPayloadWithPuter(interactive, forceFresh = false) {
     if (!window.puter?.auth?.signIn || !window.puter?.auth?.getUser) {
       await waitForPuterAuth(interactive ? 5200 : 2400);
     }
@@ -4281,7 +4277,7 @@
       if (!window.puter?.auth?.signIn) {
         throw new Error('Secure sign-in is still loading. Please try again.');
       }
-      const signInResult = await beginInteractivePuterSignIn(forceFresh, forcePrompt || forceFresh);
+      const signInResult = await beginInteractivePuterSignIn(forceFresh);
       token = String(signInResult?.token || '').trim();
       if (token) setStoredPuterToken(token);
     }
@@ -4313,8 +4309,8 @@
     return payload || null;
   }
 
-  async function syncSessionWithPuter(interactive, forceFresh = false, forcePrompt = false) {
-    const payload = await syncSessionPayloadWithPuter(interactive, forceFresh, forcePrompt);
+  async function syncSessionWithPuter(interactive, forceFresh = false) {
+    const payload = await syncSessionPayloadWithPuter(interactive, forceFresh);
     return payload?.profile || null;
   }
 
@@ -5200,7 +5196,7 @@
   async function resumeWorkspaceSignIn() {
     hideError();
     try {
-      const profile = await syncSessionWithPuter(true, false, true);
+      const profile = await syncSessionWithPuter(true);
       if (!profile) {
         throw new Error('Sign-in did not complete.');
       }
@@ -5225,10 +5221,14 @@
     stopMessageSpeech();
     showToast('Opening secure sign-in for another account...');
     try {
-      const authPayload = await syncSessionPayloadWithPuter(true, true, true);
+      const previousUid = String(currentUserUid || '').trim();
+      const authPayload = await syncSessionPayloadWithPuter(true, true);
       const profile = authPayload?.profile || null;
       if (!profile) {
         throw new Error('A different account was not selected.');
+      }
+      if (previousUid && String(profile.uid || '').trim() === previousUid) {
+        throw new Error('Puter is still using the same browser account. To use another Puter account, sign out of that Puter account in the browser or use a separate browser profile.');
       }
       let session = await fetchSessionProfile().catch(() => null);
       if (!session?.profile || session.profile.uid !== profile.uid) {
@@ -5248,7 +5248,9 @@
       inputEl.focus();
       showToast(`Switched to ${currentProfileName || profile.name || profile.email || 'your workspace'}`);
     } catch (error) {
-      renderSignedOutWorkspace(error.message || 'Use another account to continue.');
+      if (!currentUserUid) {
+        renderSignedOutWorkspace(error.message || 'Use another account to continue.');
+      }
       showError(error.message || 'Could not switch accounts right now.');
     }
   }
