@@ -35,6 +35,7 @@ function normalize(uid, data) {
     billingCustomerId: data.billingCustomerId || null,
     billingSubscriptionId: data.billingSubscriptionId || null,
     billingPaymentId: data.billingPaymentId || null,
+    lastCommercialSyncAt: data.lastCommercialSyncAt || null,
     dailyFreeUsageCount: Number(data.dailyFreeUsageCount || 0),
     dailyFreeUsageResetAt: data.dailyFreeUsageResetAt || nextReset(),
     totalMessages: Number(data.totalMessages || 0),
@@ -57,6 +58,12 @@ function normalize(uid, data) {
     longestStreak: Number(data.longestStreak || 0),
     daysActiveTotal: Number(data.daysActiveTotal || 0),
   };
+}
+
+function shouldSyncCommercialState(user) {
+  const lastSyncAt = Date.parse(user?.lastCommercialSyncAt || 0);
+  if (!Number.isFinite(lastSyncAt) || lastSyncAt <= 0) return true;
+  return (Date.now() - lastSyncAt) >= (6 * 60 * 60 * 1000);
 }
 
 function isExpiredPlan(user) {
@@ -223,6 +230,9 @@ async function getUser(uid) {
   if (Date.parse(user.dailyFreeUsageResetAt || 0) <= Date.now()) {
     updates.dailyFreeUsageCount = 0;
     updates.dailyFreeUsageResetAt = nextReset();
+  }
+  if (shouldSyncCommercialState(user)) {
+    updates.lastCommercialSyncAt = now();
   }
   if (Object.keys(updates).length) {
     updates.accountStatus = buildAccountStatus({ ...user, ...updates });

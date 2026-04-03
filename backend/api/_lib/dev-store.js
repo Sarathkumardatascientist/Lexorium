@@ -53,6 +53,7 @@ function normalize(uid, data) {
     billingCustomerId: data.billingCustomerId || null,
     billingSubscriptionId: data.billingSubscriptionId || null,
     billingPaymentId: data.billingPaymentId || null,
+    lastCommercialSyncAt: data.lastCommercialSyncAt || null,
     persona: normalizePersona(data.persona),
     primaryUseCase: data.primaryUseCase || '',
     onboardingCompletedAt: data.onboardingCompletedAt || null,
@@ -67,6 +68,12 @@ function normalize(uid, data) {
     longestStreak: Number(data.longestStreak || 0),
     daysActiveTotal: Number(data.daysActiveTotal || 0),
   };
+}
+
+function shouldSyncCommercialState(user) {
+  const lastSyncAt = Date.parse(user?.lastCommercialSyncAt || 0);
+  if (!Number.isFinite(lastSyncAt) || lastSyncAt <= 0) return true;
+  return (Date.now() - lastSyncAt) >= (6 * 60 * 60 * 1000);
 }
 
 function buildUsage(user) {
@@ -257,6 +264,10 @@ function refreshUser(state, uid) {
   if (Date.parse(user.dailyFreeUsageResetAt || 0) <= Date.now()) {
     user.dailyFreeUsageCount = 0;
     user.dailyFreeUsageResetAt = nextReset();
+    changed = true;
+  }
+  if (shouldSyncCommercialState(user)) {
+    user.lastCommercialSyncAt = now();
     changed = true;
   }
   if (changed) {
