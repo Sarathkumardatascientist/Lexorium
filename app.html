@@ -3380,6 +3380,10 @@
         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="5.2" r="2.7"/><path d="M2.8 13.5c.7-2.3 2.7-3.7 5.2-3.7s4.5 1.4 5.2 3.7"/></svg>
         <span>Profile</span>
       </button>
+      <button class="account-menu-item" onclick="switchWorkspaceAccount(); closeAccountMenu()">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11.8 2.2h2v2"/><path d="M13.8 2.2l-3 3"/><path d="M4.8 4.4a2.8 2.8 0 100 5.6h2.1"/><path d="M11.2 11.6a2.8 2.8 0 100-5.6H9.1"/></svg>
+        <span>Use another account</span>
+      </button>
       <button class="account-menu-item" onclick="openSettingsModal('general'); closeAccountMenu()">
         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="2.1"/><path d="M8 1.8v1.7"/><path d="M8 12.5v1.7"/><path d="M1.8 8h1.7"/><path d="M12.5 8h1.7"/><path d="M3.3 3.3l1.2 1.2"/><path d="M11.5 11.5l1.2 1.2"/><path d="M12.7 3.3l-1.2 1.2"/><path d="M4.5 11.5l-1.2 1.2"/></svg>
         <span>Settings</span>
@@ -3993,6 +3997,29 @@
     }
   }
 
+  function clearStoredPuterArtifacts() {
+    const clearStorage = (storage) => {
+      if (!storage) return;
+      const keys = [];
+      for (let index = 0; index < storage.length; index += 1) {
+        const key = storage.key(index);
+        if (key && (/^puter\./i.test(key) || /^lexorium\.puter\./i.test(key))) {
+          keys.push(key);
+        }
+      }
+      keys.forEach((key) => {
+        try {
+          storage.removeItem(key);
+        } catch (_error) {
+          // Ignore storage cleanup failures.
+        }
+      });
+    };
+    clearStorage(window.localStorage);
+    clearStorage(window.sessionStorage);
+    setStoredPuterToken('');
+  }
+
   async function getLivePuterProfile() {
     if (!window.puter?.auth?.getUser) return null;
     try {
@@ -4211,9 +4238,28 @@
     return message || `Request failed with status ${status}.`;
   }
 
-  async function syncSessionWithPuter(interactive) {
+  async function clearPuterSessionState() {
+    await fetch(LOGOUT_API_URL, {
+      method: 'POST',
+      credentials: 'same-origin',
+    }).catch(() => null);
+    try {
+      if (window.puter?.auth?.signOut) {
+        await Promise.resolve(window.puter.auth.signOut());
+      }
+    } catch (_error) {
+      // Ignore remote sign-out failures and continue with local cleanup.
+    }
+    clearStoredPuterArtifacts();
+    await wait(240);
+  }
+
+  async function syncSessionWithPuter(interactive, forceFresh = false) {
     if (!window.puter?.auth?.signIn || !window.puter?.auth?.getUser) {
       await waitForPuterAuth(interactive ? 5200 : 2400);
+    }
+    if (interactive && forceFresh) {
+      await clearPuterSessionState();
     }
     let token = getStoredPuterToken();
     if (!token && interactive) {
@@ -4911,7 +4957,10 @@
     if (onboardingCardEl) onboardingCardEl.style.display = 'none';
     if (starterHeadingEl) starterHeadingEl.textContent = 'Continue securely';
     if (starterPromptsEl) {
-      starterPromptsEl.innerHTML = '<button class="starter" type="button" onclick="resumeWorkspaceSignIn()">Sign in to Lexorium</button>';
+      starterPromptsEl.innerHTML = [
+        '<button class="starter" type="button" onclick="resumeWorkspaceSignIn()">Sign in to Lexorium</button>',
+        '<button class="starter" type="button" onclick="switchWorkspaceAccount()">Use another account</button>',
+      ].join('');
     }
     renderSidebarAccount();
   }
@@ -5120,6 +5169,31 @@
     }
   }
 
+  async function switchWorkspaceAccount() {
+    hideError();
+    stopVoiceCapture();
+    stopMessageSpeech();
+    showToast('Opening secure sign-in for another account...');
+    try {
+      const profile = await syncSessionWithPuter(true, true);
+      if (!profile) {
+        throw new Error('A different account was not selected.');
+      }
+      const authenticated = await renderAuthProfile();
+      if (!authenticated) {
+        throw new Error('Lexorium could not restore the new workspace yet.');
+      }
+      await syncPlanFromSession().catch(() => null);
+      await restoreChatState();
+      updateRoutingIndicator(lastRoutedModel, null);
+      inputEl.focus();
+      showToast(`Switched to ${currentProfileName || profile.name || profile.email || 'your workspace'}`);
+    } catch (error) {
+      renderSignedOutWorkspace(error.message || 'Use another account to continue.');
+      showError(error.message || 'Could not switch accounts right now.');
+    }
+  }
+
   function openUpgradeModal(options) {
     pendingUpgradePlan = getUpgradeTargetPlan(currentPlan.id, options?.planId || options?.requiredPlan || 'pro');
     document.getElementById('upgradeModalTitle').textContent = options?.title || `Upgrade to Lexorium ${formatPlanName(pendingUpgradePlan)}`;
@@ -5247,16 +5321,7 @@
     closeSettingsModal();
     sidebarHidden = false;
     applySidebarVisibility();
-    await fetch(LOGOUT_API_URL, {
-      method: 'POST',
-      credentials: 'same-origin',
-    }).catch(() => null);
-    try {
-      if (window.puter?.auth?.signOut) window.puter.auth.signOut();
-      setStoredPuterToken('');
-    } catch (_error) {
-      // Ignore token cleanup failures.
-    }
+    await clearPuterSessionState();
     if (shouldRedirect) window.location.href = 'index.html#signin';
   }
 

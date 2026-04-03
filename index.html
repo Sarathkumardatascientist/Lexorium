@@ -1405,6 +1405,15 @@ nav {
 }
 .oauth-btn svg { width:16px;height:16px; }
 
+.oauth-btn.secondary {
+  color: rgba(229,231,235,0.82);
+  background: rgba(255,255,255,0.04);
+}
+
+.oauth-btn.secondary:hover {
+  background: rgba(255,255,255,0.07);
+}
+
 .signin-note {
   margin-top: 20px;
   font-family: 'Jost', sans-serif;
@@ -2754,6 +2763,10 @@ footer {
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17a4 4 0 1 1 .8-7.92A5.5 5.5 0 0 1 18 11.5A3.5 3.5 0 1 1 17.5 18H8.2"/><path d="M12 9v8"/><path d="M9.5 14.5 12 17l2.5-2.5"/></svg>
         Sign in to Lexorium
       </button>
+      <button class="oauth-btn secondary" type="button" id="puterSwitchAccountBtn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3h4v4"/><path d="M21 3l-5 5"/><path d="M7 7a4 4 0 1 0 0 8h3"/><path d="M17 17a4 4 0 1 1 0-8h-3"/></svg>
+        Use another account
+      </button>
       <div class="signin-status" id="signinStatus"></div>
     </div>
     <p class="signin-note reveal">Already signed in? <a href="#signin" onclick="handleLaunchApp(event)">Open the app</a></p>
@@ -2844,6 +2857,7 @@ footer {
   const SESSION_URL = 'api/auth/session';
   const CREATE_ORDER_URL = 'api/billing/create-order';
   const ENTERPRISE_CONTACT_URL = 'api/contact/enterprise';
+  const LOGOUT_URL = 'api/auth/logout';
   const CHECKOUT_PHONE_STORAGE_KEY = 'lexorium.checkout.phone.v1';
   const LEXORIUM_PUTER_TOKEN_STORAGE_KEY = 'lexorium.puter.token';
   let contactSalesEmail = 'aisprezzatura@gmail.com';
@@ -2859,6 +2873,7 @@ footer {
   const COOKIE_CONSENT_KEY = 'lexorium.cookie.consent.v1';
   const DEPLOYMENT_BACKEND_ERROR = 'This deployment is frontend-only right now. Lexorium needs live backend API routes under /api/* for sign-in, chat, billing, and history. Deploy it on a full-stack host like Vercel, Render, or Railway instead of GitHub Pages or other static-only hosting.';
   const signinButton = document.getElementById('puterSignInBtn');
+  const switchAccountButton = document.getElementById('puterSwitchAccountBtn');
   const navLaunchBtn = document.getElementById('navLaunchBtn');
   const installWebAppBtn = document.getElementById('installWebAppBtn');
   const installWebAppNoteEl = document.getElementById('installWebAppNote');
@@ -3264,6 +3279,29 @@ footer {
     }
   }
 
+  function clearStoredPuterArtifacts() {
+    const clearStorage = (storage) => {
+      if (!storage) return;
+      const keys = [];
+      for (let index = 0; index < storage.length; index += 1) {
+        const key = storage.key(index);
+        if (key && (/^puter\./i.test(key) || /^lexorium\.puter\./i.test(key))) {
+          keys.push(key);
+        }
+      }
+      keys.forEach((key) => {
+        try {
+          storage.removeItem(key);
+        } catch (_error) {
+          // Ignore storage cleanup failures.
+        }
+      });
+    };
+    clearStorage(window.localStorage);
+    clearStorage(window.sessionStorage);
+    setStoredPuterToken('');
+  }
+
   function isGenericAccountName(value) {
     return /^lexorium user$/i.test(String(value || '').trim());
   }
@@ -3296,12 +3334,32 @@ footer {
     return Boolean(window.puter?.auth?.signIn && window.puter?.auth?.getUser);
   }
 
-  async function ensureSessionFromPuter(interactive) {
+  async function clearPuterSessionState() {
+    await fetch(LOGOUT_URL, {
+      method: 'POST',
+      credentials: 'same-origin',
+    }).catch(() => null);
+    try {
+      if (window.puter?.auth?.signOut) {
+        await Promise.resolve(window.puter.auth.signOut());
+      }
+    } catch (_error) {
+      // Ignore remote sign-out failures and continue with local cleanup.
+    }
+    clearStoredPuterArtifacts();
+    await new Promise((resolve) => window.setTimeout(resolve, 240));
+  }
+
+  async function ensureSessionFromPuter(interactive, forceFresh = false) {
     if (!window.puter?.auth?.signIn || !window.puter?.auth?.getUser) {
       await waitForPuterAuth(interactive ? 5200 : 2400);
     }
     if (!window.puter?.auth?.signIn) {
       throw new Error('Secure sign-in is still loading. Please try again.');
+    }
+
+    if (interactive && forceFresh) {
+      await clearPuterSessionState();
     }
 
     let token = getStoredPuterToken();
@@ -3341,6 +3399,21 @@ footer {
       window.location.replace(APP_URL);
     } catch (error) {
       showSigninMessage(error.message || 'Sign-in could not be completed.', true);
+    }
+  }
+
+  async function startPuterAccountSwitch(event) {
+    if (event) event.preventDefault();
+    showSigninMessage('Opening secure sign-in for another account...');
+    try {
+      const profile = await ensureSessionFromPuter(true, true);
+      if (!profile) {
+        throw new Error('A different account was not selected.');
+      }
+      updateSigninStatus(profile);
+      window.location.replace(APP_URL);
+    } catch (error) {
+      showSigninMessage(error.message || 'Could not switch accounts right now.', true);
     }
   }
 
@@ -3450,6 +3523,7 @@ footer {
   reveals.forEach(el => observer.observe(el));
 
   document.getElementById('puterSignInBtn')?.addEventListener('click', startPuterSignIn);
+  switchAccountButton?.addEventListener('click', startPuterAccountSwitch);
   document.getElementById('enterpriseLeadForm')?.addEventListener('submit', submitEnterpriseLead);
   document.getElementById('cookieAcceptAllBtn')?.addEventListener('click', () => saveCookieConsent('all'));
   document.getElementById('cookieEssentialBtn')?.addEventListener('click', () => saveCookieConsent('essential'));
