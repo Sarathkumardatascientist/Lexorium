@@ -3380,10 +3380,6 @@
         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="5.2" r="2.7"/><path d="M2.8 13.5c.7-2.3 2.7-3.7 5.2-3.7s4.5 1.4 5.2 3.7"/></svg>
         <span>Profile</span>
       </button>
-      <button class="account-menu-item" onclick="switchWorkspaceAccount(); closeAccountMenu()">
-        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11.8 2.2h2v2"/><path d="M13.8 2.2l-3 3"/><path d="M4.8 4.4a2.8 2.8 0 100 5.6h2.1"/><path d="M11.2 11.6a2.8 2.8 0 100-5.6H9.1"/></svg>
-        <span>Use another account</span>
-      </button>
       <button class="account-menu-item" onclick="openSettingsModal('general'); closeAccountMenu()">
         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="2.1"/><path d="M8 1.8v1.7"/><path d="M8 12.5v1.7"/><path d="M1.8 8h1.7"/><path d="M12.5 8h1.7"/><path d="M3.3 3.3l1.2 1.2"/><path d="M11.5 11.5l1.2 1.2"/><path d="M12.7 3.3l-1.2 1.2"/><path d="M4.5 11.5l-1.2 1.2"/></svg>
         <span>Settings</span>
@@ -5003,10 +4999,7 @@
     if (onboardingCardEl) onboardingCardEl.style.display = 'none';
     if (starterHeadingEl) starterHeadingEl.textContent = 'Continue securely';
     if (starterPromptsEl) {
-      starterPromptsEl.innerHTML = [
-        '<button class="starter" type="button" onclick="resumeWorkspaceSignIn()">Sign in to Lexorium</button>',
-        '<button class="starter" type="button" onclick="switchWorkspaceAccount()">Use another account</button>',
-      ].join('');
+      starterPromptsEl.innerHTML = '<button class="starter" type="button" onclick="resumeWorkspaceSignIn()">Sign in to Lexorium</button>';
     }
     renderSidebarAccount();
   }
@@ -5212,46 +5205,6 @@
     } catch (error) {
       renderSignedOutWorkspace(error.message || 'Sign in to continue inside Lexorium.');
       showError(error.message || 'Sign in to continue inside Lexorium.');
-    }
-  }
-
-  async function switchWorkspaceAccount() {
-    hideError();
-    stopVoiceCapture();
-    stopMessageSpeech();
-    showToast('Opening secure sign-in for another account...');
-    try {
-      const previousUid = String(currentUserUid || '').trim();
-      const authPayload = await syncSessionPayloadWithPuter(true, true);
-      const profile = authPayload?.profile || null;
-      if (!profile) {
-        throw new Error('A different account was not selected.');
-      }
-      if (previousUid && String(profile.uid || '').trim() === previousUid) {
-        throw new Error('Puter is still using the same browser account. To use another Puter account, sign out of that Puter account in the browser or use a separate browser profile.');
-      }
-      let session = await fetchSessionProfile().catch(() => null);
-      if (!session?.profile || session.profile.uid !== profile.uid) {
-        session = {
-          ...(session || {}),
-          ...(authPayload || {}),
-          profile,
-        };
-      }
-      const authenticated = applyAuthSession(session, profile);
-      if (!authenticated) {
-        throw new Error('Lexorium could not restore the new workspace yet.');
-      }
-      await syncPlanFromSession().catch(() => null);
-      await restoreChatState();
-      updateRoutingIndicator(lastRoutedModel, null);
-      inputEl.focus();
-      showToast(`Switched to ${currentProfileName || profile.name || profile.email || 'your workspace'}`);
-    } catch (error) {
-      if (!currentUserUid) {
-        renderSignedOutWorkspace(error.message || 'Use another account to continue.');
-      }
-      showError(error.message || 'Could not switch accounts right now.');
     }
   }
 

@@ -2763,10 +2763,6 @@ footer {
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17a4 4 0 1 1 .8-7.92A5.5 5.5 0 0 1 18 11.5A3.5 3.5 0 1 1 17.5 18H8.2"/><path d="M12 9v8"/><path d="M9.5 14.5 12 17l2.5-2.5"/></svg>
         Sign in to Lexorium
       </button>
-      <button class="oauth-btn secondary" type="button" id="puterSwitchAccountBtn">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3h4v4"/><path d="M21 3l-5 5"/><path d="M7 7a4 4 0 1 0 0 8h3"/><path d="M17 17a4 4 0 1 1 0-8h-3"/></svg>
-        Use another account
-      </button>
       <div class="signin-status" id="signinStatus"></div>
     </div>
     <p class="signin-note reveal">Already signed in? <a href="#signin" onclick="handleLaunchApp(event)">Open the app</a></p>
@@ -2873,7 +2869,6 @@ footer {
   const COOKIE_CONSENT_KEY = 'lexorium.cookie.consent.v1';
   const DEPLOYMENT_BACKEND_ERROR = 'This deployment is frontend-only right now. Lexorium needs live backend API routes under /api/* for sign-in, chat, billing, and history. Deploy it on a full-stack host like Vercel, Render, or Railway instead of GitHub Pages or other static-only hosting.';
   const signinButton = document.getElementById('puterSignInBtn');
-  const switchAccountButton = document.getElementById('puterSwitchAccountBtn');
   const signinFormEl = document.querySelector('.signin-section .signin-form');
   const signinNoteEl = document.querySelector('.signin-section .signin-note');
   const signinTitleEl = document.querySelector('.signin-section .signin-title');
@@ -3058,7 +3053,6 @@ footer {
     if (signinTitleEl) signinTitleEl.textContent = 'Sign in to Lexorium';
     if (signinSubEl) signinSubEl.textContent = 'Use one secure sign-in and Lexorium will automatically create your session, sync your app access, and open the right workspace.';
     if (signinButton) signinButton.textContent = 'Sign in to Lexorium';
-    if (switchAccountButton) switchAccountButton.textContent = 'Use another account';
     if (navLaunchBtn) navLaunchBtn.textContent = 'Launch App';
   }
 
@@ -3410,25 +3404,6 @@ footer {
     }
   }
 
-  async function startPuterAccountSwitch(event) {
-    if (event) event.preventDefault();
-    showSigninMessage('Opening secure sign-in for another account...');
-    try {
-      const currentProfile = await getSessionProfile().catch(() => null);
-      const previousUid = String(currentProfile?.uid || '').trim();
-      const profile = await ensureSessionFromPuter(true, true);
-      if (!profile) {
-        throw new Error('A different account was not selected.');
-      }
-      if (previousUid && String(profile.uid || '').trim() === previousUid) {
-        throw new Error('Puter is still using the same browser account. To use another Puter account, sign out of that Puter account in the browser or use a separate browser profile.');
-      }
-      redirectToWorkspace(profile);
-    } catch (error) {
-      showSigninMessage(error.message || 'Could not switch accounts right now.', true);
-    }
-  }
-
   async function goToCheckout(plan) {
     if (plan === 'enterprise') {
       contactSales();
@@ -3535,7 +3510,6 @@ footer {
   reveals.forEach(el => observer.observe(el));
 
   document.getElementById('puterSignInBtn')?.addEventListener('click', startPuterSignIn);
-  switchAccountButton?.addEventListener('click', startPuterAccountSwitch);
   document.getElementById('enterpriseLeadForm')?.addEventListener('submit', submitEnterpriseLead);
   document.getElementById('cookieAcceptAllBtn')?.addEventListener('click', () => saveCookieConsent('all'));
   document.getElementById('cookieEssentialBtn')?.addEventListener('click', () => saveCookieConsent('essential'));
