@@ -4268,7 +4268,7 @@
     return window.puter.auth.signIn();
   }
 
-  async function syncSessionWithPuter(interactive, forceFresh = false) {
+  async function syncSessionPayloadWithPuter(interactive, forceFresh = false) {
     if (!window.puter?.auth?.signIn || !window.puter?.auth?.getUser) {
       await waitForPuterAuth(interactive ? 5200 : 2400);
     }
@@ -4306,6 +4306,11 @@
     if (!response.ok) {
       throw new Error(getApiFailureMessage(response, payload, SESSION_API_URL));
     }
+    return payload || null;
+  }
+
+  async function syncSessionWithPuter(interactive, forceFresh = false) {
+    const payload = await syncSessionPayloadWithPuter(interactive, forceFresh);
     return payload?.profile || null;
   }
 
@@ -4326,6 +4331,36 @@
       return { __networkError: true, message: getApiFailureMessage(response, data, SESSION_API_URL) };
     }
     return data || null;
+  }
+
+  function applyAuthSession(session, profileOverride = null) {
+    const signOutItem = document.getElementById('signOutItem');
+    const profile = profileOverride || session?.profile || null;
+    if (!profile) return false;
+
+    authPill.style.display = 'inline-flex';
+    const displayName = normalizeSignedInDisplayName(profile);
+    authName.textContent = displayName;
+    authAvatar.src = profile.picture || profile.avatar || 'https://www.gravatar.com/avatar/?d=mp';
+    authAvatar.style.display = 'block';
+    if (signOutItem) signOutItem.style.display = 'flex';
+    currentUserUid = profile.uid || null;
+    currentProfileName = displayName;
+    currentProfilePhone = String(profile?.phone || '').trim();
+    currentPlan = session?.plan || currentPlan;
+    currentUsage = session?.usage || currentUsage || null;
+    retentionState = session?.retention || profile?.retention || retentionState;
+    loadPersonalizationState();
+    loadSidebarPreference();
+    if (Number(currentUsage?.remaining || 0) <= 0) lockComposer('limit_reached');
+    else unlockComposer();
+    renderGreeting(currentProfileName);
+    renderPlanStatus();
+    renderModelDropdown();
+    renderSidebarAccount();
+    syncVoiceUi();
+    refreshAssistantSurfaces();
+    return true;
   }
 
   async function fetchAuthConfig() {
@@ -5186,11 +5221,20 @@
     stopMessageSpeech();
     showToast('Opening secure sign-in for another account...');
     try {
-      const profile = await syncSessionWithPuter(true, true);
+      const authPayload = await syncSessionPayloadWithPuter(true, true);
+      const profile = authPayload?.profile || null;
       if (!profile) {
         throw new Error('A different account was not selected.');
       }
-      const authenticated = await renderAuthProfile();
+      let session = await fetchSessionProfile().catch(() => null);
+      if (!session?.profile || session.profile.uid !== profile.uid) {
+        session = {
+          ...(session || {}),
+          ...(authPayload || {}),
+          profile,
+        };
+      }
+      const authenticated = applyAuthSession(session, profile);
       if (!authenticated) {
         throw new Error('Lexorium could not restore the new workspace yet.');
       }
@@ -5299,29 +5343,7 @@
       renderSignedOutWorkspace('Sign in to continue inside the Lexorium app.');
       return false;
     }
-
-    authPill.style.display = 'inline-flex';
-    const displayName = normalizeSignedInDisplayName(profile);
-    authName.textContent = displayName;
-    authAvatar.src = profile.picture || 'https://www.gravatar.com/avatar/?d=mp';
-    authAvatar.style.display = 'block';
-    if (signOutItem) signOutItem.style.display = 'flex';
-    currentUserUid = profile.uid || null;
-    currentProfileName = displayName;
-    currentProfilePhone = String(profile?.phone || '').trim();
-    currentPlan = session?.plan || currentPlan;
-    currentUsage = session?.usage || null;
-    retentionState = session?.retention || profile?.retention || retentionState;
-    loadPersonalizationState();
-    loadSidebarPreference();
-    if (Number(currentUsage?.remaining || 0) <= 0) lockComposer('limit_reached');
-    else unlockComposer();
-    renderGreeting(currentProfileName);
-    renderPlanStatus();
-    renderModelDropdown();
-    renderSidebarAccount();
-    syncVoiceUi();
-    refreshAssistantSurfaces();
+    applyAuthSession(session, profile);
     await trackEvent('greeting_rendered', { planId: currentPlan.id }).catch(() => null);
     return true;
   }
