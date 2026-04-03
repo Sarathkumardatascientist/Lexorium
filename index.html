@@ -3334,6 +3334,17 @@ footer {
     return Boolean(window.puter?.auth?.signIn && window.puter?.auth?.getUser);
   }
 
+  async function waitForPuterSignOut(timeoutMs = 2600) {
+    const startedAt = Date.now();
+    while (Date.now() - startedAt < timeoutMs) {
+      const signedIn = Boolean(window.puter?.auth?.isSignedIn?.());
+      const liveProfile = await getLivePuterProfile();
+      if (!signedIn && !liveProfile) return true;
+      await new Promise((resolve) => window.setTimeout(resolve, 120));
+    }
+    return false;
+  }
+
   async function clearPuterSessionState() {
     await fetch(LOGOUT_URL, {
       method: 'POST',
@@ -3341,13 +3352,21 @@ footer {
     }).catch(() => null);
     try {
       if (window.puter?.auth?.signOut) {
-        await Promise.resolve(window.puter.auth.signOut());
+        window.puter.auth.signOut();
       }
     } catch (_error) {
       // Ignore remote sign-out failures and continue with local cleanup.
     }
+    await waitForPuterSignOut().catch(() => false);
     clearStoredPuterArtifacts();
     await new Promise((resolve) => window.setTimeout(resolve, 240));
+  }
+
+  async function runInteractivePuterSignIn(forceFresh = false) {
+    if (forceFresh && window.puter?.ui?.authenticateWithPuter) {
+      await window.puter.ui.authenticateWithPuter();
+    }
+    return window.puter.auth.signIn();
   }
 
   async function ensureSessionFromPuter(interactive, forceFresh = false) {
@@ -3364,7 +3383,7 @@ footer {
 
     let token = getStoredPuterToken();
     if (!token && interactive) {
-      const signInResult = await window.puter.auth.signIn();
+      const signInResult = await runInteractivePuterSignIn(forceFresh);
       token = String(signInResult?.token || '').trim();
       if (token) setStoredPuterToken(token);
     }
