@@ -308,12 +308,12 @@ async function upsertUser(profile) {
   return user;
 }
 
-async function takeQuota(uid) {
+async function takeQuota(uid, resolvedPlanId = null) {
   const state = readState();
   const user = refreshUser(state, uid);
   if (!user) throw new Error('User record not found.');
 
-  const planId = getPlanIdFromUser(user);
+  const planId = normalizePlanId(resolvedPlanId || getPlanIdFromUser(user));
   const limit = getDailyLimit(planId);
   if (user.dailyFreeUsageCount >= limit) {
     return {

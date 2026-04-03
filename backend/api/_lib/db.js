@@ -330,7 +330,7 @@ async function recordRetentionActivity(uid, classification, meta) {
   });
 }
 
-async function takeQuota(uid) {
+async function takeQuota(uid, resolvedPlanId = null) {
   const ref = getDb().collection('users').doc(uid);
   const result = await getDb().runTransaction(async (tx) => {
     const snap = await tx.get(ref);
@@ -342,7 +342,7 @@ async function takeQuota(uid) {
       user.dailyFreeUsageResetAt = nextReset();
     }
 
-    const planId = getPlanIdFromUser(user);
+    const planId = normalizePlanId(resolvedPlanId || getPlanIdFromUser(user));
     const limit = getDailyLimit(planId);
     if (user.dailyFreeUsageCount >= limit) {
       return { ok: false, plan: planId, usage: buildUsage(user), first: user.totalMessages === 0, user };

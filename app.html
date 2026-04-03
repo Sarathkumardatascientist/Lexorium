@@ -4328,6 +4328,15 @@
       await waitForPuterAuth(1800);
       liveProfile = await getLivePuterProfile();
     }
+    if (!token && liveProfile && window.puter?.auth?.signIn) {
+      try {
+        const signInResult = await window.puter.auth.signIn();
+        token = String(signInResult?.token || '').trim();
+        if (token) setStoredPuterToken(token);
+      } catch (_error) {
+        // Keep going with the live profile fallback if token recovery is unavailable.
+      }
+    }
     if (!token && !liveProfile) return null;
 
     const response = await fetch(SESSION_API_URL, {
@@ -4368,12 +4377,19 @@
     }, profile);
   }
 
-  async function getRequiredPuterToken() {
+  async function getRequiredPuterToken(interactive = false) {
     let token = getStoredPuterToken();
     if (token) return token;
-    await syncSessionWithPuter(true);
+    await syncSessionPayloadWithPuter(false).catch(() => null);
     token = getStoredPuterToken();
-    if (!token) throw new Error('Sign in is required to continue.');
+    if (token) return token;
+    if (interactive) {
+      await syncSessionPayloadWithPuter(true);
+      token = getStoredPuterToken();
+    }
+    if (!token) {
+      throw new Error(interactive ? 'Sign in is required to continue.' : 'Your secure session needs to refresh. Please reload Lexorium or sign in again.');
+    }
     return token;
   }
 
@@ -7218,29 +7234,39 @@
   }
 
   async function callLexoriumModel(modelId, messages, attachments, mode) {
-    const puterToken = await getRequiredPuterToken();
+    let puterToken = await getRequiredPuterToken(false);
     const retention = getRetentionState();
     const personalization = getPersonalizationState();
-    const response = await fetch(CHAT_API_URL, {
+    const requestBody = JSON.stringify({
+      conversationId: currentConversationId,
+      title: chatTitle,
+      mode: mode || 'chat',
+      persona: retention.persona || '',
+      primaryUseCase: retention.primaryUseCase || '',
+      personalization,
+      messages: buildApiMessages(messages, attachments),
+    });
+    const requestWithToken = async (token) => fetch(CHAT_API_URL, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'X-Puter-Token': puterToken,
+        'X-Puter-Token': token,
       },
       credentials: 'same-origin',
-      body: JSON.stringify({
-        conversationId: currentConversationId,
-        title: chatTitle,
-        mode: mode || 'chat',
-        persona: retention.persona || '',
-        primaryUseCase: retention.primaryUseCase || '',
-        personalization,
-        messages: buildApiMessages(messages, attachments),
-      })
+      body: requestBody,
     }).catch(() => { throw new Error('Could not reach the Lexorium server. Start the local server or open the deployed app.'); });
+
+    let response = await requestWithToken(puterToken);
     if (response.status === 401) {
-      await signOutSession(false);
-      throw new Error('Your session expired. Sign in again to continue.');
+      await syncSessionPayloadWithPuter(false).catch(() => null);
+      const refreshedToken = getStoredPuterToken();
+      if (refreshedToken && refreshedToken !== puterToken) {
+        puterToken = refreshedToken;
+        response = await requestWithToken(puterToken);
+      }
+    }
+    if (response.status === 401) {
+      throw new Error('Your secure session needs to refresh. Reload Lexorium and try again.');
     }
     const payload = await response.json().catch(() => ({}));
     if (!response.ok) {

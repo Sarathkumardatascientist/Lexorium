@@ -2,7 +2,7 @@ const { getSessionFromRequest } = require('./auth/_session');
 const db = require('./_lib/db');
 const devStore = require('./_lib/dev-store');
 const store = devStore.isLocalDevStoreEnabled() ? devStore : db;
-const { getConversation, getPlanIdFromUser, getUser, saveConversation, takeQuota, track } = store;
+const { getConversation, getUser, saveConversation, takeQuota, track } = store;
 const { classify, prompt } = require('./_lib/legal');
 const { assessAnswerQuality, buildRepairMessages } = require('./_lib/answer-quality');
 const { findAuthoritativeSources } = require('./_lib/research');
@@ -11,7 +11,7 @@ const { routeModel } = require('./_lib/model-router');
 const { executeAIRequest, extractProviderToken } = require('./_lib/ai-provider');
 const { buildBlockedPayload, buildSuccessPayload } = require('./_lib/response-normalizer');
 const { parseJsonBody, requireMethod, sendError, sendJson } = require('./_lib/http');
-const { getPlanConfig, getProUpgradeMessage, getPublicPlanSummary, getUsageWarningState } = require('./_lib/plan-access');
+const { getPlanConfig, getPlanForProfile, getProUpgradeMessage, getPublicPlanSummary, getUsageWarningState } = require('./_lib/plan-access');
 const { buildRetentionSummary } = require('./_lib/retention');
 
 function usageView(planId, usage) {
@@ -245,7 +245,7 @@ module.exports = async (req, res) => {
   const attachments = legacy ? extractAttachmentHints(lastUserMessage?.content) : Array.isArray(body.attachments) ? body.attachments : [];
   const rawText = legacy ? extractText(lastUserMessage?.content) : String(body.text || '').trim();
   const gate = classify(rawText, attachments, mode === 'summarize' ? 'analyse' : mode);
-  const planId = getPlanIdFromUser(user);
+  const planId = getPlanForProfile(user, req);
   const plan = getPublicPlanSummary(planId);
   const baseUsage = usageView(planId, {
     limit: plan.dailyLimit,
@@ -321,7 +321,7 @@ module.exports = async (req, res) => {
     );
   }
 
-  const quota = await takeQuota(user.uid);
+  const quota = await takeQuota(user.uid, planId);
   if (!quota.ok) {
     const deniedUsage = usageView(planId, quota.usage);
     const upgradePlanName = plan.upgradeTarget || 'pro';
