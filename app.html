@@ -3344,7 +3344,7 @@
   <div class="sidebar-footer">
     <div class="account-menu" id="accountMenu">
       <div class="account-menu-head">
-        <strong id="accountMenuName">Lexorium User</strong>
+        <strong id="accountMenuName">Sign in to Lexorium</strong>
         <span id="accountMenuPlan">Free</span>
       </div>
       <div class="account-menu-sep"></div>
@@ -3381,7 +3381,7 @@
     <button class="account-trigger" id="sidebarAccountTrigger" onclick="toggleAccountMenu(event)">
       <div class="account-avatar" id="sidebarAccountAvatar">L</div>
       <div class="account-copy">
-        <div class="account-name" id="sidebarAccountName">Lexorium User</div>
+        <div class="account-name" id="sidebarAccountName">Sign in to Lexorium</div>
         <div class="account-plan" id="sidebarAccountPlan">Free</div>
       </div>
       <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6l4 4 4-4"/></svg>
@@ -3573,7 +3573,7 @@
 
           <div class="settings-section" data-settings-section="account">
             <div class="settings-account-card">
-              <div class="settings-account-name" id="settingsAccountName">Lexorium User</div>
+              <div class="settings-account-name" id="settingsAccountName">Sign in to Lexorium</div>
               <div class="settings-account-meta" id="settingsAccountMeta">Free plan</div>
             </div>
             <div class="settings-inline-actions">
@@ -4027,7 +4027,9 @@
 
   function registerInstallSupport() {
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('service-worker.js').catch(() => null);
+      navigator.serviceWorker.register('service-worker.js')
+        .then((registration) => registration.update().catch(() => null))
+        .catch(() => null);
     }
     window.addEventListener('beforeinstallprompt', (event) => {
       event.preventDefault();
@@ -4422,7 +4424,7 @@
         : 'Answer notifications are not supported in this browser';
     }
 
-    if (settingsAccountNameEl) settingsAccountNameEl.textContent = currentProfileName || authName.textContent || 'Lexorium User';
+    if (settingsAccountNameEl) settingsAccountNameEl.textContent = currentProfileName || authName.textContent || 'Sign in to Lexorium';
     if (settingsAccountMetaEl) {
       const remaining = currentPlan?.unmetered
         ? 'Priority access enabled'
@@ -4503,7 +4505,7 @@
   }
 
   function renderSidebarAccount() {
-    const displayName = currentProfileName || authName.textContent || 'Lexorium User';
+    const displayName = currentProfileName || authName.textContent || 'Sign in to Lexorium';
     const planLabel = currentPlan?.name || 'Free';
     if (sidebarAccountNameEl) sidebarAccountNameEl.textContent = displayName;
     if (sidebarAccountPlanEl) sidebarAccountPlanEl.textContent = planLabel;
@@ -4862,6 +4864,43 @@
     renderStarterPrompts();
   }
 
+  function renderSignedOutWorkspace(message) {
+    currentUserUid = null;
+    currentProfileName = '';
+    authPill.style.display = 'none';
+    if (authName) authName.textContent = 'Lexorium';
+    if (sidebarAccountNameEl) sidebarAccountNameEl.textContent = 'Sign in to Lexorium';
+    if (sidebarAccountPlanEl) sidebarAccountPlanEl.textContent = 'Secure access';
+    if (accountMenuNameEl) accountMenuNameEl.textContent = 'Sign in to Lexorium';
+    if (accountMenuPlanEl) accountMenuPlanEl.textContent = 'Secure access';
+    if (settingsAccountNameEl) settingsAccountNameEl.textContent = 'Sign in to Lexorium';
+    if (settingsAccountMetaEl) settingsAccountMetaEl.textContent = 'Secure access required';
+    if (planStatusEl) {
+      planStatusEl.innerHTML = `
+        <span class="plan-status-primary">Sign in required</span>
+        <span class="plan-status-note">Open your Lexorium workspace to restore plan access and conversation history.</span>
+      `;
+    }
+    lockComposer('auth_required');
+    pendingAttachments = [];
+    activeMode = null;
+    renderAttachPreview();
+    updateSendBtn();
+    messagesEl.innerHTML = '';
+    emptyEl.style.display = 'flex';
+    messagesEl.appendChild(emptyEl);
+    emptyTitleEl.textContent = 'Sign in to continue';
+    emptySubEl.textContent = message || 'Use your Puter account to open the Lexorium workspace and keep the conversation in the app.';
+    emptyHabitEl.textContent = '';
+    emptyHabitEl.style.display = 'none';
+    if (onboardingCardEl) onboardingCardEl.style.display = 'none';
+    if (starterHeadingEl) starterHeadingEl.textContent = 'Continue securely';
+    if (starterPromptsEl) {
+      starterPromptsEl.innerHTML = '<button class="starter" type="button" onclick="resumeWorkspaceSignIn()">Sign in to Lexorium</button>';
+    }
+    renderSidebarAccount();
+  }
+
   function getCurrentPlanSummary() {
     if (!Array.isArray(authConfig.plans) || !authConfig.plans.length) return currentPlan;
     return authConfig.plans.find((plan) => plan.id === currentPlan.id) || currentPlan;
@@ -5009,9 +5048,15 @@
     document.body.classList.add('composer-locked');
     inputEl.disabled = true;
     sendBtn.disabled = true;
-    inputEl.placeholder = reason === 'limit_reached'
-      ? 'Daily plan limit reached. Upgrade to Pro for more research and premium legal tools.'
-      : 'Upgrade to use this premium legal workflow.';
+    if (reason === 'limit_reached') {
+      inputEl.placeholder = 'Daily plan limit reached. Upgrade to Pro for more research and premium legal tools.';
+      return;
+    }
+    if (reason === 'auth_required') {
+      inputEl.placeholder = 'Sign in to ask Lexorium a legal or compliance question.';
+      return;
+    }
+    inputEl.placeholder = 'Upgrade to use this premium legal workflow.';
   }
 
   function unlockComposer() {
@@ -5020,6 +5065,28 @@
     inputEl.disabled = false;
     inputEl.placeholder = activeMode ? MODES[activeMode].placeholder : 'Ask a legal or compliance question...';
     updateSendBtn();
+  }
+
+  async function resumeWorkspaceSignIn() {
+    hideError();
+    try {
+      const profile = await syncSessionWithPuter(true);
+      if (!profile) {
+        throw new Error('Sign-in did not complete.');
+      }
+      const authenticated = await renderAuthProfile();
+      if (!authenticated) {
+        throw new Error('Lexorium could not restore this workspace yet.');
+      }
+      await syncPlanFromSession().catch(() => null);
+      await restoreChatState();
+      updateRoutingIndicator(lastRoutedModel, null);
+      inputEl.focus();
+      showToast(`Signed in as ${currentProfileName || profile.name || profile.email || 'your workspace'}`);
+    } catch (error) {
+      renderSignedOutWorkspace(error.message || 'Sign in to continue inside Lexorium.');
+      showError(error.message || 'Sign in to continue inside Lexorium.');
+    }
   }
 
   function openUpgradeModal(options) {
@@ -5085,6 +5152,7 @@
     if (session?.__networkError) {
       authPill.style.display = 'none';
       if (signOutItem) signOutItem.style.display = 'none';
+      renderSignedOutWorkspace(session.message);
       showError(session.message);
       return false;
     }
@@ -5103,9 +5171,8 @@
     }
     const profile = session?.profile || null;
     if (!profile) {
-      authPill.style.display = 'none';
       if (signOutItem) signOutItem.style.display = 'none';
-      window.location.href = 'index.html#signin';
+      renderSignedOutWorkspace('Sign in to continue inside the Lexorium app.');
       return false;
     }
 

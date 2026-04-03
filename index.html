@@ -2687,7 +2687,7 @@ footer {
         <li>Basic reasoning</li>
         <li>Community-level access</li>
       </ul>
-      <a class="plan-btn" href="#signin">Start Free</a>
+      <a class="plan-btn" href="#signin" onclick="openSigninSection(event)">Start Free</a>
     </div>
     <div class="plan-card featured">
       <div class="plan-badge">Most Popular</div>
@@ -2899,7 +2899,9 @@ footer {
 
   function registerPwaSupport() {
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('service-worker.js').catch(() => null);
+      navigator.serviceWorker.register('service-worker.js')
+        .then((registration) => registration.update().catch(() => null))
+        .catch(() => null);
     }
     window.addEventListener('beforeinstallprompt', (event) => {
       event.preventDefault();
@@ -3032,6 +3034,12 @@ footer {
     }
     if (signinButton) signinButton.textContent = 'Sign in to Lexorium';
     if (navLaunchBtn) navLaunchBtn.textContent = 'Launch App';
+  }
+
+  function openSigninSection(event) {
+    if (event) event.preventDefault();
+    document.getElementById('signin')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    showSigninMessage('Sign in to start your Lexorium workspace.');
   }
 
   function showSigninMessage(message, isError) {

@@ -111,10 +111,11 @@ module.exports = async (req, res) => {
     username,
     email
   );
+  const fallbackName = uid.replace(/^puter:/, '') || 'Lexorium User';
   const user = await upsertUser({
     uid,
     authProvider: 'puter',
-    name: resolvedName || 'Lexorium User',
+    name: resolvedName || fallbackName,
     email: email || fallbackEmail,
     avatar,
   });
