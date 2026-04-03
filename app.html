@@ -5009,6 +5009,10 @@
     };
   }
 
+  function cloneUsageState(usage) {
+    return usage && typeof usage === 'object' ? { ...usage } : null;
+  }
+
   function syncUsageCounter(nextUsage, options = {}) {
     const consumeOnMissing = Boolean(options.consumeOnMissing);
     const normalized = normalizeUsageState(nextUsage, currentUsage);
@@ -7271,6 +7275,10 @@
     history.push({ role: 'user', content: fullText, displayContent: displayText, attachments: serializeAttachments(attachments) });
     persistChatState();
     const assistantMsgDiv = showThinking(label, attachments);
+    const usageBeforeSend = cloneUsageState(currentUsage);
+    syncUsageCounter(null, { consumeOnMissing: true });
+    renderSidebarAccount();
+    syncVoiceUi();
 
     try {
       const reply = await callWithRouting(prevMode, fullText, history, attachments);
@@ -7416,6 +7424,10 @@
         showError('Error: ' + err.message);
       }
       if (!providerUnavailable) {
+        currentUsage = usageBeforeSend;
+        renderPlanStatus();
+        renderSidebarAccount();
+        syncVoiceUi();
         if (userMsgDiv) userMsgDiv.remove();
         history.pop();
         persistChatState();
