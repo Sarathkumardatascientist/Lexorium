@@ -1049,13 +1049,6 @@ nav {
   color: rgba(229,231,235,0.62);
 }
 
-.models-scroll {
-  display: flex;
-  gap: 12px;
-  flex-wrap: wrap;
-  margin-top: 40px;
-}
-
 .pricing-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -1860,8 +1853,7 @@ footer {
 .features-grid .feature-card,
 .steps-row .step,
 .pricing-grid .pricing-card,
-.plans-grid .plan-card,
-.models-scroll .model-pill {
+.plans-grid .plan-card {
   opacity: 0;
   transform: translateY(26px) scale(0.985);
   transition: opacity 0.7s ease, transform 0.7s ease, box-shadow 0.3s ease, background 0.3s ease, border-color 0.3s ease;
@@ -1870,8 +1862,7 @@ footer {
 .features-grid.reveal.visible .feature-card,
 .steps-row.reveal.visible .step,
 .pricing-grid.reveal.visible .pricing-card,
-.plans-grid.reveal.visible .plan-card,
-.models-scroll.reveal.visible .model-pill {
+.plans-grid.reveal.visible .plan-card {
   opacity: 1;
   transform: translateY(0) scale(1);
 }
@@ -1879,32 +1870,24 @@ footer {
 .features-grid.reveal.visible .feature-card:nth-child(1),
 .steps-row.reveal.visible .step:nth-child(1),
 .pricing-grid.reveal.visible .pricing-card:nth-child(1),
-.plans-grid.reveal.visible .plan-card:nth-child(1),
-.models-scroll.reveal.visible .model-pill:nth-child(1) { transition-delay: 0.04s; }
+.plans-grid.reveal.visible .plan-card:nth-child(1) { transition-delay: 0.04s; }
 
 .features-grid.reveal.visible .feature-card:nth-child(2),
 .steps-row.reveal.visible .step:nth-child(2),
 .pricing-grid.reveal.visible .pricing-card:nth-child(2),
-.plans-grid.reveal.visible .plan-card:nth-child(2),
-.models-scroll.reveal.visible .model-pill:nth-child(2) { transition-delay: 0.1s; }
+.plans-grid.reveal.visible .plan-card:nth-child(2) { transition-delay: 0.1s; }
 
 .features-grid.reveal.visible .feature-card:nth-child(3),
 .steps-row.reveal.visible .step:nth-child(3),
 .pricing-grid.reveal.visible .pricing-card:nth-child(3),
-.plans-grid.reveal.visible .plan-card:nth-child(3),
-.models-scroll.reveal.visible .model-pill:nth-child(3) { transition-delay: 0.16s; }
+.plans-grid.reveal.visible .plan-card:nth-child(3) { transition-delay: 0.16s; }
 
 .features-grid.reveal.visible .feature-card:nth-child(4),
-.steps-row.reveal.visible .step:nth-child(4),
-.models-scroll.reveal.visible .model-pill:nth-child(4) { transition-delay: 0.22s; }
+.steps-row.reveal.visible .step:nth-child(4) { transition-delay: 0.22s; }
 
-.features-grid.reveal.visible .feature-card:nth-child(5),
-.models-scroll.reveal.visible .model-pill:nth-child(5) { transition-delay: 0.28s; }
+.features-grid.reveal.visible .feature-card:nth-child(5) { transition-delay: 0.28s; }
 
-.features-grid.reveal.visible .feature-card:nth-child(6),
-.models-scroll.reveal.visible .model-pill:nth-child(6) { transition-delay: 0.34s; }
-
-.models-scroll.reveal.visible .model-pill:nth-child(7) { transition-delay: 0.4s; }
+.features-grid.reveal.visible .feature-card:nth-child(6) { transition-delay: 0.34s; }
 
 .cookie-banner {
   position: fixed;
@@ -2665,14 +2648,6 @@ footer {
       <p class="platform-card-copy">User profiles, subscriptions, payments, usage caps, conversations, and feature entitlements stay controlled in the backend database, so plan access remains dependable after sign-in and payment.</p>
     </div>
   </div>
-  <div class="models-scroll reveal" aria-label="Platform components">
-    <div class="model-pill">Lexorium Core Routing</div>
-    <div class="model-pill">Lexorium Structure Engine</div>
-    <div class="model-pill">Claude Sonnet 4.6</div>
-    <div class="model-pill">GPT-5.4</div>
-    <div class="model-pill">Gemini 3.1 Pro</div>
-    <div class="model-pill">Qwen 3.6 Plus</div>
-  </div>
 </div>
 
 <section class="section" id="pricing">
@@ -3289,7 +3264,19 @@ footer {
     }
   }
 
+  async function waitForPuterAuth(timeoutMs = 3200) {
+    const startedAt = Date.now();
+    while (Date.now() - startedAt < timeoutMs) {
+      if (window.puter?.auth?.signIn && window.puter?.auth?.getUser) return true;
+      await new Promise((resolve) => window.setTimeout(resolve, 120));
+    }
+    return Boolean(window.puter?.auth?.signIn && window.puter?.auth?.getUser);
+  }
+
   async function ensureSessionFromPuter(interactive) {
+    if (!window.puter?.auth?.signIn || !window.puter?.auth?.getUser) {
+      await waitForPuterAuth(interactive ? 5200 : 2400);
+    }
     if (!window.puter?.auth?.signIn) {
       throw new Error('Secure sign-in is still loading. Please try again.');
     }
@@ -3300,7 +3287,11 @@ footer {
       token = String(signInResult?.token || '').trim();
       if (token) setStoredPuterToken(token);
     }
-    const liveProfile = await getLivePuterProfile();
+    let liveProfile = await getLivePuterProfile();
+    if (!token && !liveProfile && !interactive) {
+      await waitForPuterAuth(1800);
+      liveProfile = await getLivePuterProfile();
+    }
     if (!token && !liveProfile) return null;
 
     const data = await fetchJson(SESSION_URL, {

@@ -3989,6 +3989,15 @@
     }
   }
 
+  async function waitForPuterAuth(timeoutMs = 3200) {
+    const startedAt = Date.now();
+    while (Date.now() - startedAt < timeoutMs) {
+      if (window.puter?.auth?.signIn && window.puter?.auth?.getUser) return true;
+      await wait(120);
+    }
+    return Boolean(window.puter?.auth?.signIn && window.puter?.auth?.getUser);
+  }
+
   function hasAndroidNativeBridge() {
     return typeof window !== 'undefined'
       && typeof window.LexoriumAndroidBridge !== 'undefined'
@@ -4174,6 +4183,9 @@
   }
 
   async function syncSessionWithPuter(interactive) {
+    if (!window.puter?.auth?.signIn || !window.puter?.auth?.getUser) {
+      await waitForPuterAuth(interactive ? 5200 : 2400);
+    }
     let token = getStoredPuterToken();
     if (!token && interactive) {
       if (!window.puter?.auth?.signIn) {
@@ -4183,7 +4195,11 @@
       token = String(signInResult?.token || '').trim();
       if (token) setStoredPuterToken(token);
     }
-    const liveProfile = await getLivePuterProfile();
+    let liveProfile = await getLivePuterProfile();
+    if (!token && !liveProfile && !interactive) {
+      await waitForPuterAuth(1800);
+      liveProfile = await getLivePuterProfile();
+    }
     if (!token && !liveProfile) return null;
 
     const response = await fetch(SESSION_API_URL, {
@@ -5062,6 +5078,11 @@
     if (!session?.profile) {
       await syncSessionWithPuter(false).catch(() => null);
       session = await fetchSessionProfile().catch(() => null);
+      if (!session?.profile) {
+        await waitForPuterAuth(1800);
+        await syncSessionWithPuter(false).catch(() => null);
+        session = await fetchSessionProfile().catch(() => null);
+      }
     }
     const profile = session?.profile || null;
     if (!profile) {
