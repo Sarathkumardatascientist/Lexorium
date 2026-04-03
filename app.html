@@ -4052,17 +4052,6 @@
     return Boolean(window.puter?.auth?.signIn && window.puter?.auth?.getUser);
   }
 
-  async function waitForPuterSignOut(timeoutMs = 2600) {
-    const startedAt = Date.now();
-    while (Date.now() - startedAt < timeoutMs) {
-      const signedIn = Boolean(window.puter?.auth?.isSignedIn?.());
-      const liveProfile = await getLivePuterProfile();
-      if (!signedIn && !liveProfile) return true;
-      await wait(120);
-    }
-    return false;
-  }
-
   function hasAndroidNativeBridge() {
     return typeof window !== 'undefined'
       && typeof window.LexoriumAndroidBridge !== 'undefined'
@@ -4261,14 +4250,20 @@
     } catch (_error) {
       // Ignore remote sign-out failures and continue with local cleanup.
     }
-    await waitForPuterSignOut().catch(() => false);
     clearStoredPuterArtifacts();
-    await wait(240);
+    await wait(180);
   }
 
-  async function runInteractivePuterSignIn(forceFresh = false) {
-    if (forceFresh && window.puter?.ui?.authenticateWithPuter) {
-      await window.puter.ui.authenticateWithPuter();
+  function beginInteractivePuterSignIn(forceFresh = false) {
+    if (forceFresh) {
+      try {
+        if (window.puter?.auth?.signOut) {
+          window.puter.auth.signOut();
+        }
+      } catch (_error) {
+        // Ignore sign-out failures and continue with a fresh sign-in attempt.
+      }
+      clearStoredPuterArtifacts();
     }
     return window.puter.auth.signIn();
   }
@@ -4277,15 +4272,12 @@
     if (!window.puter?.auth?.signIn || !window.puter?.auth?.getUser) {
       await waitForPuterAuth(interactive ? 5200 : 2400);
     }
-    if (interactive && forceFresh) {
-      await clearPuterSessionState();
-    }
     let token = getStoredPuterToken();
     if (!token && interactive) {
       if (!window.puter?.auth?.signIn) {
         throw new Error('Secure sign-in is still loading. Please try again.');
       }
-      const signInResult = await runInteractivePuterSignIn(forceFresh);
+      const signInResult = await beginInteractivePuterSignIn(forceFresh);
       token = String(signInResult?.token || '').trim();
       if (token) setStoredPuterToken(token);
     }

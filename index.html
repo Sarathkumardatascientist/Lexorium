@@ -3334,37 +3334,16 @@ footer {
     return Boolean(window.puter?.auth?.signIn && window.puter?.auth?.getUser);
   }
 
-  async function waitForPuterSignOut(timeoutMs = 2600) {
-    const startedAt = Date.now();
-    while (Date.now() - startedAt < timeoutMs) {
-      const signedIn = Boolean(window.puter?.auth?.isSignedIn?.());
-      const liveProfile = await getLivePuterProfile();
-      if (!signedIn && !liveProfile) return true;
-      await new Promise((resolve) => window.setTimeout(resolve, 120));
-    }
-    return false;
-  }
-
-  async function clearPuterSessionState() {
-    await fetch(LOGOUT_URL, {
-      method: 'POST',
-      credentials: 'same-origin',
-    }).catch(() => null);
-    try {
-      if (window.puter?.auth?.signOut) {
-        window.puter.auth.signOut();
+  function beginInteractivePuterSignIn(forceFresh = false) {
+    if (forceFresh) {
+      try {
+        if (window.puter?.auth?.signOut) {
+          window.puter.auth.signOut();
+        }
+      } catch (_error) {
+        // Ignore sign-out failures and continue with a fresh sign-in attempt.
       }
-    } catch (_error) {
-      // Ignore remote sign-out failures and continue with local cleanup.
-    }
-    await waitForPuterSignOut().catch(() => false);
-    clearStoredPuterArtifacts();
-    await new Promise((resolve) => window.setTimeout(resolve, 240));
-  }
-
-  async function runInteractivePuterSignIn(forceFresh = false) {
-    if (forceFresh && window.puter?.ui?.authenticateWithPuter) {
-      await window.puter.ui.authenticateWithPuter();
+      clearStoredPuterArtifacts();
     }
     return window.puter.auth.signIn();
   }
@@ -3377,13 +3356,9 @@ footer {
       throw new Error('Secure sign-in is still loading. Please try again.');
     }
 
-    if (interactive && forceFresh) {
-      await clearPuterSessionState();
-    }
-
     let token = getStoredPuterToken();
     if (!token && interactive) {
-      const signInResult = await runInteractivePuterSignIn(forceFresh);
+      const signInResult = await beginInteractivePuterSignIn(forceFresh);
       token = String(signInResult?.token || '').trim();
       if (token) setStoredPuterToken(token);
     }
