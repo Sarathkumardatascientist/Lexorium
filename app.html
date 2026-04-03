@@ -3989,6 +3989,19 @@
     }
   }
 
+  function isGenericAccountName(value) {
+    return /^lexorium user$/i.test(String(value || '').trim());
+  }
+
+  function normalizeSignedInDisplayName(profile) {
+    const explicitName = String(profile?.name || '').trim();
+    if (explicitName && !isGenericAccountName(explicitName)) return explicitName;
+    const email = String(profile?.email || '').trim();
+    if (email) return email.replace(/@puter\.local$/i, '');
+    const uid = String(profile?.uid || '').trim().replace(/^puter:/i, '');
+    return uid || 'Lexorium';
+  }
+
   async function waitForPuterAuth(timeoutMs = 3200) {
     const startedAt = Date.now();
     while (Date.now() - startedAt < timeoutMs) {
@@ -5083,6 +5096,10 @@
         await syncSessionWithPuter(false).catch(() => null);
         session = await fetchSessionProfile().catch(() => null);
       }
+      if (!session?.profile) {
+        await syncSessionWithPuter(true).catch(() => null);
+        session = await fetchSessionProfile().catch(() => null);
+      }
     }
     const profile = session?.profile || null;
     if (!profile) {
@@ -5093,12 +5110,13 @@
     }
 
     authPill.style.display = 'inline-flex';
-    authName.textContent = profile.name || profile.email || 'Lexorium';
+    const displayName = normalizeSignedInDisplayName(profile);
+    authName.textContent = displayName;
     authAvatar.src = profile.picture || 'https://www.gravatar.com/avatar/?d=mp';
     authAvatar.style.display = 'block';
     if (signOutItem) signOutItem.style.display = 'flex';
     currentUserUid = profile.uid || null;
-    currentProfileName = profile.name || profile.email || 'there';
+    currentProfileName = displayName;
     currentPlan = session?.plan || currentPlan;
     currentUsage = session?.usage || null;
     retentionState = session?.retention || profile?.retention || retentionState;
@@ -7435,6 +7453,7 @@
     await fetchAuthConfig();
     const authenticated = await renderAuthProfile();
     if (!authenticated) return;
+    await syncPlanFromSession().catch(() => null);
     await handleCashfreeReturn();
     await restoreChatState();
     updateRoutingIndicator(lastRoutedModel, null);

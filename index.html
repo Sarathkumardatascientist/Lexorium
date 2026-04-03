@@ -3012,7 +3012,7 @@ footer {
       }
       if (profile) {
         updateSigninStatus(profile);
-        window.location.href = APP_URL;
+        window.location.replace(APP_URL);
         return;
       }
       document.getElementById('signin')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -3024,9 +3024,10 @@ footer {
 
   function updateSigninStatus(profile) {
     if (profile) {
-      if (signinButton) signinButton.textContent = `Open Lexorium as ${profile.name || profile.email || 'your account'}`;
+      const displayName = normalizeSignedInDisplayName(profile);
+      if (signinButton) signinButton.textContent = `Open Lexorium as ${displayName}`;
       if (navLaunchBtn) navLaunchBtn.textContent = 'Open Workspace';
-      showSigninMessage(`Signed in as ${profile.name || profile.email || 'your account'}.`);
+      showSigninMessage(`Signed in as ${displayName}.`);
       return;
     }
     if (signinButton) signinButton.textContent = 'Sign in to Lexorium';
@@ -3254,6 +3255,19 @@ footer {
     }
   }
 
+  function isGenericAccountName(value) {
+    return /^lexorium user$/i.test(String(value || '').trim());
+  }
+
+  function normalizeSignedInDisplayName(profile) {
+    const explicitName = String(profile?.name || '').trim();
+    if (explicitName && !isGenericAccountName(explicitName)) return explicitName;
+    const email = String(profile?.email || '').trim();
+    if (email) return email.replace(/@puter\.local$/i, '');
+    const uid = String(profile?.uid || '').trim().replace(/^puter:/i, '');
+    return uid || 'your account';
+  }
+
   async function getLivePuterProfile() {
     if (!window.puter?.auth?.getUser) return null;
     try {
@@ -3315,7 +3329,7 @@ footer {
         throw new Error('Sign-in did not complete.');
       }
       updateSigninStatus(profile);
-      window.location.href = APP_URL;
+      window.location.replace(APP_URL);
     } catch (error) {
       showSigninMessage(error.message || 'Sign-in could not be completed.', true);
     }

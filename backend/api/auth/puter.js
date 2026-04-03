@@ -1,6 +1,7 @@
 const { createSessionCookie } = require('./_session');
 const { resolvePuterUser, extractPuterToken } = require('../_lib/puter-client');
 const { parseJsonBody, requireMethod, sendError, sendJson } = require('../_lib/http');
+const { getPlanForProfile, getPublicPlanSummary } = require('../_lib/plan-access');
 const db = require('../_lib/db');
 const devStore = require('../_lib/dev-store');
 
@@ -30,17 +31,42 @@ function sanitizeProfile(profile) {
     uuid: pickFirst(profile.uuid, profile.id, profile._id),
     id: pickFirst(profile.id, profile.uuid, profile._id),
     _id: pickFirst(profile._id, profile.id, profile.uuid),
-    username: pickFirst(profile.username, profile.handle),
-    handle: pickFirst(profile.handle, profile.username),
-    full_name: pickFirst(profile.full_name, profile.displayName, profile.name),
-    displayName: pickFirst(profile.displayName, profile.full_name, profile.name),
-    name: pickFirst(profile.name, profile.displayName, profile.full_name),
-    email: pickFirst(profile.email),
+    username: pickFirst(profile.username, profile.handle, profile.login, profile.user_name),
+    handle: pickFirst(profile.handle, profile.username, profile.login, profile.user_name),
+    full_name: pickFirst(profile.full_name, profile.fullName, profile.display_name, profile.displayName, profile.name),
+    fullName: pickFirst(profile.fullName, profile.full_name, profile.display_name, profile.displayName, profile.name),
+    display_name: pickFirst(profile.display_name, profile.displayName, profile.full_name, profile.fullName, profile.name),
+    displayName: pickFirst(profile.displayName, profile.display_name, profile.full_name, profile.fullName, profile.name),
+    nickname: pickFirst(profile.nickname, profile.username, profile.handle),
+    name: pickFirst(profile.name, profile.displayName, profile.display_name, profile.full_name, profile.fullName, profile.nickname),
+    email: pickFirst(profile.email, profile.email_address, profile.mail),
     avatar: pickFirst(profile.avatar, profile.picture, profile.profile_picture, profile.photoURL),
     picture: pickFirst(profile.picture, profile.avatar, profile.profile_picture, profile.photoURL),
     profile_picture: pickFirst(profile.profile_picture, profile.picture, profile.avatar, profile.photoURL),
     photoURL: pickFirst(profile.photoURL, profile.picture, profile.avatar, profile.profile_picture),
   };
+}
+
+function mergeProfiles(primary, fallback) {
+  const left = sanitizeProfile(primary) || {};
+  const right = sanitizeProfile(fallback) || {};
+  const merged = {
+    uuid: pickFirst(left.uuid, right.uuid),
+    id: pickFirst(left.id, right.id),
+    _id: pickFirst(left._id, right._id),
+    username: pickFirst(left.username, right.username),
+    handle: pickFirst(left.handle, right.handle),
+    full_name: pickFirst(left.full_name, left.fullName, left.display_name, left.displayName, left.name, right.full_name, right.fullName, right.display_name, right.displayName, right.name),
+    displayName: pickFirst(left.displayName, left.display_name, left.full_name, left.fullName, left.name, right.displayName, right.display_name, right.full_name, right.fullName, right.name),
+    name: pickFirst(left.name, left.displayName, left.display_name, left.full_name, left.fullName, left.nickname, right.name, right.displayName, right.display_name, right.full_name, right.fullName, right.nickname),
+    nickname: pickFirst(left.nickname, right.nickname),
+    email: pickFirst(left.email, right.email),
+    avatar: pickFirst(left.avatar, left.picture, left.profile_picture, left.photoURL, right.avatar, right.picture, right.profile_picture, right.photoURL),
+    picture: pickFirst(left.picture, left.avatar, left.profile_picture, left.photoURL, right.picture, right.avatar, right.profile_picture, right.photoURL),
+    profile_picture: pickFirst(left.profile_picture, left.picture, left.avatar, right.profile_picture, right.picture, right.avatar),
+    photoURL: pickFirst(left.photoURL, left.picture, left.avatar, right.photoURL, right.picture, right.avatar),
+  };
+  return Object.values(merged).some((value) => clean(value)) ? merged : null;
 }
 
 module.exports = async (req, res) => {
@@ -53,36 +79,52 @@ module.exports = async (req, res) => {
   const fallbackProfile = sanitizeProfile(body.profile);
   if (!authToken && !fallbackProfile) return sendError(res, 400, 'A sign-in token is required.');
 
-  let profile;
+  let resolvedProfile = null;
   try {
-    profile = authToken ? await resolvePuterUser(authToken) : fallbackProfile;
+    resolvedProfile = authToken ? sanitizeProfile(await resolvePuterUser(authToken)) : fallbackProfile;
   } catch (error) {
     if (fallbackProfile) {
-      profile = fallbackProfile;
+      resolvedProfile = null;
     } else {
       return sendError(res, error.statusCode || 401, error.message || 'Sign-in could not be verified.');
     }
   }
+  const profile = mergeProfiles(resolvedProfile, fallbackProfile);
+  if (!profile) return sendError(res, 400, 'The sign-in profile could not be normalized.');
 
   const uid = buildStableUid(profile);
   if (!uid) {
     return sendError(res, 400, 'The sign-in profile did not include a stable identifier.');
   }
 
-  const username = pickFirst(profile?.username, profile?.handle, profile?.displayName, profile?.name);
+  const username = pickFirst(profile?.username, profile?.handle, profile?.nickname, profile?.displayName, profile?.name);
   const email = pickFirst(profile?.email, body.email);
   const avatar = pickFirst(profile?.avatar, profile?.picture, profile?.profile_picture, profile?.photoURL, body.avatar);
   const fallbackEmail = username ? `${username.toLowerCase()}@puter.local` : `${uid.replace(/^puter:/, '')}@puter.local`;
+  const resolvedName = pickFirst(
+    profile?.full_name,
+    profile?.fullName,
+    profile?.display_name,
+    profile?.displayName,
+    profile?.name,
+    profile?.nickname,
+    username,
+    email
+  );
   const user = await upsertUser({
     uid,
-    name: pickFirst(profile?.full_name, profile?.displayName, profile?.name, username, email, 'Lexorium User'),
+    authProvider: 'puter',
+    name: resolvedName || 'Lexorium User',
     email: email || fallbackEmail,
     avatar,
   });
+  const planId = getPlanForProfile(user, req);
+  const plan = getPublicPlanSummary(planId);
 
   await track(user.uid, 'puter_signin_completed', {
     username,
     email: user.email,
+    planId,
   }).catch(() => null);
 
   res.setHeader('Set-Cookie', createSessionCookie({
@@ -104,5 +146,6 @@ module.exports = async (req, res) => {
       provider: 'puter',
       username,
     },
+    plan,
   });
 };
