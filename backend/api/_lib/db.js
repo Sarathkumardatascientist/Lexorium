@@ -525,8 +525,8 @@ async function activatePaidPlan(uid, planId, payment) {
   const plan = getPlanConfig(normalizedPlan);
   const paymentOrderId = String(payment?.orderId || '').trim();
   const paymentId = String(payment?.paymentId || '').trim();
-  const requestedEndAt = Date.parse(payment?.subscriptionEnd || 0);
-  const currentEndAt = Date.parse(current.subscriptionEnd || 0);
+  const requestedEndAt = payment?.subscriptionEnd ? Date.parse(payment.subscriptionEnd) : NaN;
+  const currentEndAt = current.subscriptionEnd ? Date.parse(current.subscriptionEnd) : 0;
   const alreadyApplied = current
     && normalizePlanId(current.plan) === plan.id
     && String(current.subscriptionStatus || '').toLowerCase() === 'active'
