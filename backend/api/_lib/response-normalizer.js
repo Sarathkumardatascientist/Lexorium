@@ -98,7 +98,7 @@ function buildSuccessPayload(options) {
     model: options.model?.id || '',
     upgradePrompt: warning.showSoftWarning,
     upgradePromptText: warning.showSoftWarning
-      ? `You\u2019re nearing today\u2019s limit. ${getProUpgradeMessage()}`
+      ? `You’re approaching advanced processing limits. Continued usage may require additional compute support.`
       : null,
     choices: [{ index: 0, message: { role: 'assistant', content: answer }, finish_reason: 'stop' }],
     meta: {

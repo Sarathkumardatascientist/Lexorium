@@ -3422,6 +3422,8 @@
     <div class="modal">
       <div class="modal-title" id="upgradeModalTitle">Upgrade to Lexorium</div>
       <div class="upgrade-modal-copy" id="upgradeModalCopy">Upgrade this account to Lexorium Pro.</div>
+      <input class="modal-input" id="upgradeNameInput" type="text" placeholder="Full Name" style="margin-top:16px; margin-bottom:8px;"/>
+      <input class="modal-input" id="upgradePhoneInput" type="tel" placeholder="10-digit mobile number" style="margin-bottom:16px;"/>
       <div class="modal-actions">
         <button class="modal-btn" onclick="closeUpgradeModal()">Not now</button>
         <button class="modal-btn primary" id="upgradeModalAction" onclick="startUpgradeFlow()">Upgrade</button>
@@ -5290,6 +5292,9 @@
     document.getElementById('upgradeModalCopy').textContent = options?.message || 'Upgrade this account to Lexorium Pro.';
     const action = document.getElementById('upgradeModalAction');
     action.textContent = options?.ctaLabel || `Upgrade to ${formatPlanName(pendingUpgradePlan)}`;
+    document.getElementById('upgradeNameInput').value = currentProfileName || authName?.textContent || 'Lexorium User';
+    const savedCheckoutPhone = String(localStorage.getItem(CHECKOUT_PHONE_STORAGE_KEY) || currentProfilePhone || '').replace(/\D/g, '').slice(-10);
+    document.getElementById('upgradePhoneInput').value = savedCheckoutPhone;
     document.getElementById('upgradeModal').classList.add('open');
     if (options?.trackEvent !== false) {
       trackEvent('paywall_viewed', { planId: currentPlan.id, targetPlanId: pendingUpgradePlan, reason: options?.reason || 'upgrade_required' });
@@ -5321,10 +5326,15 @@
 
     try {
       await trackEvent('paywall_cta_clicked', { source: 'app', planId: currentPlan.id, targetPlanId: targetPlan });
-      const savedCheckoutPhone = String(localStorage.getItem(CHECKOUT_PHONE_STORAGE_KEY) || currentProfilePhone || '').replace(/\D/g, '').slice(-10);
-      const enteredCheckoutPhone = window.prompt('Enter your 10-digit mobile number for secure checkout.', savedCheckoutPhone);
-      if (enteredCheckoutPhone === null) return;
-      const customerPhone = String(enteredCheckoutPhone || '').replace(/\D/g, '').slice(-10);
+      
+      const customerName = document.getElementById('upgradeNameInput').value.trim();
+      const enteredPhone = document.getElementById('upgradePhoneInput').value.trim();
+      
+      if (!customerName) {
+        throw new Error('Please enter your full name for secure checkout.');
+      }
+      
+      const customerPhone = String(enteredPhone || '').replace(/\D/g, '').slice(-10);
       if (!/^\d{10}$/.test(customerPhone)) {
         throw new Error('Enter a valid 10-digit mobile number to continue checkout.');
       }
@@ -5332,7 +5342,7 @@
         method: 'POST',
         credentials: 'same-origin',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ plan: targetPlan, source: 'app', customerPhone }),
+        body: JSON.stringify({ plan: targetPlan, source: 'app', customerName, customerPhone }),
       });
       const order = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(order?.message || 'Could not start checkout.');

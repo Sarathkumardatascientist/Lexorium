@@ -115,9 +115,16 @@ module.exports = async (req, res) => {
   if (!customerPhone) {
     return sendError(res, 400, 'Enter a valid 10-digit mobile number to continue checkout.');
   }
-  if (updateUserProfile && customerPhone !== String(user.phone || '')) {
-    await updateUserProfile(user.uid, { phone: customerPhone }).catch(() => null);
+
+  const customerName = String(body.customerName || user.name || user.email || 'Lexorium User').trim();
+  const profileUpdates = {};
+  if (customerPhone !== String(user.phone || '')) profileUpdates.phone = customerPhone;
+  if (body.customerName && customerName !== String(user.name || '')) profileUpdates.name = customerName;
+
+  if (updateUserProfile && Object.keys(profileUpdates).length > 0) {
+    await updateUserProfile(user.uid, profileUpdates).catch(() => null);
   }
+
   const cashfreeCustomerId = toCashfreeCustomerId(user.uid);
 
   const upstream = await fetch(`${cashfree.baseUrl}/orders`, {
@@ -129,7 +136,7 @@ module.exports = async (req, res) => {
       order_currency: 'INR',
       customer_details: {
         customer_id: cashfreeCustomerId,
-        customer_name: user.name || user.email || 'Lexorium User',
+        customer_name: customerName,
         customer_email: user.email,
         customer_phone: customerPhone,
       },

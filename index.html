@@ -2538,6 +2538,20 @@ footer {
   </div>
 </div>
 
+<!-- CHECKOUT MODAL -->
+<div class="legal-overlay" id="checkoutModal" style="display:none" onclick="if(event.target === this) closeCheckoutModal()">
+  <div class="legal-modal">
+    <button class="legal-close" onclick="closeCheckoutModal()">&#x2715;</button>
+    <div class="legal-title" style="margin-bottom:8px">Upgrade to Lexorium</div>
+    <div class="legal-body">
+      <p style="margin-bottom:24px; color:rgba(255,255,255,0.72); font-size:14px;">Securely upgrade your workspace to Lexorium Pro.</p>
+      <input type="text" id="checkoutNameInput" placeholder="Full Name" style="width:100%; padding:14px; border-radius:12px; border:1px solid var(--line); background:var(--surface); color:var(--text); font-family:inherit; font-size:14px; outline:none; margin-bottom:12px;" />
+      <input type="tel" id="checkoutPhoneInput" placeholder="10-digit mobile number" style="width:100%; padding:14px; border-radius:12px; border:1px solid var(--line); background:var(--surface); color:var(--text); font-family:inherit; font-size:14px; outline:none; margin-bottom:24px;" />
+      <button class="btn-primary" style="width:100%; justify-content:center; padding:14px; border:none; cursor:pointer;" onclick="submitCheckoutModal()">Continue to Payment</button>
+    </div>
+  </div>
+</div>
+
 <!-- HERO -->
 <section class="hero">
   <div class="hero-beam hero-beam-left" aria-hidden="true"></div>
@@ -2963,6 +2977,12 @@ footer {
   const enterpriseStatusEl = document.getElementById('enterpriseStatus');
   const cookieBannerEl = document.getElementById('cookieBanner');
   const heroPrismShellEl = document.getElementById('heroPrismShell');
+  let pendingCheckoutPlan = 'pro';
+
+  function closeCheckoutModal() {
+    document.getElementById('checkoutModal').style.display = 'none';
+    document.body.style.overflow = '';
+  }
 
   function hasAndroidNativeBridge() {
     return typeof window !== 'undefined'
@@ -3555,14 +3575,31 @@ footer {
       return;
     }
 
+    pendingCheckoutPlan = plan || 'pro';
+    
+    document.getElementById('checkoutNameInput').value = profile.name || '';
     const savedCheckoutPhone = String(localStorage.getItem(CHECKOUT_PHONE_STORAGE_KEY) || '').replace(/\D/g, '').slice(-10);
-    const enteredCheckoutPhone = window.prompt('Enter your 10-digit mobile number for secure checkout.', savedCheckoutPhone);
-    if (enteredCheckoutPhone === null) return;
-    const customerPhone = String(enteredCheckoutPhone || '').replace(/\D/g, '').slice(-10);
+    document.getElementById('checkoutPhoneInput').value = savedCheckoutPhone;
+    
+    document.getElementById('checkoutModal').style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+  }
+
+  async function submitCheckoutModal() {
+    const customerName = document.getElementById('checkoutNameInput').value.trim();
+    if (!customerName) {
+      alert('Please enter your full name for secure checkout.');
+      return;
+    }
+    
+    const rawPhone = document.getElementById('checkoutPhoneInput').value;
+    const customerPhone = String(rawPhone || '').replace(/\D/g, '').slice(-10);
     if (!/^\d{10}$/.test(customerPhone)) {
       alert('Enter a valid 10-digit mobile number to continue checkout.');
       return;
     }
+    
+    const plan = pendingCheckoutPlan;
 
     try {
       const order = await fetchJson(CREATE_ORDER_URL, {
