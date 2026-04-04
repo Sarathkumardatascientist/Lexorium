@@ -78,7 +78,7 @@ const PLAN_CONFIG = {
     id: 'pro',
     name: 'Pro',
     tierLabel: 'Pro',
-    description: '150 legal queries per day with predictive risk scoring, advanced legal reasoning, contract drafting tools, priority response speed, and structured legal analysis. Additional credits may apply for complex requests.',
+    description: 'Predictive risk scoring, advanced legal reasoning, contract drafting tools, priority response speed, and structured legal analysis. Additional credits may apply for complex requests.',
     shortDescription: 'Premium legal intelligence',
     routeTier: 'pro',
     dailyLimit: FIXED_DAILY_LIMITS.pro,
@@ -144,8 +144,7 @@ const PLAN_CONFIG = {
 };
 
 function getProUpgradeMessage() {
-  const proPlan = getPlanConfig('pro');
-  return `Upgrade to Lexorium Pro for ${proPlan.dailyLimit} legal queries per day, predictive risk scoring, deeper legal research, contract drafting tools, priority response speed, and structured legal analysis.`;
+  return `Upgrade to Lexorium Pro for predictive risk scoring, deeper legal research, contract drafting tools, priority response speed, and structured legal analysis.`;
 }
 
 function getPlanConfig(planId) {
