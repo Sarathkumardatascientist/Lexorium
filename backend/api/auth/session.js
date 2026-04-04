@@ -12,23 +12,11 @@ const {
   getSubscriptionState,
   grantsEntitlement,
 } = require('../billing/_google-play');
-const { getPlanForProfile, getPublicPlanSummary, getUsageWarningState } = require('../_lib/plan-access');
+const { getPlanForProfile, getPublicPlanSummary, getUsageWarningState, getUsageForPlan } = require('../_lib/plan-access');
 const { buildRetentionSummary } = require('../_lib/retention');
 const { sendJson } = require('../_lib/http');
 
-function usageFor(planId, user) {
-  const plan = getPublicPlanSummary(planId);
-  const used = Number(user?.dailyFreeUsageCount || 0);
-  const resetAt = user?.dailyFreeUsageResetAt || null;
-  return {
-    limit: plan.dailyLimit,
-    used,
-    remaining: Math.max(plan.dailyLimit - used, 0),
-    resetAt,
-    nextResetAt: resetAt,
-    warning: getUsageWarningState(planId, { limit: plan.dailyLimit, used }),
-  };
-}
+
 
 async function syncGooglePlayEntitlement(user) {
   if (!user) return user;
@@ -103,7 +91,7 @@ module.exports = async (req, res) => {
 
   const planId = getPlanForProfile(user, req);
   const plan = getPublicPlanSummary(planId);
-  const usage = usageFor(plan.id, user);
+  const usage = getUsageForPlan(plan.id, user);
   const retention = buildRetentionSummary(user, plan, usage);
 
   return sendJson(res, 200, {

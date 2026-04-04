@@ -1,7 +1,8 @@
 const { createSessionCookie } = require('./_session');
 const { resolvePuterUser, extractPuterToken } = require('../_lib/puter-client');
 const { parseJsonBody, requireMethod, sendError, sendJson } = require('../_lib/http');
-const { getPlanForProfile, getPublicPlanSummary } = require('../_lib/plan-access');
+const { getPlanForProfile, getPublicPlanSummary, getUsageForPlan } = require('../_lib/plan-access');
+const { buildRetentionSummary } = require('../_lib/retention');
 const db = require('../_lib/db');
 const devStore = require('../_lib/dev-store');
 
@@ -121,6 +122,8 @@ module.exports = async (req, res) => {
   });
   const planId = getPlanForProfile(user, req);
   const plan = getPublicPlanSummary(planId);
+  const usage = getUsageForPlan(plan.id, user);
+  const retention = buildRetentionSummary(user, plan, usage);
 
   await track(user.uid, 'puter_signin_completed', {
     username,
@@ -138,6 +141,7 @@ module.exports = async (req, res) => {
 
   return sendJson(res, 200, {
     ok: true,
+    authenticated: true,
     profile: {
       uid: user.uid,
       name: user.name,
@@ -147,7 +151,19 @@ module.exports = async (req, res) => {
       picture: user.avatar,
       provider: 'puter',
       username,
+      currentPlan: plan.id,
+      subscriptionStatus: user.subscriptionStatus,
+      subscriptionStart: user.subscriptionStart,
+      subscriptionEnd: user.subscriptionEnd,
+      totalMessages: user.totalMessages,
+      totalConversations: user.totalConversations,
+      lastActiveAt: user.lastActiveAt,
+      createdAt: user.createdAt,
+      features: plan.features,
+      retention,
     },
     plan,
+    usage,
+    retention,
   });
 };

@@ -4422,7 +4422,8 @@
     retentionState = session?.retention || profile?.retention || retentionState;
     loadPersonalizationState();
     loadSidebarPreference();
-    if (Number(currentUsage?.remaining || 0) <= 0) lockComposer('limit_reached');
+    const remainingFallback = currentPlan?.dailyLimit ?? 1;
+    if (Number(currentUsage?.remaining ?? remainingFallback) <= 0) lockComposer('limit_reached');
     else unlockComposer();
     renderGreeting(currentProfileName);
     renderPlanStatus();

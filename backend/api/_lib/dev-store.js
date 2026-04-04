@@ -8,7 +8,11 @@ const PLAN_DURATION_DAYS = Number.parseInt(process.env.PLAN_DURATION_DAYS || pro
 const STORE_PATH = path.join(__dirname, '..', '..', '.local', 'dev-store.json');
 
 const now = () => new Date().toISOString();
-const nextReset = () => new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+const nextReset = () => {
+  const d = new Date();
+  d.setUTCHours(24, 0, 0, 0);
+  return d.toISOString();
+};
 
 function isLocalDevStoreEnabled() {
   if (process.env.LEXORIUM_LOCAL_DEV === '0') return false;
@@ -43,6 +47,7 @@ function normalize(uid, data) {
     subscriptionEnd: data.subscriptionEnd || null,
     dailyFreeUsageCount: Number(data.dailyFreeUsageCount || 0),
     dailyFreeUsageResetAt: data.dailyFreeUsageResetAt || nextReset(),
+    usageDate: data.usageDate || dayKey(data.lastActiveAt) || dayKey(Date.now()),
     totalMessages: Number(data.totalMessages || 0),
     totalConversations: Number(data.totalConversations || 0),
     lastActiveAt: data.lastActiveAt || null,
@@ -261,9 +266,10 @@ function refreshUser(state, uid) {
     user.subscriptionStatus = 'inactive';
     changed = true;
   }
-  if (Date.parse(user.dailyFreeUsageResetAt || 0) <= Date.now()) {
+  if (user.usageDate !== dayKey(Date.now())) {
     user.dailyFreeUsageCount = 0;
     user.dailyFreeUsageResetAt = nextReset();
+    user.usageDate = dayKey(Date.now());
     changed = true;
   }
   if (shouldSyncCommercialState(user)) {

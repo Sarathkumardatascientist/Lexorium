@@ -4,7 +4,11 @@ const { CORE_RESPONSE_HEADINGS, applyDailyActivity, dayKey, derivePreferredTask,
 
 const PLAN_DURATION_DAYS = Number.parseInt(process.env.PLAN_DURATION_DAYS || process.env.PRO_PLAN_DURATION_DAYS || '30', 10) || 30;
 const now = () => new Date().toISOString();
-const nextReset = () => new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+const nextReset = () => {
+  const d = new Date();
+  d.setUTCHours(24, 0, 0, 0);
+  return d.toISOString();
+};
 
 function isPro(user) {
   return isPlanAtLeast(getPlanIdFromUser(user), 'pro');
@@ -38,6 +42,7 @@ function normalize(uid, data) {
     lastCommercialSyncAt: data.lastCommercialSyncAt || null,
     dailyFreeUsageCount: Number(data.dailyFreeUsageCount || 0),
     dailyFreeUsageResetAt: data.dailyFreeUsageResetAt || nextReset(),
+    usageDate: data.usageDate || dayKey(data.lastActiveAt) || dayKey(Date.now()),
     totalMessages: Number(data.totalMessages || 0),
     totalConversations: Number(data.totalConversations || 0),
     lastActiveAt: data.lastActiveAt || null,
@@ -227,9 +232,10 @@ async function getUser(uid) {
     updates.plan = 'free';
     updates.subscriptionStatus = 'inactive';
   }
-  if (Date.parse(user.dailyFreeUsageResetAt || 0) <= Date.now()) {
+  if (user.usageDate !== dayKey(Date.now())) {
     updates.dailyFreeUsageCount = 0;
     updates.dailyFreeUsageResetAt = nextReset();
+    updates.usageDate = dayKey(Date.now());
   }
   if (shouldSyncCommercialState(user)) {
     updates.lastCommercialSyncAt = now();
@@ -337,9 +343,10 @@ async function takeQuota(uid, resolvedPlanId = null) {
     if (!snap.exists) throw new Error('User record not found.');
 
     const user = normalize(uid, snap.data());
-    if (Date.parse(user.dailyFreeUsageResetAt || 0) <= Date.now()) {
+    if (user.usageDate !== dayKey(Date.now())) {
       user.dailyFreeUsageCount = 0;
       user.dailyFreeUsageResetAt = nextReset();
+      user.usageDate = dayKey(Date.now());
     }
 
     const planId = normalizePlanId(resolvedPlanId || getPlanIdFromUser(user));
@@ -355,6 +362,7 @@ async function takeQuota(uid, resolvedPlanId = null) {
       ...user,
       dailyFreeUsageCount: nextUsed,
       dailyFreeUsageResetAt: user.dailyFreeUsageResetAt || nextReset(),
+      usageDate: user.usageDate,
       lastActiveAt: currentTime,
       lastActiveDayKey: activity.lastActiveDayKey,
       streakCount: activity.streakCount,
@@ -366,6 +374,7 @@ async function takeQuota(uid, resolvedPlanId = null) {
     tx.set(ref, {
       dailyFreeUsageCount: nextUsed,
       dailyFreeUsageResetAt: nextUser.dailyFreeUsageResetAt,
+      usageDate: nextUser.usageDate,
       lastActiveAt: currentTime,
       lastActiveDayKey: activity.lastActiveDayKey,
       streakCount: activity.streakCount,

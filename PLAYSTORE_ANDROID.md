@@ -4,7 +4,7 @@ This repository now includes an Android shell app in `android-playstore/` that w
 
 What it includes:
 - Lexorium-branded Android app shell
-- Secure WebView pointed to `https://lexorium-jrfd.vercel.app`
+- Secure WebView pointed to `https://lexoriumai.com`
 - file and image upload support
 - microphone and camera permission handling
 - download handling through Android `DownloadManager`

@@ -235,6 +235,22 @@ function getUsageWarningState(planId, usage) {
   };
 }
 
+function getUsageForPlan(planId, user) {
+  const plan = getPlanConfig(planId);
+  const used = Number(user?.dailyFreeUsageCount || 0);
+  const resetAt = user?.dailyFreeUsageResetAt || null;
+  const usageDate = user?.usageDate || null;
+  return {
+    limit: plan.dailyLimit,
+    used,
+    remaining: Math.max(plan.dailyLimit - used, 0),
+    usageDate,
+    resetAt,
+    nextResetAt: resetAt,
+    warning: getUsageWarningState(planId, { limit: plan.dailyLimit, used }),
+  };
+}
+
 function getFeatureBlockDetails(featureKey) {
   const proUpgradeMessage = getProUpgradeMessage();
   if (featureKey === 'draftMode') {
@@ -291,6 +307,7 @@ module.exports = {
   getProUpgradeMessage,
   getUpgradeTargetPlan,
   getUsageWarningState,
+  getUsageForPlan,
   isPlanAtLeast,
   normalizePlanId,
 };
