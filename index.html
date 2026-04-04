@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#0A0A0A">
+<meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Lexorium">
@@ -151,7 +152,7 @@ body::before {
   transform: translate3d(-50%, -50%, 0) scale(0.84);
 }
 
-/* ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ NAV ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ */
+/* ─── NAV ─── */
 nav {
   position: fixed;
   top: 0; left: 0; right: 0;
@@ -172,7 +173,6 @@ nav {
   from { opacity:0; transform:translateY(-10px); }
   to   { opacity:1; transform:translateY(0); }
 }
-
 .nav-logo {
   display: inline-flex;
   align-items: center;
@@ -2029,49 +2029,19 @@ footer {
 /* ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ MOBILE ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ */
 @media (max-width: 768px) {
   nav {
-    height: auto;
-    min-height: 68px;
-    padding: 14px 20px;
-    align-items: flex-start;
-    gap: 14px 12px;
-    flex-wrap: wrap;
-  }
-  .hero-beam,
-  .hero-ring {
-    display: none;
-  }
-  .nav-logo { flex: 1 1 auto; min-width: 0; }
-  .nav-logo img { width: 32px; height: 32px; border-radius: 10px; }
-  .nav-logo-wordmark { font-size: 18px; }
-  .nav-links {
-    order: 3;
-    width: 100%;
-    display: flex;
-    gap: 10px;
-    padding-bottom: 2px;
-    justify-content: flex-start;
-    overflow-x: auto;
-    scroll-snap-type: x proximity;
-    scrollbar-width: none;
-    -ms-overflow-style: none;
-  }
-  .nav-links::-webkit-scrollbar { display: none; }
-  .nav-links li { flex: 0 0 auto; scroll-snap-align: start; }
-  .nav-links a {
-    display: inline-flex;
+    height: 68px;
+    padding: 0 20px;
     align-items: center;
-    justify-content: center;
-    padding: 10px 12px;
-    border: 1px solid var(--line2);
-    border-radius: 999px;
-    background: rgba(255,255,255,0.03);
-    white-space: nowrap;
-    font-size: 10px;
+    flex-wrap: nowrap;
   }
-  .nav-cta {
-    margin-left: auto;
-    padding: 10px 16px;
-  }
+  .nav-hamburger { display: flex; }
+  .nav-drawer { display: block; }
+  .nav-links { display: none; }
+  .nav-cta { display: none; }
+  .hero-beam, .hero-ring { display: none; }
+  .nav-logo { flex: 1 1 auto; min-width: 0; }
+  .nav-logo img { width: 30px; height: 30px; border-radius: 10px; }
+  .nav-logo-wordmark { font-size: 18px; }
   .hero {
     min-height: auto;
     padding: 148px 20px 52px;
@@ -2311,7 +2281,7 @@ footer {
 <div class="site-progress" aria-hidden="true"></div>
 
 <!-- NAV -->
-<nav>
+<nav id="mainNav">
   <a class="nav-logo" href="#">
     <img src="assets/lexorium-logo.png" alt="Lexorium logo">
     <span class="nav-logo-wordmark">Lex<span>orium</span></span>
@@ -2324,7 +2294,21 @@ footer {
     <li><a href="#signin">Sign In</a></li>
   </ul>
   <a class="nav-cta" href="#signin" id="navLaunchBtn" onclick="handleLaunchApp(event)">Launch App</a>
+  <button class="nav-hamburger" id="navHamburger" aria-label="Open menu" aria-expanded="false">
+    <span></span><span></span><span></span>
+  </button>
 </nav>
+<!-- MOBILE NAV DRAWER -->
+<div class="nav-drawer" id="navDrawer">
+  <ul>
+    <li><a href="#features" onclick="closeDrawer()">Features</a></li>
+    <li><a href="#how" onclick="closeDrawer()">How It Works</a></li>
+    <li><a href="#platform" onclick="closeDrawer()">Platform</a></li>
+    <li><a href="#pricing" onclick="closeDrawer()">Pricing</a></li>
+    <li><a href="#signin" onclick="closeDrawer()">Sign In</a></li>
+  </ul>
+  <a class="nav-drawer-cta" href="#signin" onclick="closeDrawer(); handleLaunchApp(event)">Launch App</a>
+</div>
 
 <!-- LEGAL MODAL -->
 <div class="legal-overlay" id="legalOverlay" onclick="closeLegalOnBg(event)">
@@ -3607,12 +3591,41 @@ footer {
     });
   }
   document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape') closeLegal();
+    if (e.key === 'Escape') { closeLegal(); closeDrawer(); }
   });
 
   window.addEventListener('lexorium:play-billing-result', (event) => {
     handleAndroidBillingResult(event?.detail || {});
   });
+
+  // Hamburger menu
+  const navHamburger = document.getElementById('navHamburger');
+  const navDrawer = document.getElementById('navDrawer');
+  function closeDrawer() {
+    if (!navHamburger || !navDrawer) return;
+    navHamburger.classList.remove('open');
+    navDrawer.classList.remove('open');
+    navHamburger.setAttribute('aria-expanded', 'false');
+    document.body.style.overflow = '';
+  }
+  if (navHamburger && navDrawer) {
+    navHamburger.addEventListener('click', () => {
+      const isOpen = navDrawer.classList.contains('open');
+      if (isOpen) {
+        closeDrawer();
+      } else {
+        navHamburger.classList.add('open');
+        navDrawer.classList.add('open');
+        navHamburger.setAttribute('aria-expanded', 'true');
+        document.body.style.overflow = 'hidden';
+      }
+    });
+    document.addEventListener('click', (e) => {
+      if (!navDrawer.contains(e.target) && !navHamburger.contains(e.target)) {
+        closeDrawer();
+      }
+    });
+  }
 </script>
 </body>
 </html>
