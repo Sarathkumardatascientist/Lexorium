@@ -2994,7 +2994,7 @@ footer {
   let planCatalog = [];
   let deferredInstallPrompt = null;
   const COOKIE_CONSENT_KEY = 'lexorium.cookie.consent.v1';
-  const CLIENT_BUILD_VERSION = '2026-04-05-puter-token-recovery-1';
+  const CLIENT_BUILD_VERSION = '2026-04-05-puter-account-switch-1';
   const CLIENT_BUILD_STORAGE_KEY = 'lexorium.client.build';
   const CLIENT_REFRESH_FLAG = 'lexorium.client.refreshing';
   const DEPLOYMENT_BACKEND_ERROR = 'This deployment is frontend-only right now. Lexorium needs live backend API routes under /api/* for sign-in, chat, billing, and history. Deploy it on a full-stack host like Vercel, Render, or Railway instead of GitHub Pages or other static-only hosting.';
@@ -3402,7 +3402,16 @@ footer {
 
   function getStoredPuterToken() {
     try {
-      return localStorage.getItem(LEXORIUM_PUTER_TOKEN_STORAGE_KEY) || localStorage.getItem('puter.auth.token') || '';
+      let token = localStorage.getItem(LEXORIUM_PUTER_TOKEN_STORAGE_KEY) || localStorage.getItem('puter.auth.token') || '';
+      token = String(token || '').trim();
+      if (window.puter?.auth?.getAuthToken) {
+        const sdk = String(window.puter.auth.getAuthToken() || '').trim();
+        if (sdk && sdk !== token) {
+          setStoredPuterToken(sdk);
+          return sdk;
+        }
+      }
+      return token;
     } catch (_error) {
       return '';
     }
@@ -3533,6 +3542,12 @@ footer {
     return window.puter.auth.signIn();
   }
 
+  function buildPuterStableUidFromProfile(profile) {
+    if (!profile || typeof profile !== 'object') return '';
+    const raw = String(profile.uuid || profile.id || profile._id || profile.username || profile.email || '').trim();
+    return raw ? `puter:${raw.toLowerCase()}` : '';
+  }
+
   async function ensureSessionFromPuter(interactive, forceFresh = false) {
     if (!window.puter?.auth?.signIn || !window.puter?.auth?.getUser) {
       await waitForPuterAuth(interactive ? 5200 : 2400);
@@ -3541,16 +3556,52 @@ footer {
       throw new Error('Secure sign-in is still loading. Please try again.');
     }
 
-    let token = forceFresh ? '' : getStoredPuterToken();
+    let sdkToken = window.puter?.auth?.getAuthToken ? String(window.puter.auth.getAuthToken() || '').trim() : '';
+    const storedOnly = (() => {
+      try {
+        return String(localStorage.getItem(LEXORIUM_PUTER_TOKEN_STORAGE_KEY) || localStorage.getItem('puter.auth.token') || '').trim();
+      } catch (_e) {
+        return '';
+      }
+    })();
+    if (!forceFresh && sdkToken && storedOnly && sdkToken !== storedOnly) {
+      setStoredPuterToken(sdkToken);
+    }
+
+    let sessionUid = '';
+    try {
+      const sessRes = await fetch(SESSION_URL, { credentials: 'same-origin' });
+      const sess = await sessRes.json().catch(() => ({}));
+      if (sess?.profile?.uid) sessionUid = String(sess.profile.uid).trim();
+    } catch (_e) {
+      sessionUid = '';
+    }
+
+    let liveProfile = await getLivePuterProfile();
+    if (sessionUid && liveProfile) {
+      const liveUid = buildPuterStableUidFromProfile(liveProfile);
+      if (liveUid && liveUid !== sessionUid) {
+        await fetch(LOGOUT_URL, { method: 'POST', credentials: 'same-origin' }).catch(() => null);
+        setStoredPuterToken('');
+        sdkToken = window.puter?.auth?.getAuthToken ? String(window.puter.auth.getAuthToken() || '').trim() : '';
+        if (sdkToken) setStoredPuterToken(sdkToken);
+      }
+    }
+
+    let token = forceFresh ? '' : (sdkToken || getStoredPuterToken());
     if (!token && interactive) {
-      const signInResult = await beginInteractivePuterSignIn(forceFresh);
-      token = String(signInResult?.token || '').trim();
+      const signInResult = await beginInteractivePuterSignIn(true);
+      token = String(signInResult?.token || (window.puter?.auth?.getAuthToken ? window.puter.auth.getAuthToken() : '') || '').trim();
       if (token) setStoredPuterToken(token);
     }
-    let liveProfile = await getLivePuterProfile();
+    liveProfile = await getLivePuterProfile();
     if (!token && !liveProfile && !interactive) {
       await waitForPuterAuth(1800);
       liveProfile = await getLivePuterProfile();
+    }
+    if (!token && liveProfile && window.puter?.auth?.getAuthToken) {
+      token = String(window.puter.auth.getAuthToken() || '').trim();
+      if (token) setStoredPuterToken(token);
     }
     if (!token && !liveProfile) return null;
 

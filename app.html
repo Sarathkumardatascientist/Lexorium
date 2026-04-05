@@ -3937,7 +3937,7 @@
   const PERSONALIZATION_STORAGE = 'lexorium_personalization_v1';
   const SIDEBAR_PREFERENCE_STORAGE = 'lexorium_sidebar_preference_v1';
   const LEXORIUM_PUTER_TOKEN_STORAGE_KEY = 'lexorium.puter.token';
-  const CLIENT_BUILD_VERSION = '2026-04-05-puter-token-recovery-1';
+  const CLIENT_BUILD_VERSION = '2026-04-05-puter-account-switch-1';
   const CLIENT_BUILD_STORAGE_KEY = 'lexorium.client.build';
   const CLIENT_REFRESH_FLAG = 'lexorium.client.refreshing';
   const DEPLOYMENT_BACKEND_ERROR = 'This deployment is missing live backend API support. Lexorium needs working /api/* routes for sign-in, chat, billing, and history. Deploy it on a full-stack host like Vercel, Render, or Railway instead of GitHub Pages or other static-only hosting.';
@@ -4398,43 +4398,67 @@
     return window.puter.auth.signIn();
   }
 
+  function buildPuterStableUidFromProfile(profile) {
+    if (!profile || typeof profile !== 'object') return '';
+    const raw = String(profile.uuid || profile.id || profile._id || profile.username || profile.email || '').trim();
+    return raw ? `puter:${raw.toLowerCase()}` : '';
+  }
+
   async function syncSessionPayloadWithPuter(interactive, forceFresh = false) {
+    if (!window.puter?.auth?.signIn || !window.puter?.auth?.getUser) {
+      await waitForPuterAuth(interactive ? 5200 : 2400);
+    }
+
+    let sdkToken = '';
+    if (window.puter?.auth?.getAuthToken) {
+      sdkToken = String(window.puter.auth.getAuthToken() || '').trim();
+    }
+    // Puter SDK is the source of truth after in-app account switches; storage can be stale.
+    if (!forceFresh && sdkToken && getStoredPuterToken() && sdkToken !== getStoredPuterToken()) {
+      setStoredPuterToken(sdkToken);
+    }
+
+    let liveProfile = await getLivePuterProfile();
+
+    if (currentUserUid && liveProfile) {
+      const liveUid = buildPuterStableUidFromProfile(liveProfile);
+      if (liveUid && liveUid !== currentUserUid) {
+        await fetch(LOGOUT_API_URL, { method: 'POST', credentials: 'same-origin' }).catch(() => null);
+        setStoredPuterToken('');
+        sdkToken = String(window.puter?.auth?.getAuthToken?.() || '').trim();
+        if (sdkToken) setStoredPuterToken(sdkToken);
+        if (!sdkToken) interactive = true;
+      }
+    }
+
     // Avoid repeat popups once we already have a usable Puter token; if the token
     // is missing, allow interactive recovery even after a prior successful sign-in.
     if (interactive && localStorage.getItem('auth_ever_succeeded')) {
       if (getStoredPuterToken()) interactive = false;
     }
-    if (!window.puter?.auth?.signIn || !window.puter?.auth?.getUser) {
-      await waitForPuterAuth(interactive ? 5200 : 2400);
-    }
-    
-    // 1. Resolve current token
-    let token = forceFresh ? '' : getStoredPuterToken();
-    
-    // 2. If token is missing but we are interactive, show the popup
+
+    let token = forceFresh ? '' : (String(window.puter?.auth?.getAuthToken?.() || '').trim() || getStoredPuterToken());
+
     if (!token && interactive) {
       if (!window.puter?.auth?.signIn) {
         throw new Error('Secure sign-in is still loading. Please try again.');
       }
       try {
-        const signInResult = await beginInteractivePuterSignIn(forceFresh);
+        const signInResult = await beginInteractivePuterSignIn(true);
         token = String(signInResult?.token || (window.puter?.auth?.getAuthToken ? window.puter.auth.getAuthToken() : '') || '').trim();
         if (token) setStoredPuterToken(token);
       } catch (_signInError) {
         // Sign-in cancelled or failed
       }
     }
-    
-    // 3. Resolve live profile
-    let liveProfile = await getLivePuterProfile();
-    
-    // 4. If we have a profile but still no token, try to grab it silently from the SDK
+
+    liveProfile = await getLivePuterProfile();
+
     if (!token && liveProfile && window.puter?.auth?.getAuthToken) {
       token = String(window.puter.auth.getAuthToken() || '').trim();
       if (token) setStoredPuterToken(token);
     }
 
-    // 5. If still no bundle, wait once more for the SDK to hydrate
     if (!token && !liveProfile && !interactive) {
       await waitForPuterAuth(1800);
       liveProfile = await getLivePuterProfile();
@@ -4444,7 +4468,6 @@
       }
     }
 
-    // 6. Final check before calling backend
     if (!token && !liveProfile) return null;
 
     // 7. Synchronize with Lexorium backend to set session cookie and fetch profile/plan
@@ -4528,10 +4551,29 @@
     return data || null;
   }
 
+  async function resetWorkspaceForNewAccount() {
+    history = [];
+    pendingAttachments = [];
+    activeMode = null;
+    currentConversationId = null;
+    chatTitle = 'New conversation';
+    hasCustomChatTitle = false;
+    isStarred = false;
+    messagesEl.innerHTML = '';
+    emptyEl.style.display = 'flex';
+    if (emptyEl && !messagesEl.contains(emptyEl)) messagesEl.appendChild(emptyEl);
+    renderGreeting(currentProfileName);
+    hideError();
+    await restoreChatState();
+  }
+
   function applyAuthSession(session, profileOverride = null) {
     const signOutItem = document.getElementById('signOutItem');
     const profile = profileOverride || session?.profile || null;
     if (!profile) return false;
+
+    const previousUid = currentUserUid;
+    const newUid = profile.uid || null;
 
     authPill.style.display = 'inline-flex';
     const displayName = normalizeSignedInDisplayName(profile);
@@ -4540,7 +4582,7 @@
     authAvatar.style.display = 'block';
     if (signOutItem) signOutItem.style.display = 'flex';
     try { localStorage.setItem('auth_ever_succeeded', '1'); } catch (_e) {}
-    currentUserUid = profile.uid || null;
+    currentUserUid = newUid;
     currentProfileName = displayName;
     currentProfilePhone = String(profile?.phone || '').trim();
     currentPlan = session?.plan || currentPlan;
@@ -4557,6 +4599,9 @@
     renderSidebarAccount();
     syncVoiceUi();
     refreshAssistantSurfaces();
+    if (previousUid && newUid && previousUid !== newUid) {
+      resetWorkspaceForNewAccount().catch(() => null);
+    }
     return true;
   }
 

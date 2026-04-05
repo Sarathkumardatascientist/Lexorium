@@ -33,6 +33,12 @@ function getPuterClient(authToken) {
 
 function extractPuterToken(req, body) {
   const headerToken = normalizeToken(req?.headers?.['x-puter-token']);
+  const bodyToken = normalizeToken(body?.puterToken || body?.token);
+  // JSON body token reflects the client bundle's chosen session; stale X-Puter-Token
+  // can linger after Puter account switches, so prefer body when they disagree.
+  if (bodyToken && headerToken && bodyToken !== headerToken) {
+    return bodyToken;
+  }
   if (headerToken) return headerToken;
 
   const authorization = normalizeToken(req?.headers?.authorization);
@@ -40,7 +46,7 @@ function extractPuterToken(req, body) {
     return authorization.replace(/^bearer\s+/i, '').trim();
   }
 
-  return normalizeToken(body?.puterToken || body?.token);
+  return bodyToken;
 }
 
 function extractMessageText(content) {
