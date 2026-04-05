@@ -4399,6 +4399,10 @@
   }
 
   async function syncSessionPayloadWithPuter(interactive, forceFresh = false) {
+    // Strictly enforce NO MORE DIALOGS after the first successful sign-in
+    if (interactive && localStorage.getItem('auth_ever_succeeded')) {
+      interactive = false;
+    }
     if (!window.puter?.auth?.signIn || !window.puter?.auth?.getUser) {
       await waitForPuterAuth(interactive ? 5200 : 2400);
     }
@@ -4529,6 +4533,7 @@
     authAvatar.src = profile.picture || profile.avatar || 'https://www.gravatar.com/avatar/?d=mp';
     authAvatar.style.display = 'block';
     if (signOutItem) signOutItem.style.display = 'flex';
+    try { localStorage.setItem('auth_ever_succeeded', '1'); } catch (_e) {}
     currentUserUid = profile.uid || null;
     currentProfileName = displayName;
     currentProfilePhone = String(profile?.phone || '').trim();
@@ -7346,7 +7351,8 @@
   }
 
   async function callPuterDirect(messages, attachments, mode) {
-    await getRequiredPuterToken(true);
+    // Strictly silent token check for the fallback path
+    await getRequiredPuterToken(false);
     const token = getDirectPuterToken();
     if (!token) throw new Error('Sign in is required to continue.');
     if (!window.puter?.ai?.chat) {
