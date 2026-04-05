@@ -71,7 +71,7 @@
     border-right: 1px solid var(--line);
   }
 
-  /* â”€â”€ HEADER â”€â”€ */
+  /* ── HEADER ── */
   header {
     padding: 0 28px;
     border-bottom: 1px solid var(--line);
@@ -674,7 +674,7 @@
     overflow: visible;
   }
 
-  /* â”€â”€ THREE-DOT MENU â”€â”€ */
+  /* ── THREE-DOT MENU ── */
   .menu-wrap {
     position: relative;
   }
@@ -983,7 +983,7 @@
   }
 
   .settings-scroll-hint::after {
-    content: '↓';
+    content: '?';
     font-size: 12px;
     line-height: 1;
   }
@@ -1396,7 +1396,7 @@
     text-transform: uppercase;
   }
 
-  /* â”€â”€ MODEL SELECTOR (centered) â”€â”€ */
+  /* ── MODEL SELECTOR (centered) ── */
   .model-selector {
     position: relative;
   }
@@ -1587,7 +1587,7 @@
     font-weight: 300;
   }
 
-  /* â”€â”€ MESSAGES â”€â”€ */
+  /* ── MESSAGES ── */
   .messages {
     overflow-y: auto;
     padding: 40px 36px;
@@ -2146,7 +2146,7 @@
     margin-bottom: 0;
   }
 
-  /* â”€â”€ THINKING â”€â”€ */
+  /* ── THINKING ── */
   .thinking {
     display: grid;
     grid-template-columns: 52px 1fr;
@@ -2301,7 +2301,7 @@
     40% { transform: translateY(-2px); opacity: 0.95; }
   }
 
-  /* â”€â”€ EMPTY STATE â”€â”€ */
+  /* ── EMPTY STATE ── */
   .empty {
     flex: 1;
     display: flex;
@@ -2495,7 +2495,7 @@
     }
   }
 
-  /* â”€â”€ INPUT â”€â”€ */
+  /* ── INPUT ── */
   footer {
     border-top: 1px solid var(--line);
     padding: 20px 36px calc(28px + env(safe-area-inset-bottom));
@@ -2645,7 +2645,7 @@
   .api-key-row { display: none; }
   .api-key-row.visible { display: flex; }
 
-  /* â”€â”€ ATTACH BUTTON â”€â”€ */
+  /* ── ATTACH BUTTON ── */
   .attach-wrap {
     position: relative;
     flex-shrink: 0;
@@ -3472,7 +3472,7 @@
     <div class="modal-overlay" id="advancedModal">
     <div class="modal" style="text-align: center;">
       <div class="modal-title">Advanced Computing Required</div>
-      <div class="upgrade-modal-copy" style="margin-top: 12px; font-size: 14px; opacity: 0.85;">Advanced processing may require compute access. You stay in control — any additional compute usage will be shown before execution.</div>
+      <div class="upgrade-modal-copy" style="margin-top: 12px; font-size: 14px; opacity: 0.85;">Advanced processing may require compute access. You stay in control � any additional compute usage will be shown before execution.</div>
       <div class="modal-actions" style="margin-top: 24px;">
         <button class="modal-btn" onclick="closeAdvancedModal()">Cancel</button>
         <button class="modal-btn primary" onclick="confirmAdvancedModal()">Proceed</button>
@@ -3937,7 +3937,7 @@
   const PERSONALIZATION_STORAGE = 'lexorium_personalization_v1';
   const SIDEBAR_PREFERENCE_STORAGE = 'lexorium_sidebar_preference_v1';
   const LEXORIUM_PUTER_TOKEN_STORAGE_KEY = 'lexorium.puter.token';
-  const CLIENT_BUILD_VERSION = '2026-04-05-app-shell-restore-1';
+  const CLIENT_BUILD_VERSION = '2026-04-05-bootstrap-auth-fix-1';
   const CLIENT_BUILD_STORAGE_KEY = 'lexorium.client.build';
   const CLIENT_REFRESH_FLAG = 'lexorium.client.refreshing';
   const DEPLOYMENT_BACKEND_ERROR = 'This deployment is missing live backend API support. Lexorium needs working /api/* routes for sign-in, chat, billing, and history. Deploy it on a full-stack host like Vercel, Render, or Railway instead of GitHub Pages or other static-only hosting.';
@@ -4107,7 +4107,7 @@
     setStoredPuterToken('');
   }
 
-  async function refreshClientShellIfNeeded() { return true; // Force refresh
+  async function refreshClientShellIfNeeded() {
     let storedVersion = '';
     let refreshFlag = '';
     try {
@@ -4724,7 +4724,7 @@
     if (settingsAccountNameEl) settingsAccountNameEl.textContent = currentProfileName || authName.textContent || 'Sign in to Lexorium';
     if (settingsAccountMetaEl) {
       const remaining = currentPlan?.unmetered ? 'Priority access enabled' : 'Daily legal access active';
-      settingsAccountMetaEl.textContent = `${currentPlan?.name || 'Free'} plan • ${remaining}`;
+      settingsAccountMetaEl.textContent = `${currentPlan?.name || 'Free'} plan � ${remaining}`;
     }
     if (voicePlanLabelEl) voicePlanLabelEl.textContent = currentPlan?.name || 'Free';
     if (voicePlanCopyEl) {
@@ -5633,7 +5633,7 @@
     updateRoutingIndicator(currentModel, activeMode);
   }
 
-  // â”€â”€ ATTACH MENU â”€â”€
+  // ── ATTACH MENU ──
   function triggerFile(id) {
     closeAttachMenu();
     // Small delay ensures menu is closed before dialog opens (critical on iOS)
@@ -5841,7 +5841,7 @@
     };
   }
 
-    // â”€â”€ THREE-DOT MENU â”€â”€
+    // ── THREE-DOT MENU ──
   function toggleMenu() {
     const menu = document.getElementById('ctxMenu');
     const btn = document.getElementById('dotsBtn');
@@ -5865,7 +5865,7 @@
     if (!document.querySelector('.sidebar-footer')?.contains(e.target)) closeAccountMenu();
   });
 
-  // â”€â”€ HEADER ACTIONS â”€â”€
+  // ── HEADER ACTIONS ──
   function openRename(id = currentConversationId) {
     const targetId = id || currentConversationId;
     const targetChat = chatStore.find(chat => chat.id === targetId);
@@ -6556,7 +6556,7 @@
     }
   }
 
-  // â”€â”€ MARKDOWN + SOURCES RENDERER â”€â”€
+  // ── MARKDOWN + SOURCES RENDERER ──
   function parseSources(text) {
     const sources = [];
     const clean = text.replace(/\[SOURCE:(\d+)\|([^\|]+)\|([^\]]+)\]/g, (_, num, name, url) => {
@@ -6577,7 +6577,7 @@
       .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
       .replace(/\*(.+?)\*/g, '<em>$1</em>')
       .replace(/^---$/gm, '<hr>')
-      .replace(/^[-*•] (.+)$/gm, '<li>$1</li>')
+      .replace(/^[-*�] (.+)$/gm, '<li>$1</li>')
       .replace(/^\d+\. (.+)$/gm, '<oli>$1</oli>');
     html = html.replace(/(<li>.*?<\/li>\n?)+/gs, m => `<ul>${m}</ul>`);
     html = html.replace(/(<oli>.*?<\/oli>\n?)+/gs, m => `<ol>${m.replace(/<oli>/g,'<li>').replace(/<\/oli>/g,'</li>')}</ol>`);
@@ -6835,7 +6835,7 @@
     }
   }
 
-  // â”€â”€ INPUT / MESSAGES â”€â”€
+  // ── INPUT / MESSAGES ──
   inputEl.addEventListener('input', () => { updateSendBtn(); });
 
   function autoResize(el) {
@@ -7015,7 +7015,7 @@
 
       const isStructuredBlock =
         /^#{1,3}\s/.test(block) ||
-        /^[-*•]\s/m.test(block) ||
+        /^[-*�]\s/m.test(block) ||
         /^\d+\.\s/m.test(block) ||
         /^```/.test(block);
 
@@ -7172,7 +7172,7 @@
     msgDiv.querySelector('.msg-body')?.appendChild(note);
   }
 
-  // â”€â”€ API CALLS â”€â”€
+  // ── API CALLS ──
   function attachmentToMessagePart(attachment) {
     if (attachment.isImage && attachment.dataUrl) {
       return { type: 'image_url', image_url: { url: attachment.dataUrl } };
@@ -7683,12 +7683,12 @@
         const roleNode = msgDiv.querySelector('.msg-role');
         if (roleNode) roleNode.textContent = 'Lexorium';
         const limitMessage = currentPlan?.id === 'free'
-          ? 'You’ve reached today’s 20-query Free plan limit. Upgrade to continue using Lexorium.'
+          ? 'You�ve reached today�s 20-query Free plan limit. Upgrade to continue using Lexorium.'
           : 'Daily plan limit reached. Upgrade to continue using Lexorium.';
         await animateResponse(msgDiv, limitMessage);
         const limitUpgradePlan = 'pro';
         openUpgradeModal({
-          title: currentPlan?.id === 'free' ? 'You’ve reached today’s 20-query limit.' : 'Daily plan limit reached.',
+          title: currentPlan?.id === 'free' ? 'You�ve reached today�s 20-query limit.' : 'Daily plan limit reached.',
           message: currentPlan?.id === 'free' ? 'Upgrade to Lexorium Pro for increased daily limits and premium legal intelligence tools.' : 'Upgrade this account to Lexorium Pro or Enterprise.',
           reason: 'limit_reached',
           planId: limitUpgradePlan,
