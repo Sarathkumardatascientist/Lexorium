@@ -7426,21 +7426,23 @@
 
     let response = await requestWithToken(puterToken);
 
-    // 3. Handle 401 (Unauthorised) - strictly via background refresh only
+    // 3. Handle 401 (Unauthorized) with automatic silent recovery
     if (response.status === 401) {
-      // Attempt ONE silent token refresh in the background.
-      await syncSessionPayloadWithPuter(false).catch(() => null);
-      const refreshedToken = getStoredPuterToken();
-      if (refreshedToken && refreshedToken !== puterToken) {
-        puterToken = refreshedToken;
+      // Clear potentially corrupted local state
+      setStoredPuterToken('');
+      
+      // Attempt a full fresh silent sync (fetches user profile + sets new cookie)
+      const freshSync = await syncSessionPayloadWithPuter(false, true).catch(() => null);
+      if (freshSync?.ok || freshSync?.profile) {
+        puterToken = getStoredPuterToken();
+        // Retry the request with the fresh session
         response = await requestWithToken(puterToken);
       }
     }
 
-    // 4. Final check for 401: If still unauthorised, we throw an error instead of showing a dialog box.
+    // 4. Final check for 401: If still unauthorized after silent refresh, we show a retryable inline message
     if (response.status === 401) {
-      // We do NOT call syncSessionPayloadWithPuter(true) here to avoid the guest popup.
-      const authError = new Error('Your session has expired. Please refresh the page to continue.');
+      const authError = new Error('Session connectivity issue. Please try sending your message again in a moment.');
       authError.code = 'PUTER_AUTH_REQUIRED';
       throw authError;
     }
