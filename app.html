@@ -3431,7 +3431,18 @@
     </div>
   </div>
 
-  <div class="modal-overlay" id="settingsModal">
+    <div class="modal-overlay" id="advancedModal">
+    <div class="modal" style="text-align: center;">
+      <div class="modal-title">Advanced Computing Required</div>
+      <div class="upgrade-modal-copy" style="margin-top: 12px; font-size: 14px; opacity: 0.85;">Advanced processing may require compute access. You stay in control — any additional compute usage will be shown before execution.</div>
+      <div class="modal-actions" style="margin-top: 24px;">
+        <button class="modal-btn" onclick="closeAdvancedModal()">Cancel</button>
+        <button class="modal-btn primary" onclick="confirmAdvancedModal()">Proceed</button>
+      </div>
+    </div>
+  </div>
+
+<div class="modal-overlay" id="settingsModal">
     <div class="settings-modal">
       <div class="settings-shell">
         <aside class="settings-sidebar">
@@ -3707,6 +3718,7 @@
     <!-- Attach preview strip + mode badge -->
     <div id="attachPreview" class="attach-preview"></div>
 
+        <div id="usageWarningText" class="usage-warning" style="display: none; text-align: center; color: rgba(255,255,255,0.6); font-size: 11px; margin-bottom: 8px; font-family: 'Jost', sans-serif;"></div>
     <div class="input-row">
       <!-- Legal Tools button -->
       <div class="attach-wrap" id="attachWrap">
@@ -3799,8 +3811,10 @@
       </button>
     </div>
     <div class="error-msg" id="errorMsg"></div>
+    <div id="limitUpgradeCTA" style="display: none; text-align: center; margin-top: 12px;">
+      <button class="settings-inline-btn primary" onclick="openUpgradeModal({reason:'limit_reached'})">Upgrade to Pro</button>
+    </div>
     <div class="footer-hint">Enter send &nbsp;|&nbsp; Shift+Enter newline &nbsp;|&nbsp; legal-only workspace</div>
-    <div style="text-align: center; color: rgba(255,255,255,0.4); font-size: 10.5px; margin-top: 8px; letter-spacing: 0.02em; font-family: 'Jost', sans-serif;">Advanced processing may require additional compute usage. You will always be notified before any charge is applied.</div>
   </footer>
 </div>
 
@@ -5179,6 +5193,28 @@
     return usage && typeof usage === 'object' ? { ...usage } : null;
   }
 
+  function renderUsageWarning() {
+    const warningEl = document.getElementById('usageWarningText');
+    if (!warningEl) return;
+    warningEl.style.display = 'none';
+    warningEl.textContent = '';
+    const planSummary = getCurrentPlanSummary();
+    if (planSummary?.unmetered || currentPlan.id !== 'free') return;
+    if (!currentUsage) return;
+    const limit = Number(currentUsage.limit || 20);
+    const used = Number(currentUsage.used || 0);
+    const percent = used / limit;
+    if (percent >= 1.0) {
+       warningEl.style.display = 'none';
+    } else if (percent >= 0.8) {
+       warningEl.style.display = 'block';
+       warningEl.textContent = "You’re nearing today’s access limit.";
+    } else if (percent >= 0.5) {
+       warningEl.style.display = 'block';
+       warningEl.textContent = "You’re using the free plan.";
+    }
+  }
+
   function syncUsageCounter(nextUsage, options = {}) {
     const consumeOnMissing = Boolean(options.consumeOnMissing);
     const normalized = normalizeUsageState(nextUsage, currentUsage);
@@ -5191,6 +5227,7 @@
     if (getCurrentPlanSummary()?.unmetered) {
       if (composerLockedReason === 'limit_reached') unlockComposer();
       renderPlanStatus();
+      renderUsageWarning();
       return;
     }
 
@@ -5200,6 +5237,7 @@
       unlockComposer();
     }
     renderPlanStatus();
+    renderUsageWarning();
     if (settingsModalEl?.classList.contains('open')) renderSettingsPanel(activeSettingsSection);
   }
 
@@ -7367,6 +7405,20 @@
       noun,
       label: hasImage ? '[Attached image for analysis]' : '[Attached file for analysis]',
     };
+  }
+
+  function promptAdvancedModal() {
+    return new Promise((resolve) => {
+      document.getElementById('advancedModal').classList.add('open');
+      window.confirmAdvancedModal = () => {
+        document.getElementById('advancedModal').classList.remove('open');
+        resolve(true);
+      };
+      window.closeAdvancedModal = () => {
+        document.getElementById('advancedModal').classList.remove('open');
+        resolve(false);
+      };
+    });
   }
 
   async function sendMessage() {
