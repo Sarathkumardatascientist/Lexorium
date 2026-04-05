@@ -17,7 +17,7 @@ function getPuterApiOrigin() {
 }
 
 function getPuterClient(authToken) {
-  const token = normalizeToken(authToken);
+  const token = normalizeToken(authToken) || normalizeToken(process.env.PUTER_TOKEN);
   if (!token) {
     const error = new Error('Sign in is required.');
     error.statusCode = 401;

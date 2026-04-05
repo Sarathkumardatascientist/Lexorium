@@ -1,8 +1,6 @@
 const { getSessionFromRequest } = require('./auth/_session');
 const { resolvePuterUser } = require('./_lib/puter-client');
-const db = require('./_lib/db');
-const devStore = require('./_lib/dev-store');
-const store = devStore.isLocalDevStoreEnabled() ? devStore : db;
+const store = require('./_lib/store');
 const { getConversation, getUser, saveConversation, takeQuota, track, upsertUser } = store;
 const { classify, prompt } = require('./_lib/legal');
 const { assessAnswerQuality, buildRepairMessages } = require('./_lib/answer-quality');
@@ -231,8 +229,9 @@ module.exports = async (req, res) => {
   const body = await parseJsonBody(req).catch((error) => ({ __error: error }));
   if (body.__error) return sendError(res, body.__error.statusCode || 400, body.__error.message);
 
-  const providerToken = extractProviderToken(req, body);
-  if (!providerToken) return sendError(res, 401, 'Sign in is required to use Lexorium.');
+  const explicitToken = extractProviderToken(req, body);
+  const providerToken = explicitToken || (process.env.PUTER_TOKEN ? String(process.env.PUTER_TOKEN).trim() : '');
+  if (!explicitToken && !session?.sub) return sendError(res, 401, 'Sign in is required to use Lexorium.');
 
   // Resolve the user — prefer the signed session cookie, but fall back to the
   // Puter token when the cookie is absent (e.g. SESSION_SECRET not yet set on
@@ -241,9 +240,9 @@ module.exports = async (req, res) => {
   if (session?.sub) {
     user = await getUser(session.sub);
   }
-  if (!user && providerToken) {
+  if (!user && explicitToken) {
     try {
-      const puterProfile = await resolvePuterUser(providerToken);
+      const puterProfile = await resolvePuterUser(explicitToken);
       if (puterProfile) {
         const uuid = String(puterProfile.uuid || puterProfile.id || puterProfile._id || puterProfile.username || puterProfile.email || '').trim();
         if (uuid) {

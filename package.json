@@ -10,7 +10,7 @@
     "node": ">=24"
   },
   "scripts": {
-    "dev": "set LEXORIUM_LOCAL_DEV=1&& set PUBLIC_APP_URL=http://localhost:3000&& node server.js",
+    "dev": "node server.js",
     "start": "node server.js",
     "desktop:dev": "set LEXORIUM_DESKTOP_APP_URL=http://localhost:3000&& electron .",
     "desktop:build": "powershell -ExecutionPolicy Bypass -File desktop/build-desktop-installer.ps1"

@@ -1,6 +1,4 @@
-const db = require('../_lib/db');
-const devStore = require('../_lib/dev-store');
-const store = devStore.isLocalDevStoreEnabled() ? devStore : db;
+const store = require('../_lib/store');
 const { activatePaidPlan, findUserByEmail, recordPaymentEvent } = store;
 const { readRawBody, requireMethod, sendError, sendJson } = require('../_lib/http');
 const { getCashfreeConfig, verifyWebhookSignature } = require('./_cashfree');

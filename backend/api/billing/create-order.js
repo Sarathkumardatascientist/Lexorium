@@ -1,7 +1,5 @@
 const { getSessionFromRequest } = require('../auth/_session');
-const db = require('../_lib/db');
-const devStore = require('../_lib/dev-store');
-const store = devStore.isLocalDevStoreEnabled() ? devStore : db;
+const store = require('../_lib/store');
 const { getUser, recordCheckoutIntent, track, updateUserProfile } = store;
 const { parseJsonBody, requireMethod, sendError, sendJson } = require('../_lib/http');
 const { createHeaders, getCashfreeConfig } = require('./_cashfree');

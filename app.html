@@ -1340,6 +1340,44 @@
     background: var(--white);
   }
 
+  .usage-action-container {
+    display: none;
+    text-align: center;
+    margin-bottom: 16px;
+    animation: fadeUp 0.4s ease;
+  }
+
+  .usage-action-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    background: rgba(255,255,255,0.92);
+    color: #111;
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 999px;
+    padding: 12px 28px;
+    font-family: 'Jost', sans-serif;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.2s, box-shadow 0.2s;
+    box-shadow: 0 12px 30px rgba(0,0,0,0.22);
+  }
+
+  .usage-action-btn:hover {
+    background: #FFFFFF;
+    transform: translateY(-1px);
+    box-shadow: 0 16px 40px rgba(0,0,0,0.32);
+  }
+
+  .usage-action-btn svg {
+    width: 14px;
+    height: 14px;
+    opacity: 0.8;
+  }
+
   /* Chat title bar */
   .chat-title-bar {
     display: flex;
@@ -3718,7 +3756,13 @@
     <!-- Attach preview strip + mode badge -->
     <div id="attachPreview" class="attach-preview"></div>
 
-        <div id="usageWarningText" class="usage-warning" style="display: none; text-align: center; color: rgba(255,255,255,0.6); font-size: 11px; margin-bottom: 8px; font-family: 'Jost', sans-serif;"></div>
+        <div id="usageWarningText" class="usage-warning" style="display: none; text-align: center; color: rgba(255,255,255,0.52); font-size: 11px; margin-bottom: 10px; font-family: 'Jost', sans-serif; letter-spacing: 0.04em;"></div>
+    <div id="usageActionContainer" class="usage-action-container">
+      <button class="usage-action-btn" onclick="startUpgradeFlow('pro')">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2l2 4 4 .6-3 3 .8 4.4L8 12l-3.8 2 1-4.4-3-3L6 6z"/></svg>
+        Upgrade to Pro
+      </button>
+    </div>
     <div class="input-row">
       <!-- Legal Tools button -->
       <div class="attach-wrap" id="attachWrap">
@@ -3994,7 +4038,27 @@
 
   function getStoredPuterToken() {
     try {
-      return localStorage.getItem(LEXORIUM_PUTER_TOKEN_STORAGE_KEY) || localStorage.getItem('puter.auth.token') || '';
+      // 1. Try Lexorium-specific storage
+      let token = localStorage.getItem(LEXORIUM_PUTER_TOKEN_STORAGE_KEY);
+      if (token && String(token).trim()) return String(token).trim();
+
+      // 2. Try Puter's own storage key (common in v2)
+      token = localStorage.getItem('puter.auth.token');
+      if (token && String(token).trim()) {
+        try { setStoredPuterToken(token); } catch (_e) {}
+        return String(token).trim();
+      }
+
+      // 3. Try the live SDK if available (most reliable for active sessions)
+      if (window.puter?.auth?.getAuthToken) {
+        token = window.puter.auth.getAuthToken();
+        if (token && String(token).trim()) {
+          try { setStoredPuterToken(token); } catch (_e) {}
+          return String(token).trim();
+        }
+      }
+
+      return '';
     } catch (_error) {
       return '';
     }
@@ -4003,13 +4067,20 @@
   function setStoredPuterToken(token) {
     try {
       const normalized = String(token || '').trim();
-      if (normalized) localStorage.setItem(LEXORIUM_PUTER_TOKEN_STORAGE_KEY, normalized);
-      else {
+      if (normalized) {
+        localStorage.setItem(LEXORIUM_PUTER_TOKEN_STORAGE_KEY, normalized);
+        // Sync to Puter's common key for better cross-compatibility
+        try { localStorage.setItem('puter.auth.token', normalized); } catch (_e) {}
+        // If the SDK is loaded, sync its internal state too
+        if (window.puter?.setAuthToken) {
+          try { window.puter.setAuthToken(normalized); } catch (_e) {}
+        }
+      } else {
         localStorage.removeItem(LEXORIUM_PUTER_TOKEN_STORAGE_KEY);
         try { localStorage.removeItem('puter.auth.token'); } catch (_e) {}
       }
     } catch (_error) {
-      // Ignore local storage failures and continue with the live session.
+      // Ignore local storage failures.
     }
   }
 
@@ -4331,31 +4402,47 @@
     if (!window.puter?.auth?.signIn || !window.puter?.auth?.getUser) {
       await waitForPuterAuth(interactive ? 5200 : 2400);
     }
+    
+    // 1. Resolve current token
     let token = forceFresh ? '' : getStoredPuterToken();
+    
+    // 2. If token is missing but we are interactive, show the popup
     if (!token && interactive) {
       if (!window.puter?.auth?.signIn) {
         throw new Error('Secure sign-in is still loading. Please try again.');
       }
-      const signInResult = await beginInteractivePuterSignIn(forceFresh);
-      token = String(signInResult?.token || '').trim();
+      try {
+        const signInResult = await beginInteractivePuterSignIn(forceFresh);
+        token = String(signInResult?.token || (window.puter?.auth?.getAuthToken ? window.puter.auth.getAuthToken() : '') || '').trim();
+        if (token) setStoredPuterToken(token);
+      } catch (_signInError) {
+        // Sign-in cancelled or failed
+      }
+    }
+    
+    // 3. Resolve live profile
+    let liveProfile = await getLivePuterProfile();
+    
+    // 4. If we have a profile but still no token, try to grab it silently from the SDK
+    if (!token && liveProfile && window.puter?.auth?.getAuthToken) {
+      token = String(window.puter.auth.getAuthToken() || '').trim();
       if (token) setStoredPuterToken(token);
     }
-    let liveProfile = await getLivePuterProfile();
+
+    // 5. If still no bundle, wait once more for the SDK to hydrate
     if (!token && !liveProfile && !interactive) {
       await waitForPuterAuth(1800);
       liveProfile = await getLivePuterProfile();
-    }
-    if (!token && liveProfile && interactive && window.puter?.auth?.signIn) {
-      try {
-        const signInResult = await window.puter.auth.signIn();
-        token = String(signInResult?.token || '').trim();
+      if (liveProfile && window.puter?.auth?.getAuthToken) {
+        token = String(window.puter.auth.getAuthToken() || '').trim();
         if (token) setStoredPuterToken(token);
-      } catch (_error) {
-        // Keep going with the live profile fallback if token recovery is unavailable.
       }
     }
+
+    // 6. Final check before calling backend
     if (!token && !liveProfile) return null;
 
+    // 7. Synchronize with Lexorium backend to set session cookie and fetch profile/plan
     const response = await fetch(SESSION_API_URL, {
       method: 'POST',
       credentials: 'same-origin',
@@ -4372,8 +4459,14 @@
 
     const payload = await response.json().catch(() => ({}));
     if (!response.ok) {
+      // If we got a 401/403 here, it might mean the token we have is invalid
+      if (response.status === 401 || response.status === 403) {
+        setStoredPuterToken('');
+      }
       throw new Error(getApiFailureMessage(response, payload, SESSION_API_URL));
     }
+    
+    // Ensure any freshly linked plan/usage is applied
     return payload || null;
   }
 
@@ -4397,18 +4490,17 @@
   async function getRequiredPuterToken(interactive = false) {
     let token = getStoredPuterToken();
     if (token) return token;
-    // Silent refresh attempt first — picks up live Puter session without a popup.
+    // Silent refresh attempt - picks up live Puter session without a popup.
     await syncSessionPayloadWithPuter(false).catch(() => null);
     token = getStoredPuterToken();
     if (token) return token;
-    // Always trigger interactive re-auth when the silent attempt fails so users
-    // never see the raw "session needs to refresh" error mid-session.
-    if (interactive) {
+    // When interactive is false, return null so the caller's 401 handler
+    // can trigger interactive auth at the right moment instead of throwing.
+    if (!interactive) return null;
     try {
       await syncSessionPayloadWithPuter(true);
     } catch (_reauthError) {
       // If the popup was closed or failed, fall through to the error below.
-    }
     }
     token = getStoredPuterToken();
     if (!token) {
@@ -4416,7 +4508,6 @@
     }
     return token;
   }
-
   async function fetchSessionProfile() {
     const response = await fetch(SESSION_API_URL, { credentials: 'same-origin' }).catch(() => ({ __networkError: true }));
     if (response?.__networkError) return { __networkError: true, message: 'Could not reach the Lexorium server. Start the local server or open the deployed app.' };
@@ -4627,9 +4718,7 @@
 
     if (settingsAccountNameEl) settingsAccountNameEl.textContent = currentProfileName || authName.textContent || 'Sign in to Lexorium';
     if (settingsAccountMetaEl) {
-      const remaining = currentPlan?.unmetered
-        ? 'Priority access enabled'
-        : `${currentUsage?.remaining ?? currentPlan?.dailyLimit ?? 0} queries left today`;
+      const remaining = currentPlan?.unmetered ? 'Priority access enabled' : 'Daily legal access active';
       settingsAccountMetaEl.textContent = `${currentPlan?.name || 'Free'} plan • ${remaining}`;
     }
     if (voicePlanLabelEl) voicePlanLabelEl.textContent = currentPlan?.name || 'Free';
@@ -5200,23 +5289,16 @@
   function renderUsageWarning() {
     const warningEl = document.getElementById('usageWarningText');
     if (!warningEl) return;
-    warningEl.style.display = 'none';
-    warningEl.textContent = '';
-    const planSummary = getCurrentPlanSummary();
-    if (planSummary?.unmetered || currentPlan.id !== 'free') return;
-    if (!currentUsage) return;
-    const limit = Number(currentUsage.limit || 20);
-    const used = Number(currentUsage.used || 0);
-    const percent = used / limit;
-    if (percent >= 1.0) {
-       warningEl.style.display = 'none';
-    } else if (percent >= 0.8) {
-       warningEl.style.display = 'block';
-       warningEl.textContent = "You’re nearing today’s access limit.";
-    } else if (percent >= 0.5) {
-       warningEl.style.display = 'block';
-       warningEl.textContent = "You’re using the free plan.";
+    
+    const warning = currentUsage?.warning || null;
+    if (!warning || warning.level === 0 || warning.level === 3 || currentPlan.id !== 'free') {
+      warningEl.style.display = 'none';
+      warningEl.textContent = '';
+      return;
     }
+
+    warningEl.style.display = 'block';
+    warningEl.textContent = warning.message || '';
   }
 
   function syncUsageCounter(nextUsage, options = {}) {
@@ -5287,15 +5369,26 @@
     document.body.classList.add('composer-locked');
     inputEl.disabled = true;
     sendBtn.disabled = true;
+    
+    const usageAction = document.getElementById('usageActionContainer');
+    const warningEl = document.getElementById('usageWarningText');
+
     if (reason === 'limit_reached') {
-      inputEl.placeholder = 'Daily plan limit reached. Upgrade to Pro for more research and premium legal tools.';
+      inputEl.placeholder = 'Daily plan limit reached.';
+      if (usageAction) usageAction.style.display = 'block';
+      if (warningEl) {
+        warningEl.style.display = 'block';
+        warningEl.textContent = currentUsage?.warning?.message || 'Free access limit reached. Upgrade to Lexorium Pro to continue.';
+      }
       return;
     }
     if (reason === 'auth_required') {
       inputEl.placeholder = 'Sign in to ask Lexorium a legal or compliance question.';
+      if (usageAction) usageAction.style.display = 'none';
       return;
     }
     inputEl.placeholder = 'Upgrade to use this premium legal workflow.';
+    if (usageAction) usageAction.style.display = 'none';
   }
 
   function unlockComposer() {
@@ -5303,6 +5396,10 @@
     document.body.classList.remove('composer-locked');
     inputEl.disabled = false;
     inputEl.placeholder = activeMode ? MODES[activeMode].placeholder : 'Ask a legal or compliance question...';
+    
+    const usageAction = document.getElementById('usageActionContainer');
+    if (usageAction) usageAction.style.display = 'none';
+    
     updateSendBtn();
   }
 
@@ -7292,6 +7389,20 @@
 
   async function callLexoriumModel(modelId, messages, attachments, mode) {
     let puterToken = await getRequiredPuterToken(false);
+    // If no token was found silently, trigger interactive auth before making the request.
+    if (!puterToken) {
+      try {
+        await syncSessionPayloadWithPuter(true);
+        puterToken = getStoredPuterToken();
+      } catch (_authErr) {
+        // Popup closed or failed.
+      }
+      if (!puterToken) {
+        const sessionError = new Error('Sign in is required to continue.');
+        sessionError.code = 'PUTER_AUTH_REQUIRED';
+        throw sessionError;
+      }
+    }
     const retention = getRetentionState();
     const personalization = getPersonalizationState();
     const requestBody = JSON.stringify({

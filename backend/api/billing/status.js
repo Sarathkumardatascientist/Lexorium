@@ -1,7 +1,5 @@
 const { getSessionFromRequest } = require('../auth/_session');
-const db = require('../_lib/db');
-const devStore = require('../_lib/dev-store');
-const store = devStore.isLocalDevStoreEnabled() ? devStore : db;
+const store = require('../_lib/store');
 const { getUser } = store;
 const { sendJson, sendError } = require('../_lib/http');
 const { getPlanForProfile, getPublicPlanSummary } = require('../_lib/plan-access');

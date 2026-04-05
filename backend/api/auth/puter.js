@@ -3,10 +3,7 @@ const { resolvePuterUser, extractPuterToken } = require('../_lib/puter-client');
 const { parseJsonBody, requireMethod, sendError, sendJson } = require('../_lib/http');
 const { getPlanForProfile, getPublicPlanSummary, getUsageForPlan } = require('../_lib/plan-access');
 const { buildRetentionSummary } = require('../_lib/retention');
-const db = require('../_lib/db');
-const devStore = require('../_lib/dev-store');
-
-const store = devStore.isLocalDevStoreEnabled() ? devStore : db;
+const store = require('../_lib/store');
 const { track, upsertUser } = store;
 
 function clean(value) {

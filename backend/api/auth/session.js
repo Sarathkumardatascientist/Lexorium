@@ -1,8 +1,6 @@
 const puterHandler = require('./puter');
 const { getSessionFromRequest } = require('./_session');
-const db = require('../_lib/db');
-const devStore = require('../_lib/dev-store');
-const store = devStore.isLocalDevStoreEnabled() ? devStore : db;
+const store = require('../_lib/store');
 const { activatePaidPlan, getUser } = store;
 const {
   fetchGooglePlaySubscription,

@@ -218,22 +218,36 @@ function getUpgradeTargetPlan(planId) {
 function getUsageWarningState(planId, usage) {
   const plan = getPlanConfig(planId);
   if (plan.unmetered) {
-    return {
-      showSoftWarning: false,
-      showHardLimit: false,
-      threshold: null,
-    };
+    return { level: 0, message: '', showSoftWarning: false, showHardLimit: false };
   }
 
   const limit = Number(usage?.limit || plan.dailyLimit || 0);
   const used = Number(usage?.used || 0);
   const remaining = Math.max(limit - used, 0);
-  const threshold = Math.max(Math.floor(limit * 0.8), limit - 6);
+
+  // States
+  // Level 1: Mid Usage (50-70%) -> "You’re using the free plan."
+  // Level 2: Nearing Limit (80-99%) -> "You’re nearing today’s access limit."
+  // Level 3: Reached (100%) -> "Free access limit reached. Upgrade to Lexorium Pro to continue with full access."
+  let level = 0;
+  let message = '';
+
+  if (remaining <= 0) {
+    level = 3;
+    message = 'Free access limit reached. Upgrade to Lexorium Pro to continue with full access.';
+  } else if (used >= Math.floor(limit * 0.8)) {
+    level = 2;
+    message = 'You’re nearing today’s access limit.';
+  } else if (used >= Math.floor(limit * 0.5)) {
+    level = 1;
+    message = 'You’re using the free plan.';
+  }
 
   return {
-    showSoftWarning: planId === 'free' && used >= threshold && remaining > 0,
-    showHardLimit: remaining <= 0,
-    threshold,
+    level,
+    message,
+    showSoftWarning: level > 0 && level < 3,
+    showHardLimit: level === 3,
   };
 }
 
