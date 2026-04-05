@@ -47,7 +47,7 @@ const PLAN_CONFIG = {
     id: 'free',
     name: 'Free',
     tierLabel: 'Free',
-    description: '20 legal queries per day with standard legal responses, basic reasoning, and community-level access for everyday legal clarity. Additional credits may apply for complex requests.',
+    description: '20 legal queries per day with standard legal responses, basic reasoning, and community-level access for everyday legal clarity.',
     shortDescription: 'Community legal access',
     routeTier: 'free',
     dailyLimit: FIXED_DAILY_LIMITS.free,
