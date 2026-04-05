@@ -4345,7 +4345,7 @@
       await waitForPuterAuth(1800);
       liveProfile = await getLivePuterProfile();
     }
-    if (!token && liveProfile && window.puter?.auth?.signIn) {
+    if (!token && liveProfile && interactive && window.puter?.auth?.signIn) {
       try {
         const signInResult = await window.puter.auth.signIn();
         token = String(signInResult?.token || '').trim();
@@ -4403,10 +4403,12 @@
     if (token) return token;
     // Always trigger interactive re-auth when the silent attempt fails so users
     // never see the raw "session needs to refresh" error mid-session.
+    if (interactive) {
     try {
       await syncSessionPayloadWithPuter(true);
     } catch (_reauthError) {
       // If the popup was closed or failed, fall through to the error below.
+    }
     }
     token = getStoredPuterToken();
     if (!token) {
@@ -7289,7 +7291,7 @@
   }
 
   async function callLexoriumModel(modelId, messages, attachments, mode) {
-    let puterToken = await getRequiredPuterToken(true);
+    let puterToken = await getRequiredPuterToken(false);
     const retention = getRetentionState();
     const personalization = getPersonalizationState();
     const requestBody = JSON.stringify({
@@ -7575,12 +7577,14 @@
         const msgDiv = pendingAssistantMsg || addMessage('assistant', '', 'Lexorium');
         const roleNode = msgDiv.querySelector('.msg-role');
         if (roleNode) roleNode.textContent = 'Lexorium';
-        const limitMessage = 'Daily plan limit reached. Upgrade to continue using Lexorium.';
+        const limitMessage = currentPlan?.id === 'free'
+          ? 'You’ve reached today’s 20-query Free plan limit. Upgrade to continue using Lexorium.'
+          : 'Daily plan limit reached. Upgrade to continue using Lexorium.';
         await animateResponse(msgDiv, limitMessage);
         const limitUpgradePlan = 'pro';
         openUpgradeModal({
-          title: 'Daily plan limit reached.',
-          message: 'Upgrade this account to Lexorium Pro.',
+          title: currentPlan?.id === 'free' ? 'You’ve reached today’s 20-query limit.' : 'Daily plan limit reached.',
+          message: currentPlan?.id === 'free' ? 'Upgrade to Lexorium Pro for increased daily limits and premium legal intelligence tools.' : 'Upgrade this account to Lexorium Pro or Enterprise.',
           reason: 'limit_reached',
           planId: limitUpgradePlan,
           ctaLabel: 'Upgrade to Pro',
@@ -7816,3 +7820,5 @@
 </script>
 </body>
 </html>
+
+
