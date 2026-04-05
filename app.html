@@ -3937,7 +3937,7 @@
   const PERSONALIZATION_STORAGE = 'lexorium_personalization_v1';
   const SIDEBAR_PREFERENCE_STORAGE = 'lexorium_sidebar_preference_v1';
   const LEXORIUM_PUTER_TOKEN_STORAGE_KEY = 'lexorium.puter.token';
-  const CLIENT_BUILD_VERSION = '2026-04-06-hide-upgrade-paid-1';
+  const CLIENT_BUILD_VERSION = '2026-04-06-single-signin-ux-1';
   const CLIENT_BUILD_STORAGE_KEY = 'lexorium.client.build';
   const CLIENT_REFRESH_FLAG = 'lexorium.client.refreshing';
   const DEPLOYMENT_BACKEND_ERROR = 'This deployment is missing live backend API support. Lexorium needs working /api/* routes for sign-in, chat, billing, and history. Deploy it on a full-stack host like Vercel, Render, or Railway instead of GitHub Pages or other static-only hosting.';
@@ -4165,8 +4165,24 @@
   }
 
   function normalizeSignedInDisplayName(profile) {
-    const explicitName = String(profile?.name || '').trim();
-    if (explicitName && !isGenericAccountName(explicitName)) return explicitName;
+    const pick = (...vals) => {
+      for (const v of vals) {
+        const s = String(v || '').trim();
+        if (s && !isGenericAccountName(s)) return s;
+      }
+      return '';
+    };
+    let n = pick(
+      profile?.name,
+      profile?.displayName,
+      profile?.display_name,
+      profile?.full_name,
+      profile?.fullName,
+      profile?.nickname,
+    );
+    if (n) return n;
+    n = pick(profile?.username, profile?.handle);
+    if (n) return n;
     const email = String(profile?.email || '').trim();
     if (email) return email.replace(/@puter\.local$/i, '');
     const uid = String(profile?.uid || '').trim().replace(/^puter:/i, '');
@@ -4381,8 +4397,11 @@
       // Ignore remote sign-out failures and continue with local cleanup.
     }
     clearStoredPuterArtifacts();
+    try { localStorage.removeItem('auth_ever_succeeded'); } catch (_e) {}
     await wait(180);
   }
+
+  let puterInteractiveSignInPromise = null;
 
   function beginInteractivePuterSignIn(forceFresh = false) {
     if (forceFresh) {
@@ -4396,6 +4415,18 @@
       clearStoredPuterArtifacts();
     }
     return window.puter.auth.signIn();
+  }
+
+  function beginInteractivePuterSignInOnce(forceFresh = false) {
+    if (puterInteractiveSignInPromise) return puterInteractiveSignInPromise;
+    puterInteractiveSignInPromise = (async () => {
+      try {
+        return await beginInteractivePuterSignIn(forceFresh);
+      } finally {
+        puterInteractiveSignInPromise = null;
+      }
+    })();
+    return puterInteractiveSignInPromise;
   }
 
   function buildPuterStableUidFromProfile(profile) {
@@ -4439,12 +4470,17 @@
 
     let token = forceFresh ? '' : (String(window.puter?.auth?.getAuthToken?.() || '').trim() || getStoredPuterToken());
 
-    if (!token && interactive) {
+    if (!token && liveProfile && window.puter?.auth?.getAuthToken) {
+      token = String(window.puter.auth.getAuthToken() || '').trim();
+      if (token) setStoredPuterToken(token);
+    }
+
+    if (!token && interactive && !liveProfile) {
       if (!window.puter?.auth?.signIn) {
         throw new Error('Secure sign-in is still loading. Please try again.');
       }
       try {
-        const signInResult = await beginInteractivePuterSignIn(true);
+        const signInResult = await beginInteractivePuterSignInOnce(true);
         token = String(signInResult?.token || (window.puter?.auth?.getAuthToken ? window.puter.auth.getAuthToken() : '') || '').trim();
         if (token) setStoredPuterToken(token);
       } catch (_signInError) {
@@ -5608,6 +5644,10 @@
       return false;
     }
     applyResolvedSessionPayload(session);
+    requestAnimationFrame(() => {
+      renderSidebarAccount();
+      renderGreeting(currentProfileName || authName?.textContent || 'there');
+    });
     await trackEvent('greeting_rendered', { planId: currentPlan.id }).catch(() => null);
     return true;
   }
@@ -7426,10 +7466,8 @@
     token = getDirectPuterToken();
     if (!token && currentUserUid) await syncSessionPayloadWithPuter(false, true).catch(() => null);
     token = getDirectPuterToken();
-    if (!token && currentUserUid) await syncSessionPayloadWithPuter(true).catch(() => null);
-    token = getDirectPuterToken();
     if (!token) {
-      const err = new Error('Reconnect Puter to continue: use Log out and sign in again from the landing page, or reload this page.');
+      const err = new Error('Lexorium could not reach the live AI path. Reload the page or use Sign in to Lexorium below the chat.');
       err.code = 'PUTER_AUTH_REQUIRED';
       throw err;
     }
@@ -7509,7 +7547,7 @@
 
     let response = await requestWithToken(puterToken);
 
-    // 3. Handle 401 (Unauthorized) with silent then interactive Puter recovery
+    // 3. Handle 401 with silent session refresh only (no extra Puter popups after initial sign-in)
     if (response.status === 401) {
       setStoredPuterToken('');
       const freshSync = await syncSessionPayloadWithPuter(false, true).catch(() => null);
@@ -7517,19 +7555,23 @@
         puterToken = getStoredPuterToken();
         response = await requestWithToken(puterToken);
       }
-    }
-
-    if (response.status === 401 && currentUserUid) {
-      await syncSessionPayloadWithPuter(true).catch(() => null);
-      puterToken = getStoredPuterToken() || '';
-      if (puterToken) {
-        response = await requestWithToken(puterToken);
+      if (response.status === 401 && currentUserUid && window.puter?.auth?.getAuthToken) {
+        puterToken = String(window.puter.auth.getAuthToken() || '').trim();
+        if (puterToken) {
+          setStoredPuterToken(puterToken);
+          response = await requestWithToken(puterToken);
+        }
+      }
+      if (response.status === 401 && currentUserUid) {
+        await syncSessionPayloadWithPuter(false, true).catch(() => null);
+        puterToken = getStoredPuterToken() || '';
+        if (puterToken) response = await requestWithToken(puterToken);
       }
     }
 
     // 4. Final check for 401 after recovery attempts
     if (response.status === 401) {
-      const authError = new Error('Sign-in to Puter is required to reach the AI service. Reload the page or sign in again from lexoriumai.com.');
+      const authError = new Error('Could not verify AI access. Reload once, or open Sign in to Lexorium if you are not signed in yet.');
       authError.code = 'PUTER_AUTH_REQUIRED';
       throw authError;
     }

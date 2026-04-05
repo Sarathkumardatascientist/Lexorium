@@ -2994,7 +2994,7 @@ footer {
   let planCatalog = [];
   let deferredInstallPrompt = null;
   const COOKIE_CONSENT_KEY = 'lexorium.cookie.consent.v1';
-  const CLIENT_BUILD_VERSION = '2026-04-06-hide-upgrade-paid-1';
+  const CLIENT_BUILD_VERSION = '2026-04-06-single-signin-ux-1';
   const CLIENT_BUILD_STORAGE_KEY = 'lexorium.client.build';
   const CLIENT_REFRESH_FLAG = 'lexorium.client.refreshing';
   const DEPLOYMENT_BACKEND_ERROR = 'This deployment is frontend-only right now. Lexorium needs live backend API routes under /api/* for sign-in, chat, billing, and history. Deploy it on a full-stack host like Vercel, Render, or Railway instead of GitHub Pages or other static-only hosting.';
@@ -3501,8 +3501,24 @@ footer {
   }
 
   function normalizeSignedInDisplayName(profile) {
-    const explicitName = String(profile?.name || '').trim();
-    if (explicitName && !isGenericAccountName(explicitName)) return explicitName;
+    const pick = (...vals) => {
+      for (const v of vals) {
+        const s = String(v || '').trim();
+        if (s && !isGenericAccountName(s)) return s;
+      }
+      return '';
+    };
+    let n = pick(
+      profile?.name,
+      profile?.displayName,
+      profile?.display_name,
+      profile?.full_name,
+      profile?.fullName,
+      profile?.nickname,
+    );
+    if (n) return n;
+    n = pick(profile?.username, profile?.handle);
+    if (n) return n;
     const email = String(profile?.email || '').trim();
     if (email) return email.replace(/@puter\.local$/i, '');
     const uid = String(profile?.uid || '').trim().replace(/^puter:/i, '');
