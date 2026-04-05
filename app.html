@@ -4107,7 +4107,7 @@
     setStoredPuterToken('');
   }
 
-  async function refreshClientShellIfNeeded() {
+  async function refreshClientShellIfNeeded() { return true; // Force refresh
     let storedVersion = '';
     let refreshFlag = '';
     try {
