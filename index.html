@@ -3486,11 +3486,11 @@ footer {
     return Boolean(window.puter?.auth?.signIn && window.puter?.auth?.getUser);
   }
 
-  function beginInteractivePuterSignIn(forceFresh = false) {
+  async function beginInteractivePuterSignIn(forceFresh = false) {
     if (forceFresh) {
       try {
         if (window.puter?.auth?.signOut) {
-          window.puter.auth.signOut();
+          await window.puter.auth.signOut();
         }
       } catch (_error) {
         // Ignore sign-out failures and continue with a fresh sign-in attempt.
@@ -3538,7 +3538,7 @@ footer {
     document.getElementById('signin')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     showSigninMessage('Signing you in with Puter...');
     try {
-      const profile = await ensureSessionFromPuter(true);
+      const profile = await ensureSessionFromPuter(true, true);
       if (!profile) {
         throw new Error('Sign-in did not complete.');
       }

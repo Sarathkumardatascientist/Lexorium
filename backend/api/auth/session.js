@@ -65,6 +65,10 @@ async function syncGooglePlayEntitlement(user) {
 }
 
 module.exports = async (req, res) => {
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
+
   if (req.method === 'POST') return puterHandler(req, res);
 
   const session = getSessionFromRequest(req);
