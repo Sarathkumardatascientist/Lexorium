@@ -3758,7 +3758,7 @@
 
         <div id="usageWarningText" class="usage-warning" style="display: none; text-align: center; color: rgba(255,255,255,0.52); font-size: 11px; margin-bottom: 10px; font-family: 'Jost', sans-serif; letter-spacing: 0.04em;"></div>
     <div id="usageActionContainer" class="usage-action-container">
-      <button class="usage-action-btn" onclick="startUpgradeFlow('pro')">
+      <button class="usage-action-btn" onclick="openUpgradeModal({ reason: 'limit_reached', planId: 'pro' })">
         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2l2 4 4 .6-3 3 .8 4.4L8 12l-3.8 2 1-4.4-3-3L6 6z"/></svg>
         Upgrade to Pro
       </button>
@@ -4508,7 +4508,7 @@
     }
     token = getStoredPuterToken();
     if (!token) {
-      throw new Error('Sign in is required to continue.');
+      throw new Error('Your session has expired. Please refresh the page to continue.');
     }
     return token;
   }
@@ -7354,7 +7354,7 @@
     // Strictly silent token check for the fallback path
     await getRequiredPuterToken(false);
     const token = getDirectPuterToken();
-    if (!token) throw new Error('Sign in is required to continue.');
+    if (!token) throw new Error('Your session has expired. Please refresh the page to continue.');
     if (!window.puter?.ai?.chat) {
       throw new Error('Live response is still loading. Please retry.');
     }
