@@ -7388,8 +7388,15 @@
   }
 
   async function callLexoriumModel(modelId, messages, attachments, mode) {
-    // Get token silently. If missing, we proceed anyway and trust the session cookie.
+    // 1. Get token silently.
     let puterToken = await getRequiredPuterToken(false) || '';
+
+    // 2. If token is missing but we are supposedly signed in, try one last background hydration from the SDK.
+    if (!puterToken && currentUserUid && window.puter?.auth?.getAuthToken) {
+      puterToken = String(window.puter.auth.getAuthToken() || '').trim();
+      if (puterToken) setStoredPuterToken(puterToken);
+    }
+
     const retention = getRetentionState();
     const personalization = getPersonalizationState();
     const requestBody = JSON.stringify({
@@ -7412,32 +7419,24 @@
     }).catch(() => { throw new Error('Could not reach the Lexorium server. Start the local server or open the deployed app.'); });
 
     let response = await requestWithToken(puterToken);
+
+    // 3. Handle 401 (Unauthorised) - strictly via background refresh only
     if (response.status === 401) {
-      // First 401: attempt a silent token refresh.
+      // Attempt ONE silent token refresh in the background.
       await syncSessionPayloadWithPuter(false).catch(() => null);
-      const silentToken = getStoredPuterToken();
-      if (silentToken && silentToken !== puterToken) {
-        puterToken = silentToken;
+      const refreshedToken = getStoredPuterToken();
+      if (refreshedToken && refreshedToken !== puterToken) {
+        puterToken = refreshedToken;
         response = await requestWithToken(puterToken);
       }
     }
+
+    // 4. Final check for 401: If still unauthorised, we throw an error instead of showing a dialog box.
     if (response.status === 401) {
-      // Second 401: show the Puter sign-in popup and retry once more.
-      try {
-        await syncSessionPayloadWithPuter(true);
-      } catch (_reauthError) {
-        // Popup was closed or failed — fall through to sign-in error below.
-      }
-      const freshToken = getStoredPuterToken();
-      if (freshToken && freshToken !== puterToken) {
-        puterToken = freshToken;
-        response = await requestWithToken(puterToken);
-      }
-    }
-    if (response.status === 401) {
-      const sessionError = new Error('Sign in is required to continue.');
-      sessionError.code = 'PUTER_AUTH_REQUIRED';
-      throw sessionError;
+      // We do NOT call syncSessionPayloadWithPuter(true) here to avoid the guest popup.
+      const authError = new Error('Your session has expired. Please refresh the page to continue.');
+      authError.code = 'PUTER_AUTH_REQUIRED';
+      throw authError;
     }
     const payload = await response.json().catch(() => ({}));
     if (!response.ok) {
