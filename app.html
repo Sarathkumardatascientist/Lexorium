@@ -7388,21 +7388,8 @@
   }
 
   async function callLexoriumModel(modelId, messages, attachments, mode) {
-    let puterToken = await getRequiredPuterToken(false);
-    // If no token was found silently, trigger interactive auth before making the request.
-    if (!puterToken) {
-      try {
-        await syncSessionPayloadWithPuter(true);
-        puterToken = getStoredPuterToken();
-      } catch (_authErr) {
-        // Popup closed or failed.
-      }
-      if (!puterToken) {
-        const sessionError = new Error('Sign in is required to continue.');
-        sessionError.code = 'PUTER_AUTH_REQUIRED';
-        throw sessionError;
-      }
-    }
+    // Get token silently. If missing, we proceed anyway and trust the session cookie.
+    let puterToken = await getRequiredPuterToken(false) || '';
     const retention = getRetentionState();
     const personalization = getPersonalizationState();
     const requestBody = JSON.stringify({
@@ -7418,7 +7405,7 @@
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'X-Puter-Token': token,
+        ...(token ? { 'X-Puter-Token': token } : {}),
       },
       credentials: 'same-origin',
       body: requestBody,
