@@ -215,7 +215,7 @@ function prompt(planId, classification, mixed, sources, sensitive, personalizati
   const paidPlan = ['pro', 'enterprise'].includes(planId);
   const depthInstruction = paidPlan
     ? 'Be precise, premium, and professionally structured.'
-    : 'Be clear, disciplined, and concise while preserving legal accuracy.';
+    : 'Be accurate, precise, clear, disciplined, and concise while preserving legal accuracy.';
   const personalizationInstruction = getPersonalizationInstruction(personalization);
 
   return [

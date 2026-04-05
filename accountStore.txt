@@ -1,0 +1,115 @@
+﻿
+  app.html:4519:  }
+  app.html:4520:
+  app.html:4521:  
+function getPersonalizatio
+nStorageKey() {
+> app.html:4522:    
+return accountStorageKey(P
+ERSONALIZATION_STORAGE);
+  app.html:4523:  }
+  app.html:4524:
+  app.html:4525:  
+function sanitizePersonali
+zationState(input) {
+  app.html:5779:    
+historySearchQuery = '';
+  app.html:5780:    if 
+(historySearchEl) 
+historySearchEl.value = 
+'';
+  app.html:5781:    try {
+> app.html:5782:      loca
+lStorage.removeItem(accoun
+tStorageKey(CHAT_HISTORY_S
+TORAGE));
+> app.html:5783:      loca
+lStorage.removeItem(accoun
+tStorageKey(CHAT_STATE_STO
+RAGE));
+  app.html:5784:    } 
+catch (_error) {
+  app.html:5785:      // 
+Ignore storage cleanup 
+failures.
+  app.html:5786:    }
+  app.html:5918:    docume
+nt.getElementById('history
+Backdrop').classList.remov
+e('open');
+  app.html:5919:  }
+  app.html:5920:
+> app.html:5921:  
+function 
+accountStorageKey(base) {
+  app.html:5922:    
+return currentUserUid ? `$
+{base}_${currentUserUid}` 
+: base;
+  app.html:5923:  }
+  app.html:5924:
+  app.html:5925:  
+function 
+getSidebarPreferenceKey() 
+{
+> app.html:5926:    
+return accountStorageKey(S
+IDEBAR_PREFERENCE_STORAGE)
+;
+  app.html:5927:  }
+  app.html:5928:
+  app.html:5929:  
+function 
+applySidebarVisibility() {
+  app.html:5981:
+  app.html:5982:  
+function saveChatStore() {
+  app.html:5983:    if 
+(!currentUserUid) return;
+> app.html:5984:    localS
+torage.setItem(accountStor
+ageKey(CHAT_HISTORY_STORAG
+E), JSON.stringify(chatSto
+re));
+  app.html:5985:  }
+  app.html:5986:
+  app.html:5987:  
+function 
+readStoredChatStore() {
+  app.html:5988:    if 
+(!currentUserUid) return 
+[];
+  app.html:5989:    try {
+> app.html:5990:      
+const stored = JSON.parse(
+localStorage.getItem(accou
+ntStorageKey(CHAT_HISTORY_
+STORAGE)) || '[]');
+  app.html:5991:      
+return 
+Array.isArray(stored) ? 
+stored : [];
+  app.html:5992:    } 
+catch (_error) {
+  app.html:5993:      
+return [];
+  app.html:7624:    if 
+(index >= 0) 
+chatStore[index] = { 
+...chatStore[index], 
+...record };
+  app.html:7625:    else 
+chatStore.unshift(record);
+  app.html:7626:    
+saveChatStore();
+> app.html:7627:    if 
+(currentUserUid) localStor
+age.setItem(accountStorage
+Key(CHAT_STATE_STORAGE), 
+JSON.stringify(record));
+  app.html:7628:    
+renderHistoryList();
+  app.html:7629:  }
+  app.html:7630:
+
+

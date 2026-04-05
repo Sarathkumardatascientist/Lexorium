@@ -82,18 +82,7 @@ const RAW_MODELS = [
     speedScore: 8,
     costCategory: 'free',
   },
-  {
-    id: 'qwen/qwen3.5-397b-a17b',
-    label: 'Qwen 3.5 397B',
-    tier: 'free',
-    useCases: LEGAL_USE_CASES,
-    priority: 6,
-    fallbackPriority: 6,
-    legalReasoningScore: 9,
-    structureScore: 8,
-    speedScore: 6,
-    costCategory: 'free',
-  },
+
   {
     id: 'anthropic/claude-sonnet-4-6',
     label: 'Claude Sonnet 4.6',
