@@ -5154,11 +5154,8 @@
       `;
       return;
     }
-    const usageText = currentUsage
-      ? `${currentUsage.remaining}/${currentUsage.limit} queries left`
-      : `${plan.dailyLimit || 0} queries available today`;
-    planStatusEl.innerHTML = `
-      <span class="plan-status-primary">${escapeHtml(`${plan.name || 'Free'} plan | ${usageText}`)}</span>
+        planStatusEl.innerHTML = `
+      <span class="plan-status-primary">${escapeHtml(`${plan.name || 'Free'} plan`)}</span>
       <span class="plan-status-note">${escapeHtml(getHabitLine())}</span>
     `;
   }
