@@ -3406,7 +3406,7 @@
         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 4.5h9"/><path d="M6.2 2.8h3.6"/><path d="M5 4.5v8.1a.9.9 0 00.9.9h4.2a.9.9 0 00.9-.9V4.5"/><path d="M6.7 7.2v3.8"/><path d="M9.3 7.2v3.8"/></svg>
         <span>Clear chat history</span>
       </button>
-      <button class="account-menu-item" onclick="openUpgradeFromSidebar(); closeAccountMenu()">
+      <button type="button" class="account-menu-item" id="accountMenuUpgradeItem" onclick="openUpgradeFromSidebar(); closeAccountMenu()">
         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2l2 4 4 .6-3 3 .8 4.4L8 12l-3.8 2 1-4.4-3-3L6 6z"/></svg>
         <span>Upgrade plan</span>
       </button>
@@ -3629,7 +3629,7 @@
                 <div class="settings-row-title">Voice analysis</div>
                 <div class="settings-row-desc">Pro and Enterprise accounts can ask legal questions by voice with the microphone button beside the composer.</div>
               </div>
-              <button class="settings-inline-btn" type="button" onclick="openUpgradeFromSidebar()">Upgrade plan</button>
+              <button class="settings-inline-btn" type="button" id="settingsVoiceUpgradeBtn" onclick="openUpgradeFromSidebar()">Upgrade plan</button>
             </div>
           </div>
 
@@ -3639,7 +3639,7 @@
               <div class="settings-account-meta" id="settingsAccountMeta">Free plan</div>
             </div>
             <div class="settings-inline-actions">
-              <button class="settings-inline-btn primary" type="button" onclick="openUpgradeFromSidebar()">Upgrade plan</button>
+              <button class="settings-inline-btn primary" type="button" id="settingsAccountUpgradeBtn" onclick="openUpgradeFromSidebar()">Upgrade plan</button>
               <button class="settings-inline-btn" type="button" onclick="openRename()">Rename current chat</button>
               <button class="settings-inline-btn" type="button" onclick="clearChatHistory()">Clear chat history</button>
               <button class="settings-inline-btn" type="button" id="settingsSidebarToggleBtn" onclick="toggleSidebarVisibility()">Hide sidebar</button>
@@ -3937,7 +3937,7 @@
   const PERSONALIZATION_STORAGE = 'lexorium_personalization_v1';
   const SIDEBAR_PREFERENCE_STORAGE = 'lexorium_sidebar_preference_v1';
   const LEXORIUM_PUTER_TOKEN_STORAGE_KEY = 'lexorium.puter.token';
-  const CLIENT_BUILD_VERSION = '2026-04-05-puter-account-switch-1';
+  const CLIENT_BUILD_VERSION = '2026-04-06-hide-upgrade-paid-1';
   const CLIENT_BUILD_STORAGE_KEY = 'lexorium.client.build';
   const CLIENT_REFRESH_FLAG = 'lexorium.client.refreshing';
   const DEPLOYMENT_BACKEND_ERROR = 'This deployment is missing live backend API support. Lexorium needs working /api/* routes for sign-in, chat, billing, and history. Deploy it on a full-stack host like Vercel, Render, or Railway instead of GitHub Pages or other static-only hosting.';
@@ -4783,6 +4783,7 @@
         ? 'Voice analysis and answer playback are unlocked for this workspace.'
         : 'Voice analysis and answer playback are available on Lexorium Pro.';
     }
+    updateUpgradePlanCtaVisibility();
     applySidebarVisibility();
   }
 
@@ -4848,6 +4849,23 @@
       accountMenuEl?.classList.add('open');
       sidebarAccountTriggerEl?.classList.add('open');
     }
+  }
+
+  function shouldShowUpgradePlanCta() {
+    if (!currentUserUid) return true;
+    const id = String(currentPlan?.id || 'free').toLowerCase();
+    return id !== 'pro' && id !== 'enterprise';
+  }
+
+  function updateUpgradePlanCtaVisibility() {
+    const show = shouldShowUpgradePlanCta();
+    const display = show ? '' : 'none';
+    const menuBtn = document.getElementById('accountMenuUpgradeItem');
+    if (menuBtn) menuBtn.style.display = display;
+    const voiceBtn = document.getElementById('settingsVoiceUpgradeBtn');
+    if (voiceBtn) voiceBtn.style.display = display;
+    const accountBtn = document.getElementById('settingsAccountUpgradeBtn');
+    if (accountBtn) accountBtn.style.display = display;
   }
 
   function renderSidebarAccount() {
@@ -5304,12 +5322,13 @@
         <span class="plan-status-primary">${escapeHtml(`${plan.name || 'Enterprise'} plan | Priority access enabled`)}</span>
         <span class="plan-status-note">${escapeHtml(getHabitLine())}</span>
       `;
-      return;
+    } else {
+      planStatusEl.innerHTML = `
+        <span class="plan-status-primary">${escapeHtml(`${plan.name || 'Free'} plan`)}</span>
+        <span class="plan-status-note">${escapeHtml(getHabitLine())}</span>
+      `;
     }
-        planStatusEl.innerHTML = `
-      <span class="plan-status-primary">${escapeHtml(`${plan.name || 'Free'} plan`)}</span>
-      <span class="plan-status-note">${escapeHtml(getHabitLine())}</span>
-    `;
+    updateUpgradePlanCtaVisibility();
   }
 
   function normalizeUsageState(usage, fallbackUsage) {
