@@ -1,8 +1,9 @@
 const { getSessionFromRequest } = require('./auth/_session');
+const { resolvePuterUser } = require('./_lib/puter-client');
 const db = require('./_lib/db');
 const devStore = require('./_lib/dev-store');
 const store = devStore.isLocalDevStoreEnabled() ? devStore : db;
-const { getConversation, getUser, saveConversation, takeQuota, track } = store;
+const { getConversation, getUser, saveConversation, takeQuota, track, upsertUser } = store;
 const { classify, prompt } = require('./_lib/legal');
 const { assessAnswerQuality, buildRepairMessages } = require('./_lib/answer-quality');
 const { findAuthoritativeSources } = require('./_lib/research');
@@ -227,16 +228,37 @@ module.exports = async (req, res) => {
   if (!requireMethod(req, res, 'POST')) return;
 
   const session = getSessionFromRequest(req);
-  if (!session) return sendError(res, 401, 'Sign in is required to use Lexorium.');
-
   const body = await parseJsonBody(req).catch((error) => ({ __error: error }));
   if (body.__error) return sendError(res, body.__error.statusCode || 400, body.__error.message);
 
   const providerToken = extractProviderToken(req, body);
   if (!providerToken) return sendError(res, 401, 'Sign in is required to use Lexorium.');
 
-  const user = await getUser(session.sub);
-  if (!user) return sendError(res, 401, 'User record not found.');
+  // Resolve the user — prefer the signed session cookie, but fall back to the
+  // Puter token when the cookie is absent (e.g. SESSION_SECRET not yet set on
+  // Vercel, cookie expired, or a cross-origin context on first sign-in).
+  let user = null;
+  if (session?.sub) {
+    user = await getUser(session.sub);
+  }
+  if (!user && providerToken) {
+    try {
+      const puterProfile = await resolvePuterUser(providerToken);
+      if (puterProfile) {
+        const uuid = String(puterProfile.uuid || puterProfile.id || puterProfile._id || puterProfile.username || puterProfile.email || '').trim();
+        if (uuid) {
+          const uid = `puter:${uuid.toLowerCase()}`;
+          const name = String(puterProfile.name || puterProfile.display_name || puterProfile.displayName || puterProfile.full_name || puterProfile.username || '').trim();
+          const email = String(puterProfile.email || '').trim() || `${uuid.toLowerCase()}@puter.local`;
+          const avatar = String(puterProfile.avatar || puterProfile.picture || '').trim();
+          user = await upsertUser({ uid, authProvider: 'puter', name, email, avatar });
+        }
+      }
+    } catch (_tokenError) {
+      // Token resolution failed — leave user as null and return 401 below.
+    }
+  }
+  if (!user) return sendError(res, 401, 'Sign in is required to use Lexorium.');
 
   const legacy = Array.isArray(body.messages);
   const mode = mapMode(body.mode);

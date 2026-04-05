@@ -3893,7 +3893,7 @@
   const PERSONALIZATION_STORAGE = 'lexorium_personalization_v1';
   const SIDEBAR_PREFERENCE_STORAGE = 'lexorium_sidebar_preference_v1';
   const LEXORIUM_PUTER_TOKEN_STORAGE_KEY = 'lexorium.puter.token';
-  const CLIENT_BUILD_VERSION = '2026-04-05-ux-refresh-1';
+  const CLIENT_BUILD_VERSION = '2026-04-05-ux-refresh-2';
   const CLIENT_BUILD_STORAGE_KEY = 'lexorium.client.build';
   const CLIENT_REFRESH_FLAG = 'lexorium.client.refreshing';
   const DEPLOYMENT_BACKEND_ERROR = 'This deployment is missing live backend API support. Lexorium needs working /api/* routes for sign-in, chat, billing, and history. Deploy it on a full-stack host like Vercel, Render, or Railway instead of GitHub Pages or other static-only hosting.';
@@ -4397,15 +4397,20 @@
   async function getRequiredPuterToken(interactive = false) {
     let token = getStoredPuterToken();
     if (token) return token;
+    // Silent refresh attempt first — picks up live Puter session without a popup.
     await syncSessionPayloadWithPuter(false).catch(() => null);
     token = getStoredPuterToken();
     if (token) return token;
-    if (interactive) {
+    // Always trigger interactive re-auth when the silent attempt fails so users
+    // never see the raw "session needs to refresh" error mid-session.
+    try {
       await syncSessionPayloadWithPuter(true);
-      token = getStoredPuterToken();
+    } catch (_reauthError) {
+      // If the popup was closed or failed, fall through to the error below.
     }
+    token = getStoredPuterToken();
     if (!token) {
-      throw new Error(interactive ? 'Sign in is required to continue.' : 'Your secure session needs to refresh. Please reload Lexorium or sign in again.');
+      throw new Error('Sign in is required to continue.');
     }
     return token;
   }
@@ -7242,7 +7247,7 @@
   }
 
   async function callPuterDirect(messages, attachments, mode) {
-    await getRequiredPuterToken();
+    await getRequiredPuterToken(true);
     const token = getDirectPuterToken();
     if (!token) throw new Error('Sign in is required to continue.');
     if (!window.puter?.ai?.chat) {
@@ -7284,7 +7289,7 @@
   }
 
   async function callLexoriumModel(modelId, messages, attachments, mode) {
-    let puterToken = await getRequiredPuterToken(false);
+    let puterToken = await getRequiredPuterToken(true);
     const retention = getRetentionState();
     const personalization = getPersonalizationState();
     const requestBody = JSON.stringify({
@@ -7308,15 +7313,31 @@
 
     let response = await requestWithToken(puterToken);
     if (response.status === 401) {
+      // First 401: attempt a silent token refresh.
       await syncSessionPayloadWithPuter(false).catch(() => null);
-      const refreshedToken = getStoredPuterToken();
-      if (refreshedToken && refreshedToken !== puterToken) {
-        puterToken = refreshedToken;
+      const silentToken = getStoredPuterToken();
+      if (silentToken && silentToken !== puterToken) {
+        puterToken = silentToken;
         response = await requestWithToken(puterToken);
       }
     }
     if (response.status === 401) {
-      throw new Error('Your secure session needs to refresh. Reload Lexorium and try again.');
+      // Second 401: show the Puter sign-in popup and retry once more.
+      try {
+        await syncSessionPayloadWithPuter(true);
+      } catch (_reauthError) {
+        // Popup was closed or failed — fall through to sign-in error below.
+      }
+      const freshToken = getStoredPuterToken();
+      if (freshToken && freshToken !== puterToken) {
+        puterToken = freshToken;
+        response = await requestWithToken(puterToken);
+      }
+    }
+    if (response.status === 401) {
+      const sessionError = new Error('Sign in is required to continue.');
+      sessionError.code = 'PUTER_AUTH_REQUIRED';
+      throw sessionError;
     }
     const payload = await response.json().catch(() => ({}));
     if (!response.ok) {
