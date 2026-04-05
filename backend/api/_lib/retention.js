@@ -135,10 +135,7 @@ function applyDailyActivity(userLike, when) {
 }
 
 function buildHabitMessage(options) {
-  const streakCount = Number(options?.streakCount || 0);
-  const base = 'Use Lexorium daily for legal clarity';
-  if (streakCount >= 2) return `${base}. You've used Lexorium ${streakCount} days in a row.`;
-  return base;
+  return 'Use Lexorium daily for legal clarity';
 }
 
 function buildRetentionSummary(user, plan, usage) {

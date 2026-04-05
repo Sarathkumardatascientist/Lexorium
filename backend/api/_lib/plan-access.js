@@ -58,6 +58,7 @@ const PLAN_CONFIG = {
     features: {
       draftMode: false,
       summarizeMode: false,
+      analyseMode: false,
       researchTool: false,
       predictiveRiskScoring: false,
       exportConversation: false,
@@ -91,6 +92,7 @@ const PLAN_CONFIG = {
     features: {
       draftMode: true,
       summarizeMode: true,
+      analyseMode: true,
       researchTool: true,
       predictiveRiskScoring: true,
       exportConversation: true,
@@ -121,6 +123,7 @@ const PLAN_CONFIG = {
     features: {
       draftMode: true,
       summarizeMode: true,
+      analyseMode: true,
       researchTool: true,
       predictiveRiskScoring: true,
       exportConversation: true,

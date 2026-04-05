@@ -5513,10 +5513,11 @@
 
   function setMode(mode) {
     closeAttachMenu();
-    const premiumMode = ['draft', 'summarize', 'research', 'risk'].includes(mode);
+    const premiumMode = ['draft', 'summarize', 'analyse', 'research', 'risk'].includes(mode);
     const featureMap = {
       draft: 'Contract Drafting is available on Lexorium Pro.',
       summarize: 'Summarise is available on Lexorium Pro.',
+      analyse: 'Document Analysis is available on Lexorium Pro.',
       research: 'Research Tool is available on Lexorium Pro.',
       risk: 'Predictive Risk Scoring is available on Lexorium Pro.',
     };
@@ -5526,7 +5527,9 @@
         ? 'draftMode'
         : mode === 'risk'
           ? 'predictiveRiskScoring'
-          : 'researchTool';
+          : mode === 'analyse'
+            ? 'analyseMode'
+            : 'researchTool';
     if (premiumMode && !currentPlan?.features?.[featureKey]) {
       openUpgradeModal({
         title: featureMap[mode],
