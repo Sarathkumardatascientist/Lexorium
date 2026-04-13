@@ -248,7 +248,8 @@ function createSession() {
 async function handleAdminEnterprise(req, res) {
   const method = req.method.toUpperCase();
   const accept = req.headers?.accept || '';
-  const isHtmlRequest = accept.includes('text/html') || req.headers?.['sec-fetch-mode'] === 'navigate';
+  const contentType = req.headers?.['content-type'] || '';
+  const isApiRequest = accept.includes('application/json') && !accept.includes('text/html');
   const cookies = parseCookies(req);
   const sessionToken = cookies['lexorium_admin_session'];
   
@@ -256,7 +257,7 @@ async function handleAdminEnterprise(req, res) {
   const isConfigured = Boolean(config.passwordHash);
   const isAuthenticated = validateSession(sessionToken);
 
-  if (method === 'GET' && isHtmlRequest) {
+  if (method === 'GET' && !isApiRequest) {
     if (!isConfigured) {
       res.setHeader('Content-Type', 'text/html; charset=utf-8');
       let html = getHtmlPage(false);
@@ -265,7 +266,7 @@ async function handleAdminEnterprise(req, res) {
           <strong style="color: #a78bfa;">Setup Required</strong>
           <p style="color: var(--silver); font-size: 12px; margin-top: 8px;">Set admin password via terminal or API</p>
           <div style="margin-top: 12px; padding: 12px; background: rgba(0,0,0,0.3); border-radius: 8px; text-align: left; font-family: monospace; font-size: 11px; color: #4ade80;">
-            curl -X POST your-domain.com/api/admin/enterprise/setup<br>
+            curl -X POST https://lexoriumai.com/api/admin/enterprise<br>
             -H "Content-Type: application/json"<br>
             -d '{"password":"your-secure-password"}'
           </div>
@@ -273,6 +274,15 @@ async function handleAdminEnterprise(req, res) {
       `);
       return res.send(html);
     }
+
+    if (!isAuthenticated) {
+      res.setHeader('Content-Type', 'text/html; charset=utf-8');
+      return res.send(getLoginPage());
+    }
+
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    return res.send(getHtmlPage(true));
+  }
 
     if (!isAuthenticated) {
       res.setHeader('Content-Type', 'text/html; charset=utf-8');
