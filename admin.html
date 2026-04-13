@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lexorium Enterprise Admin</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0A0A0A; color: #fff; min-height: 100vh; display: flex; justify-content: center; align-items: center; padding: 20px; }
+    .card { background: #1F1F1F; padding: 40px; border-radius: 16px; width: 100%; max-width: 450px; }
+    h1 { font-size: 28px; margin-bottom: 8px; }
+    h1 span { color: #8B5CF6; }
+    p { color: #C0C0C0; margin-bottom: 24px; font-size: 14px; }
+    input { width: 100%; padding: 14px; border-radius: 10px; border: 1px solid #444; background: #2a2a2a; color: #fff; font-size: 14px; margin-bottom: 16px; box-sizing: border-box; }
+    button { width: 100%; padding: 14px; border-radius: 10px; border: none; background: linear-gradient(135deg, #8B5CF6, #6366F1); color: white; font-size: 14px; cursor: pointer; }
+    button:hover { opacity: 0.9; }
+    .msg { margin-top: 16px; padding: 12px; border-radius: 8px; font-size: 13px; display: none; text-align: center; }
+    .msg.show { display: block; }
+    .msg.success { background: rgba(34,197,94,0.15); border: 1px solid rgba(34,197,94,0.4); color: #4ade80; }
+    .msg.error { background: rgba(239,68,68,0.15); border: 1px solid rgba(239,68,68,0.4); color: #f87171; }
+    .users-section { margin-top: 30px; border-top: 1px solid #333; padding-top: 24px; }
+    h3 { font-size: 12px; color: #888; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+    .badge { background: #8B5CF6; padding: 2px 8px; border-radius: 10px; font-size: 11px; }
+    .user { display: flex; justify-content: space-between; align-items: center; padding: 12px; background: rgba(255,255,255,0.03); border-radius: 8px; margin-bottom: 8px; }
+    .user-email { font-size: 13px; word-break: break-all; }
+    .user-date { font-size: 11px; color: #666; margin-top: 2px; }
+    .btn-remove { background: rgba(239,68,68,0.15); border: 1px solid rgba(239,68,68,0.3); color: #f87171; padding: 6px 12px; border-radius: 6px; font-size: 11px; cursor: pointer; }
+    .btn-remove:hover { background: rgba(239,68,68,0.25); }
+    .btn-secondary { background: rgba(255,255,255,0.1); margin-top: 10px; }
+    .logout-btn { position: fixed; top: 20px; right: 20px; background: rgba(255,255,255,0.1); border: 1px solid #444; color: #888; padding: 8px 16px; border-radius: 8px; font-size: 12px; cursor: pointer; }
+    .logout-btn:hover { background: rgba(255,255,255,0.15); }
+  </style>
+</head>
+<body>
+  <button class="logout-btn" id="logoutBtn" onclick="logout()" style="display:none;">Logout</button>
+  
+  <div class="card" id="setupCard">
+    <h1>Lexorium <span>Enterprise</span></h1>
+    <p>Set up your admin password to manage enterprise users.</p>
+    <input type="password" id="password" placeholder="Enter password (min 6 characters)">
+    <input type="password" id="confirm" placeholder="Confirm password">
+    <button onclick="doSetup()">Set Password</button>
+    <div class="msg" id="setupMsg"></div>
+  </div>
+
+  <div class="card" id="loginCard" style="display:none;">
+    <h1>Lexorium <span>Enterprise</span></h1>
+    <p>Login to manage enterprise users.</p>
+    <input type="password" id="loginPassword" placeholder="Enter admin password">
+    <button onclick="doLogin()">Login</button>
+    <div class="msg" id="loginMsg"></div>
+  </div>
+
+  <div class="card" id="adminCard" style="display:none;">
+    <h1>Lexorium <span>Enterprise</span></h1>
+    <p>Add enterprise users below.</p>
+    <input type="email" id="userEmail" placeholder="user@company.com">
+    <button onclick="addUser()">Activate Enterprise Access</button>
+    <button class="btn-secondary" onclick="loadUsers()">Refresh List</button>
+    <div class="msg" id="adminMsg"></div>
+    
+    <div class="users-section">
+      <h3>Enterprise Users <span class="badge" id="userCount">0</span></h3>
+      <div id="usersList"><div style="color:#666;text-align:center;padding:20px;">Loading...</div></div>
+    </div>
+  </div>
+
+  <script>
+    var API = '/api/admin/enterprise';
+
+    function showMsg(el, text, isError) {
+      el.textContent = text;
+      el.className = 'msg show ' + (isError ? 'error' : 'success');
+      setTimeout(function() { el.className = 'msg'; }, 5000);
+    }
+
+    function doSetup() {
+      var pwd = document.getElementById('password').value;
+      var conf = document.getElementById('confirm').value;
+      var msg = document.getElementById('setupMsg');
+      if (pwd.length < 6) { showMsg(msg, 'Password must be at least 6 characters', true); return; }
+      if (pwd !== conf) { showMsg(msg, 'Passwords do not match', true); return; }
+      fetch(API, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({password: pwd, action: 'setup'})
+      }).then(function(r) { return r.json(); })
+      .then(function(d) {
+        if (d.ok) { showMsg(msg, 'Password set! Loading admin...'); setTimeout(function() { checkAuth(); }, 1000); }
+        else { showMsg(msg, d.message || 'Error', true); }
+      })
+      .catch(function() { showMsg(msg, 'Connection error', true); });
+    }
+
+    function doLogin() {
+      var pwd = document.getElementById('loginPassword').value;
+      var msg = document.getElementById('loginMsg');
+      fetch(API, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({password: pwd, action: 'login'})
+      }).then(function(r) { return r.json(); })
+      .then(function(d) {
+        if (d.ok) { showAdminPanel(); }
+        else { showMsg(msg, d.message || 'Invalid password', true); }
+      })
+      .catch(function() { showMsg(msg, 'Connection error', true); });
+    }
+
+    function logout() {
+      fetch(API, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({action: 'logout'})
+      }).then(function() { location.reload(); });
+    }
+
+    function showAdminPanel() {
+      document.getElementById('setupCard').style.display = 'none';
+      document.getElementById('loginCard').style.display = 'none';
+      document.getElementById('adminCard').style.display = 'block';
+      document.getElementById('logoutBtn').style.display = 'block';
+      loadUsers();
+    }
+
+    function loadUsers() {
+      var list = document.getElementById('usersList');
+      var count = document.getElementById('userCount');
+      list.innerHTML = '<div style="color:#666;text-align:center;padding:20px;">Loading...</div>';
+      fetch(API).then(function(r) { return r.json(); })
+      .then(function(d) {
+        if (d.ok && d.users && d.users.length > 0) {
+          count.textContent = d.users.length;
+          list.innerHTML = d.users.map(function(u) {
+            return '<div class="user"><div><div class="user-email">' + u.email + '</div><div class="user-date">Added: ' + new Date(u.addedAt).toLocaleDateString() + '</div></div><button class="btn-remove" onclick="removeUser(\'' + u.email.replace(/'/g, '\\\'') + '\')">Remove</button></div>';
+          }).join('');
+        } else {
+          count.textContent = '0';
+          list.innerHTML = '<div style="color:#666;text-align:center;padding:20px;">No enterprise users yet</div>';
+        }
+      })
+      .catch(function() { list.innerHTML = '<div style="color:#f87171;text-align:center;padding:20px;">Failed to load</div>'; });
+    }
+
+    function addUser() {
+      var email = document.getElementById('userEmail').value.trim();
+      var msg = document.getElementById('adminMsg');
+      if (!email || !email.includes('@')) { showMsg(msg, 'Enter a valid email', true); return; }
+      fetch(API, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({email: email, action: 'add'})
+      }).then(function(r) { return r.json(); })
+      .then(function(d) {
+        if (d.ok) { showMsg(msg, d.message); document.getElementById('userEmail').value = ''; loadUsers(); }
+        else { showMsg(msg, d.message || 'Error', true); }
+      })
+      .catch(function() { showMsg(msg, 'Connection error', true); });
+    }
+
+    function removeUser(email) {
+      if (!confirm('Remove ' + email + ' from Enterprise?')) return;
+      var msg = document.getElementById('adminMsg');
+      fetch(API, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({email: email, action: 'remove'})
+      }).then(function(r) { return r.json(); })
+      .then(function(d) {
+        if (d.ok) { showMsg(msg, d.message); loadUsers(); }
+        else { showMsg(msg, d.message || 'Error', true); }
+      })
+      .catch(function() { showMsg(msg, 'Connection error', true); });
+    }
+
+    function checkAuth() {
+      fetch(API).then(function(r) { return r.json(); })
+      .then(function(d) {
+        if (d.ok || d.message === 'Already logged in') {
+          showAdminPanel();
+        } else {
+          document.getElementById('setupCard').style.display = 'block';
+        }
+      })
+      .catch(function() {
+        document.getElementById('setupCard').style.display = 'block';
+      });
+    }
+
+    document.getElementById('password').addEventListener('keypress', function(e) { if (e.key === 'Enter') doSetup(); });
+    document.getElementById('confirm').addEventListener('keypress', function(e) { if (e.key === 'Enter') doSetup(); });
+    document.getElementById('loginPassword').addEventListener('keypress', function(e) { if (e.key === 'Enter') doLogin(); });
+    document.getElementById('userEmail').addEventListener('keypress', function(e) { if (e.key === 'Enter') addUser(); });
+
+    checkAuth();
+  </script>
+</body>
+</html>
