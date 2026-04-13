@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lexorium Enterprise Admin</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,9..144,300;0,9..144,400;1,9..144,300;1,9..144,400&family=Jost:wght@200;300;400;500&display=swap');
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0A0A0A;
+      --bg2: #1F1F1F;
+      --silver: #C0C0C0;
+      --white: #FFFFFF;
+      --line: rgba(192,192,192,0.12);
+      --line2: rgba(192,192,192,0.22);
+    }
+
+    body {
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--white);
+      font-family: 'Jost', sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px 20px;
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+
+    .brand {
+      font-family: 'Fraunces', serif;
+      font-style: italic;
+      font-size: 28px;
+      margin-bottom: 8px;
+    }
+
+    .brand span { color: #8B5CF6; }
+
+    .subtitle {
+      color: var(--silver);
+      font-size: 14px;
+      font-weight: 300;
+    }
+
+    .card {
+      background: var(--bg2);
+      border: 1px solid var(--line2);
+      border-radius: 16px;
+      padding: 32px;
+      width: 100%;
+      max-width: 500px;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    label {
+      display: block;
+      font-size: 12px;
+      font-weight: 500;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--silver);
+      margin-bottom: 8px;
+    }
+
+    input {
+      width: 100%;
+      padding: 14px 16px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--line2);
+      border-radius: 10px;
+      color: var(--white);
+      font-family: 'Jost', sans-serif;
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    input:focus {
+      border-color: rgba(139, 92, 246, 0.5);
+    }
+
+    input::placeholder {
+      color: rgba(255,255,255,0.3);
+    }
+
+    .btn {
+      width: 100%;
+      padding: 14px 20px;
+      border: none;
+      border-radius: 10px;
+      font-family: 'Jost', sans-serif;
+      font-size: 14px;
+      font-weight: 500;
+      letter-spacing: 0.04em;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #8B5CF6, #6366F1);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 8px 24px rgba(139, 92, 246, 0.3);
+    }
+
+    .btn-primary:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .btn-secondary {
+      background: rgba(255,255,255,0.06);
+      color: var(--silver);
+      border: 1px solid var(--line2);
+      margin-top: 10px;
+    }
+
+    .btn-secondary:hover {
+      background: rgba(255,255,255,0.1);
+    }
+
+    .message {
+      padding: 14px 16px;
+      border-radius: 10px;
+      margin-top: 20px;
+      font-size: 13px;
+      display: none;
+    }
+
+    .message.success {
+      display: block;
+      background: rgba(34, 197, 94, 0.1);
+      border: 1px solid rgba(34, 197, 94, 0.3);
+      color: #4ade80;
+    }
+
+    .message.error {
+      display: block;
+      background: rgba(239, 68, 68, 0.1);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      color: #f87171;
+    }
+
+    .divider {
+      height: 1px;
+      background: var(--line);
+      margin: 24px 0;
+    }
+
+    .section-title {
+      font-size: 12px;
+      font-weight: 500;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--silver);
+      margin-bottom: 16px;
+    }
+
+    .users-list {
+      max-height: 300px;
+      overflow-y: auto;
+    }
+
+    .user-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 14px;
+      background: rgba(255,255,255,0.02);
+      border-radius: 8px;
+      margin-bottom: 8px;
+    }
+
+    .user-email {
+      font-size: 13px;
+      color: var(--white);
+      word-break: break-all;
+    }
+
+    .user-date {
+      font-size: 11px;
+      color: var(--silver);
+      opacity: 0.6;
+    }
+
+    .btn-remove {
+      background: rgba(239, 68, 68, 0.1);
+      border: 1px solid rgba(239, 68, 68, 0.2);
+      color: #f87171;
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 11px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-remove:hover {
+      background: rgba(239, 68, 68, 0.2);
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 30px;
+      color: var(--silver);
+      font-size: 13px;
+      opacity: 0.6;
+    }
+
+    .loading {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-radius: 50%;
+      border-top-color: white;
+      animation: spin 1s linear infinite;
+      margin-right: 8px;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .back-link {
+      color: var(--silver);
+      font-size: 13px;
+      margin-top: 30px;
+      text-decoration: none;
+      opacity: 0.6;
+      transition: opacity 0.2s;
+    }
+
+    .back-link:hover {
+      opacity: 1;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <div class="brand">Lexorium <span>Enterprise</span> Admin</div>
+    <div class="subtitle">Manage Enterprise User Access</div>
+  </div>
+
+  <div class="card">
+    <div class="form-group">
+      <label for="emailInput">User Email Address</label>
+      <input type="email" id="emailInput" placeholder="user@company.com" required>
+    </div>
+
+    <button class="btn btn-primary" id="addBtn" onclick="addEnterpriseUser()">
+      Activate Enterprise Access
+    </button>
+
+    <button class="btn btn-secondary" onclick="loadUsers()">
+      Refresh List
+    </button>
+
+    <div class="message" id="message"></div>
+
+    <div class="divider"></div>
+
+    <div class="section-title">Current Enterprise Users</div>
+    <div class="users-list" id="usersList">
+      <div class="empty-state">Loading...</div>
+    </div>
+  </div>
+
+  <a href="/" class="back-link">Back to Lexorium</a>
+
+  <script>
+    const API_BASE = '/api/admin/enterprise';
+
+    function showMessage(text, isError = false) {
+      const msg = document.getElementById('message');
+      msg.textContent = text;
+      msg.className = 'message ' + (isError ? 'error' : 'success');
+      setTimeout(() => {
+        msg.className = 'message';
+        msg.style.display = 'none';
+      }, 5000);
+    }
+
+    function setLoading(loading) {
+      const btn = document.getElementById('addBtn');
+      const input = document.getElementById('emailInput');
+      btn.disabled = loading;
+      input.disabled = loading;
+      btn.innerHTML = loading ? '<span class="loading"></span>Processing...' : 'Activate Enterprise Access';
+    }
+
+    async function addEnterpriseUser() {
+      const email = document.getElementById('emailInput').value.trim();
+      
+      if (!email) {
+        showMessage('Please enter an email address', true);
+        return;
+      }
+
+      if (!email.includes('@')) {
+        showMessage('Please enter a valid email address', true);
+        return;
+      }
+
+      setLoading(true);
+
+      try {
+        const res = await fetch(API_BASE, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, action: 'add' })
+        });
+
+        const data = await res.json();
+
+        if (data.ok) {
+          showMessage(data.message);
+          document.getElementById('emailInput').value = '';
+          loadUsers();
+        } else {
+          showMessage(data.message || 'Failed to add user', true);
+        }
+      } catch (err) {
+        showMessage('Connection error. Please try again.', true);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    async function removeUser(email) {
+      if (!confirm(`Remove ${email} from Enterprise access?`)) return;
+
+      try {
+        const res = await fetch(API_BASE, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, action: 'remove' })
+        });
+
+        const data = await res.json();
+
+        if (data.ok) {
+          showMessage(data.message);
+          loadUsers();
+        } else {
+          showMessage(data.message || 'Failed to remove user', true);
+        }
+      } catch (err) {
+        showMessage('Connection error. Please try again.', true);
+      }
+    }
+
+    async function loadUsers() {
+      const list = document.getElementById('usersList');
+      list.innerHTML = '<div class="empty-state">Loading...</div>';
+
+      try {
+        const res = await fetch(API_BASE);
+        const data = await res.json();
+
+        if (data.ok && data.users && data.users.length > 0) {
+          list.innerHTML = data.users.map(user => `
+            <div class="user-item">
+              <div>
+                <div class="user-email">${escapeHtml(user.email)}</div>
+                <div class="user-date">Added: ${formatDate(user.addedAt)}</div>
+              </div>
+              <button class="btn-remove" onclick="removeUser('${escapeHtml(user.email)}')">Remove</button>
+            </div>
+          `).join('');
+        } else {
+          list.innerHTML = '<div class="empty-state">No enterprise users yet</div>';
+        }
+      } catch (err) {
+        list.innerHTML = '<div class="empty-state">Failed to load users</div>';
+      }
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    function formatDate(dateStr) {
+      if (!dateStr) return 'Unknown';
+      const date = new Date(dateStr);
+      return date.toLocaleDateString('en-IN', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    }
+
+    document.getElementById('emailInput').addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') addEnterpriseUser();
+    });
+
+    loadUsers();
+  </script>
+
+</body>
+</html>

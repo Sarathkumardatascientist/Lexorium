@@ -42,6 +42,17 @@ function normalizeEmail(value) {
 
 async function handleAdminEnterprise(req, res) {
   const method = req.method.toUpperCase();
+  const accept = req.headers?.accept || '';
+  const isHtmlRequest = accept.includes('text/html');
+
+  if (method === 'GET' && isHtmlRequest) {
+    const htmlPath = path.join(__dirname, 'enterprise-admin.html');
+    if (fs.existsSync(htmlPath)) {
+      const html = fs.readFileSync(htmlPath, 'utf-8');
+      res.setHeader('Content-Type', 'text/html; charset=utf-8');
+      return res.send(html);
+    }
+  }
 
   if (method === 'GET') {
     const users = readEnterpriseUsers();
