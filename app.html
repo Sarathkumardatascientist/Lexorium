@@ -7740,7 +7740,41 @@
     return '';
   }
 
-  function getDirectPuterModelCandidates(mode) {
+  const VISION_CAPABLE_MODELS = [
+    'google/gemini',
+    'google/gemini-3.1-flash-lite-preview',
+    'google/gemini-3.1-pro-preview',
+    'google/gemini-2.0-flash',
+    'google/gemini-2.0-flash-exp',
+    'openai/gpt-4o',
+    'openai/gpt-4o-mini',
+    'openai/gpt-5.4',
+    'openai/gpt-5.4-mini',
+    'openai/gpt-5.4-pro',
+    'anthropic/claude-sonnet-4-6',
+  ];
+
+  function isVisionCapable(modelId) {
+    if (!modelId) return false;
+    const lower = modelId.toLowerCase();
+    return VISION_CAPABLE_MODELS.some(v => lower.includes(v.toLowerCase()));
+  }
+
+  function prioritizeVisionModels(modelList, hasImages) {
+    if (!hasImages) return modelList;
+    const prioritized = [];
+    const nonVision = [];
+    for (const m of modelList) {
+      if (isVisionCapable(m)) {
+        prioritized.unshift(m);
+      } else {
+        nonVision.push(m);
+      }
+    }
+    return [...prioritized, ...nonVision];
+  }
+
+  function getDirectPuterModelCandidates(mode, attachments) {
     const routeTier = String(currentPlan?.routeTier || 'free').toLowerCase();
     const selectedModel = resolveCurrentModelSelection();
     const settings = authConfig.modelSettings || {};
@@ -7748,6 +7782,7 @@
     const proSettings = settings.pro || {};
     const enterpriseSettings = settings.enterprise || {};
     const reasoningMode = ['draft', 'analyse', 'research', 'summarize'].includes(String(mode || '').toLowerCase());
+    const hasImages = attachments && attachments.some(a => a.isImage && a.dataUrl);
     const freeFast = [
       freeSettings.fast,
       freeSettings.default,
@@ -7798,7 +7833,9 @@
       : routeTier === 'pro'
         ? (reasoningMode ? proReasoning : [...proFast, ...proReasoning])
         : (reasoningMode ? freeReasoning : [...freeFast, ...freeReasoning]);
-    return [...new Set([selectedModel?.id || '', ...pool].filter(Boolean))];
+    let result = [...new Set([selectedModel?.id || '', ...pool].filter(Boolean))];
+    result = prioritizeVisionModels(result, hasImages);
+    return result;
   }
 
   function getDirectPuterOptions(mode, modelId) {
@@ -7826,13 +7863,41 @@
     if (!window.puter?.ai?.chat) {
       throw new Error('Live response is still loading. Please retry.');
     }
+
+    const hasImages = attachments && attachments.some(a => a.isImage && a.dataUrl);
+    let processedAttachments = attachments;
+
+    if (hasImages) {
+      const visionCandidates = getDirectPuterModelCandidates(mode, attachments);
+      const hasVisionModel = visionCandidates.some(m => isVisionCapable(m));
+      
+      if (!hasVisionModel) {
+        const ocrText = await extractTextFromImages(attachments);
+        if (ocrText) {
+          processedAttachments = attachments.map(a => {
+            if (a.isImage) {
+              return {
+                ...a,
+                isImage: false,
+                textContent: `OCR extracted text from image "${a.name}":\n${ocrText}`,
+              };
+            }
+            return a;
+          });
+          showToast('Image text extracted for analysis');
+        }
+      }
+    }
+
     let lastError = null;
-    const candidates = getDirectPuterModelCandidates(mode);
+    const candidates = getDirectPuterModelCandidates(mode, processedAttachments);
 
     for (const candidate of candidates) {
       try {
+        if (hasImages && !isVisionCapable(candidate)) continue;
+        
         const result = await window.puter.ai.chat(
-          buildDirectPuterMessages(messages, attachments, mode),
+          buildDirectPuterMessages(messages, processedAttachments, mode),
           getDirectPuterOptions(mode, candidate)
         );
         const replyText = normalizeStructuredAssistantText(extractDirectPuterText(result));
@@ -7852,13 +7917,53 @@
           },
         };
       } catch (error) {
+        const errMsg = String(error?.message || '');
+        if (errMsg.toLowerCase().includes('image') || errMsg.toLowerCase().includes('vision') || errMsg.toLowerCase().includes('does not support')) {
+          continue;
+        }
         lastError = error;
       }
+    }
+
+    if (hasImages && processedAttachments === attachments) {
+      const failure = lastError || new Error('Image analysis is not supported with your current plan. Upgrade to Pro for vision-enabled AI models.');
+      if (!failure.code) failure.code = 'IMAGE_NOT_SUPPORTED';
+      throw failure;
     }
 
     const failure = lastError || new Error('Lexorium could not get a live response right now. Please retry.');
     if (!failure.code) failure.code = 'PUTER_DIRECT_FAILED';
     throw failure;
+  }
+
+  async function extractTextFromImages(attachments) {
+    try {
+      if (!window.Tesseract && !window.tesseract) {
+        const script = document.createElement('script');
+        script.src = 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';
+        document.head.appendChild(script);
+        await new Promise((resolve, reject) => {
+          script.onload = resolve;
+          script.onerror = reject;
+          setTimeout(reject, 15000);
+        });
+      }
+      
+      const worker = await (window.Tesseract || window.tesseract).createWorker('eng');
+      const imageAttachments = attachments.filter(a => a.isImage && a.dataUrl);
+      let fullText = '';
+      
+      for (const attachment of imageAttachments) {
+        const { data: { text } } = await worker.recognize(attachment.dataUrl);
+        fullText += `\n--- From ${attachment.name} ---\n${text}\n`;
+      }
+      
+      await worker.terminate();
+      return fullText.trim() || null;
+    } catch (err) {
+      console.error('OCR failed:', err);
+      return null;
+    }
   }
 
   async function callLexoriumModel(modelId, messages, attachments, mode) {
@@ -8240,6 +8345,19 @@
           await animateResponse(msgDiv, finalMessage);
           showError(finalMessage);
         }
+      } else if (err.code === 'IMAGE_NOT_SUPPORTED') {
+        if (pendingAssistantMsg) pendingAssistantMsg.remove();
+        const imgMsg = 'Image analysis requires a vision-enabled AI model. Your current plan may not support this feature. Please try with a different image or upgrade to Pro.';
+        const msgDiv = addMessage('assistant', imgMsg, 'Lexorium');
+        showError(imgMsg);
+        openUpgradeModal({
+          title: 'Vision AI Required',
+          message: 'Your current plan does not include vision-enabled AI models for image analysis. Upgrade to Lexorium Pro to analyze images directly with AI.',
+          reason: 'upgrade_required',
+          planId: 'pro',
+        });
+        history.pop();
+        persistChatState();
       } else {
         if (pendingAssistantMsg) pendingAssistantMsg.remove();
         showError('Error: ' + err.message);
