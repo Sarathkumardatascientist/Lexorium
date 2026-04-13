@@ -3368,9 +3368,172 @@
       display: none;
     }
   }
+
+  /* Camera Overlay */
+  .camera-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.92);
+    z-index: 900;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s ease;
+    backdrop-filter: blur(8px);
+  }
+
+  .camera-overlay.open {
+    opacity: 1;
+    pointer-events: all;
+  }
+
+  .camera-container {
+    position: relative;
+    width: min(90vw, 480px);
+    max-height: 70vh;
+    background: #000;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 24px 80px rgba(0,0,0,0.8);
+  }
+
+  .camera-video {
+    width: 100%;
+    height: auto;
+    max-height: 60vh;
+    display: block;
+    object-fit: cover;
+  }
+
+  .camera-canvas {
+    display: none;
+  }
+
+  .camera-controls {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 24px;
+    background: linear-gradient(transparent, rgba(0,0,0,0.7));
+  }
+
+  .camera-capture-btn {
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    background: #fff;
+    border: 4px solid rgba(255,255,255,0.3);
+    cursor: pointer;
+    transition: transform 0.15s, background 0.15s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .camera-capture-btn:hover {
+    transform: scale(1.08);
+  }
+
+  .camera-capture-btn:active {
+    transform: scale(0.95);
+    background: #e0e0e0;
+  }
+
+  .camera-capture-btn svg {
+    width: 32px;
+    height: 32px;
+    color: #000;
+  }
+
+  .camera-switch-btn, .camera-close-btn {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.15);
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s;
+  }
+
+  .camera-switch-btn:hover, .camera-close-btn:hover {
+    background: rgba(255,255,255,0.25);
+  }
+
+  .camera-switch-btn svg, .camera-close-btn svg {
+    width: 20px;
+    height: 20px;
+    color: #fff;
+  }
+
+  .camera-error {
+    color: rgba(255,255,255,0.7);
+    text-align: center;
+    padding: 20px;
+    font-family: 'Jost', sans-serif;
+  }
+
+  .camera-error button {
+    margin-top: 12px;
+    padding: 10px 20px;
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.2);
+    color: #fff;
+    border-radius: 8px;
+    cursor: pointer;
+    font-family: 'Jost', sans-serif;
+  }
+
+  .camera-error button:hover {
+    background: rgba(255,255,255,0.15);
+  }
+
+  /* Camera flip animation */
+  @keyframes cameraFlip {
+    0% { transform: scaleX(1); }
+    50% { transform: scaleX(0); }
+    100% { transform: scaleX(1); }
+  }
+
+  .camera-flipping .camera-video {
+    animation: cameraFlip 0.3s ease;
+  }
 </style>
 </head>
 <body>
+
+<!-- Camera Overlay -->
+<div class="camera-overlay" id="cameraOverlay">
+  <div class="camera-container" id="cameraContainer">
+    <video class="camera-video" id="cameraVideo" autoplay playsinline></video>
+    <canvas class="camera-canvas" id="cameraCanvas"></canvas>
+    <div class="camera-controls">
+      <button class="camera-close-btn" id="cameraCloseBtn" title="Close camera">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><line x1="4" y1="4" x2="12" y2="12"/><line x1="12" y1="4" x2="4" y2="12"/></svg>
+      </button>
+      <button class="camera-capture-btn" id="cameraCaptureBtn" title="Take photo">
+        <svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="8"/></svg>
+      </button>
+      <button class="camera-switch-btn" id="cameraSwitchBtn" title="Switch camera">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M1 5h2l2-3h6l2 3h2v9H1z"/><circle cx="8" cy="9.5" r="2.5"/></svg>
+      </button>
+    </div>
+  </div>
+  <div class="camera-error" id="cameraError" style="display:none;">
+    <p id="cameraErrorText">Camera not available</p>
+    <button onclick="openCameraFallback()">Use Photo Library Instead</button>
+  </div>
+</div>
 
 <div class="history-backdrop" id="historyBackdrop" onclick="closeHistoryPanel()"></div>
 <aside class="history-panel" id="historyPanel">
@@ -3472,7 +3635,7 @@
     <div class="modal-overlay" id="advancedModal">
     <div class="modal" style="text-align: center;">
       <div class="modal-title">Advanced Computing Required</div>
-      <div class="upgrade-modal-copy" style="margin-top: 12px; font-size: 14px; opacity: 0.85;">Advanced processing may require compute access. You stay in control ù any additional compute usage will be shown before execution.</div>
+      <div class="upgrade-modal-copy" style="margin-top: 12px; font-size: 14px; opacity: 0.85;">Advanced processing may require compute access. You stay in control ÔøΩ any additional compute usage will be shown before execution.</div>
       <div class="modal-actions" style="margin-top: 24px;">
         <button class="modal-btn" onclick="closeAdvancedModal()">Cancel</button>
         <button class="modal-btn primary" onclick="confirmAdvancedModal()">Proceed</button>
@@ -3821,7 +3984,7 @@
             <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><rect x="1" y="3" width="14" height="10" rx="2"/><circle cx="8" cy="8" r="2.5"/><path d="M5 3l1-2h4l1 2"/></svg>
             Photo
           </div>
-          <div class="attach-item" onclick="triggerFile('fileCamera')">
+          <div class="attach-item" onclick="openCamera()">
             <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><path d="M1 5h2l2-3h6l2 3h2v9H1z"/><circle cx="8" cy="9.5" r="2.5"/></svg>
             Camera
           </div>
@@ -4811,7 +4974,7 @@
     if (settingsAccountNameEl) settingsAccountNameEl.textContent = currentProfileName || authName.textContent || 'Sign in to Lexorium';
     if (settingsAccountMetaEl) {
       const remaining = currentPlan?.unmetered ? 'Priority access enabled' : 'Daily legal access active';
-      settingsAccountMetaEl.textContent = `${currentPlan?.name || 'Free'} plan ù ${remaining}`;
+      settingsAccountMetaEl.textContent = `${currentPlan?.name || 'Free'} plan ÔøΩ ${remaining}`;
     }
     if (voicePlanLabelEl) voicePlanLabelEl.textContent = currentPlan?.name || 'Free';
     if (voicePlanCopyEl) {
@@ -5742,6 +5905,195 @@
     currentModel = resolveCurrentModelSelection();
     updateRoutingIndicator(currentModel, activeMode);
   }
+
+  // ?? CAMERA SYSTEM ??
+  let cameraStream = null;
+  let currentFacingMode = 'environment';
+  let cameraRetryCount = 0;
+  const MAX_CAMERA_RETRIES = 2;
+
+  const cameraOverlay = document.getElementById('cameraOverlay');
+  const cameraVideo = document.getElementById('cameraVideo');
+  const cameraCanvas = document.getElementById('cameraCanvas');
+  const cameraContainer = document.getElementById('cameraContainer');
+  const cameraError = document.getElementById('cameraError');
+  const cameraErrorText = document.getElementById('cameraErrorText');
+  const cameraCaptureBtn = document.getElementById('cameraCaptureBtn');
+  const cameraSwitchBtn = document.getElementById('cameraSwitchBtn');
+  const cameraCloseBtn = document.getElementById('cameraCloseBtn');
+
+  function isDesktopCamera() {
+    return window.lexoriumDesktop && window.lexoriumDesktop.platform === 'win32';
+  }
+
+  async function openCamera() {
+    closeAttachMenu();
+    cameraError.style.display = 'none';
+    cameraContainer.style.display = 'flex';
+    cameraOverlay.classList.add('open');
+    cameraRetryCount = 0;
+    currentFacingMode = 'environment';
+    await startCameraStream();
+  }
+
+  async function startCameraStream() {
+    try {
+      stopCameraStream();
+      cameraVideo.srcObject = null;
+      
+      let stream;
+      
+      if (isDesktopCamera() && window.lexoriumDesktop && window.lexoriumDesktop.captureCamera) {
+        const imageData = await window.lexoriumDesktop.captureCamera();
+        if (imageData) {
+          cameraVideo.src = imageData;
+          cameraVideo.removeAttribute('autoplay');
+          cameraCaptureBtn.style.display = 'none';
+          cameraSwitchBtn.style.display = 'none';
+        } else {
+          throw new Error('No camera available on desktop');
+        }
+        return;
+      }
+
+      const constraints = {
+        video: {
+          facingMode: currentFacingMode,
+          width: { ideal: 1280 },
+          height: { ideal: 720 }
+        },
+        audio: false
+      };
+
+      stream = await navigator.mediaDevices.getUserMedia(constraints);
+      cameraStream = stream;
+      cameraVideo.srcObject = stream;
+      cameraVideo.setAttribute('autoplay', '');
+      cameraVideo.play();
+      
+      cameraCaptureBtn.style.display = 'flex';
+      cameraSwitchBtn.style.display = 'flex';
+      
+    } catch (err) {
+      console.error('Camera error:', err);
+      handleCameraError(err);
+    }
+  }
+
+  function handleCameraError(err) {
+    const isPermission = err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError';
+    const isNotFound = err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError';
+    
+    if (isNotFound || (isPermission && cameraRetryCount >= MAX_CAMERA_RETRIES)) {
+      cameraContainer.style.display = 'none';
+      cameraError.style.display = 'block';
+      cameraErrorText.textContent = isPermission 
+        ? 'Camera permission denied. Please allow camera access in your browser settings.' 
+        : 'No camera found on this device.';
+      return;
+    }
+
+    cameraRetryCount++;
+    if (currentFacingMode === 'environment') {
+      currentFacingMode = 'user';
+      startCameraStream();
+    } else {
+      cameraContainer.style.display = 'none';
+      cameraError.style.display = 'block';
+      cameraErrorText.textContent = 'Could not access camera. Try using photo library instead.';
+    }
+  }
+
+  function stopCameraStream() {
+    if (cameraStream) {
+      cameraStream.getTracks().forEach(track => track.stop());
+      cameraStream = null;
+    }
+  }
+
+  async function capturePhoto() {
+    if (isDesktopCamera() && window.lexoriumDesktop && window.lexoriumDesktop.captureCamera) {
+      try {
+        const imageData = await window.lexoriumDesktop.capturePhoto();
+        if (imageData) {
+          await processCapturedImage(imageData);
+        }
+      } catch (err) {
+        console.error('Desktop capture error:', err);
+        showError('Failed to capture photo from camera.');
+      }
+      closeCamera();
+      return;
+    }
+
+    try {
+      const video = cameraVideo;
+      const canvas = cameraCanvas;
+      canvas.width = video.videoWidth || 1280;
+      canvas.height = video.videoHeight || 720;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.92);
+      await processCapturedImage(dataUrl);
+    } catch (err) {
+      console.error('Capture error:', err);
+      showError('Failed to capture photo.');
+    }
+    closeCamera();
+  }
+
+  async function processCapturedImage(dataUrl) {
+    try {
+      const byteString = atob(dataUrl.split(',')[1]);
+      const mimeType = dataUrl.match(/data:([^;]+)/)[1];
+      const ab = new ArrayBuffer(byteString.length);
+      const ia = new Uint8Array(ab);
+      for (let i = 0; i < byteString.length; i++) {
+        ia[i] = byteString.charCodeAt(i);
+      }
+      const blob = new Blob([ab], { type: mimeType });
+      const file = new File([blob], `camera_${Date.now()}.jpg`, { type: mimeType });
+      await processFile(file);
+      showToast('Photo captured successfully');
+    } catch (err) {
+      console.error('Image processing error:', err);
+      showError('Failed to process captured photo.');
+    }
+  }
+
+  function switchCamera() {
+    cameraContainer.classList.add('camera-flipping');
+    setTimeout(() => {
+      currentFacingMode = currentFacingMode === 'environment' ? 'user' : 'environment';
+      startCameraStream();
+      cameraContainer.classList.remove('camera-flipping');
+    }, 150);
+  }
+
+  function closeCamera() {
+    stopCameraStream();
+    cameraOverlay.classList.remove('open');
+    cameraVideo.srcObject = null;
+    cameraVideo.src = '';
+    cameraContainer.style.display = 'flex';
+    cameraError.style.display = 'none';
+  }
+
+  function openCameraFallback() {
+    closeCamera();
+    triggerFile('filePhoto');
+  }
+
+  cameraCaptureBtn.addEventListener('click', capturePhoto);
+  cameraSwitchBtn.addEventListener('click', switchCamera);
+  cameraCloseBtn.addEventListener('click', closeCamera);
+
+  cameraVideo.addEventListener('click', capturePhoto);
+
+  cameraOverlay.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeCamera();
+    if (e.key === 'Enter' || e.key === ' ') capturePhoto();
+  });
 
   // ?? ATTACH MENU ??
   function triggerFile(id) {
@@ -6687,7 +7039,7 @@
       .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
       .replace(/\*(.+?)\*/g, '<em>$1</em>')
       .replace(/^---$/gm, '<hr>')
-      .replace(/^[-*ù] (.+)$/gm, '<li>$1</li>')
+      .replace(/^[-*ÔøΩ] (.+)$/gm, '<li>$1</li>')
       .replace(/^\d+\. (.+)$/gm, '<oli>$1</oli>');
     html = html.replace(/(<li>.*?<\/li>\n?)+/gs, m => `<ul>${m}</ul>`);
     html = html.replace(/(<oli>.*?<\/oli>\n?)+/gs, m => `<ol>${m.replace(/<oli>/g,'<li>').replace(/<\/oli>/g,'</li>')}</ol>`);
@@ -7125,7 +7477,7 @@
 
       const isStructuredBlock =
         /^#{1,3}\s/.test(block) ||
-        /^[-*ù]\s/m.test(block) ||
+        /^[-*ÔøΩ]\s/m.test(block) ||
         /^\d+\.\s/m.test(block) ||
         /^```/.test(block);
 
@@ -7812,12 +8164,12 @@
         const roleNode = msgDiv.querySelector('.msg-role');
         if (roleNode) roleNode.textContent = 'Lexorium';
         const limitMessage = currentPlan?.id === 'free'
-          ? 'Youùve reached todayùs 20-query Free plan limit. Upgrade to continue using Lexorium.'
+          ? 'YouÔøΩve reached todayÔøΩs 20-query Free plan limit. Upgrade to continue using Lexorium.'
           : 'Daily plan limit reached. Upgrade to continue using Lexorium.';
         await animateResponse(msgDiv, limitMessage);
         const limitUpgradePlan = 'pro';
         openUpgradeModal({
-          title: currentPlan?.id === 'free' ? 'Youùve reached todayùs 20-query limit.' : 'Daily plan limit reached.',
+          title: currentPlan?.id === 'free' ? 'YouÔøΩve reached todayÔøΩs 20-query limit.' : 'Daily plan limit reached.',
           message: currentPlan?.id === 'free' ? 'Upgrade to Lexorium Pro for increased daily limits and premium legal intelligence tools.' : 'Upgrade this account to Lexorium Pro or Enterprise.',
           reason: 'limit_reached',
           planId: limitUpgradePlan,

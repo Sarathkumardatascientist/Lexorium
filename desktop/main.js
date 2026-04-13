@@ -1,4 +1,4 @@
-const { app, BrowserWindow, shell } = require('electron');
+const { app, BrowserWindow, shell, ipcMain, desktopCapturer, dialog } = require('electron');
 const fs = require('fs');
 const path = require('path');
 const DESKTOP_ICON_PATH = path.join(__dirname, 'icon.png');
@@ -64,6 +64,64 @@ function fallbackHtml(targetUrl) {
   </html>`;
 }
 
+async function getCameraSources() {
+  try {
+    const sources = await desktopCapturer.getSources({
+      types: ['window', 'screen'],
+      thumbnailSize: { width: 0, height: 0 },
+      fetchWindowIcons: false
+    });
+    return sources.filter(s => s.id.startsWith('camera'));
+  } catch (_error) {
+    return [];
+  }
+}
+
+async function captureCamera(win) {
+  try {
+    const cameras = await getCameraSources();
+    
+    if (cameras.length === 0) {
+      const result = await dialog.showMessageBox(win, {
+        type: 'info',
+        title: 'Camera',
+        message: 'No camera source found.',
+        detail: 'Please connect a webcam to use the camera feature.',
+        buttons: ['OK']
+      });
+      return null;
+    }
+
+    const source = cameras[0];
+    
+    if (desktopCapturer.isScreenCapturerEnabled && !desktopCapturer.isScreenCapturerEnabled()) {
+      const result = await dialog.showMessageBox(win, {
+        type: 'error',
+        title: 'Permission Denied',
+        message: 'Screen capture permission is required for camera access.',
+        detail: 'Please enable screen capture in your system settings.',
+        buttons: ['OK']
+      });
+      return null;
+    }
+
+    const stream = await navigator.mediaDevices.getUserMedia({
+      audio: false,
+      video: {
+        mandatory: {
+          chromeMediaSource: 'desktop',
+          chromeMediaSourceId: source.id
+        }
+      }
+    });
+
+    return stream;
+  } catch (_error) {
+    console.error('Camera capture error:', _error);
+    return null;
+  }
+}
+
 async function createWindow() {
   const config = readDesktopConfig();
   const win = new BrowserWindow({
@@ -86,6 +144,48 @@ async function createWindow() {
   win.webContents.setWindowOpenHandler(({ url }) => {
     shell.openExternal(url);
     return { action: 'deny' };
+  });
+
+  ipcMain.handle('capture-camera', async () => {
+    try {
+      const sources = await desktopCapturer.getSources({
+        types: ['screen'],
+        thumbnailSize: { width: 1920, height: 1080 },
+        fetchWindowIcons: false
+      });
+
+      if (sources.length === 0) {
+        return null;
+      }
+
+      const source = sources[0];
+      const thumbnail = source.thumbnail.toDataURL();
+      return thumbnail;
+    } catch (_error) {
+      console.error('Capture camera error:', _error);
+      return null;
+    }
+  });
+
+  ipcMain.handle('capture-photo', async () => {
+    try {
+      const sources = await desktopCapturer.getSources({
+        types: ['screen'],
+        thumbnailSize: { width: 1920, height: 1080 },
+        fetchWindowIcons: false
+      });
+
+      if (sources.length === 0) {
+        return null;
+      }
+
+      const source = sources[0];
+      const thumbnail = source.thumbnail.toDataURL();
+      return thumbnail;
+    } catch (_error) {
+      console.error('Capture photo error:', _error);
+      return null;
+    }
   });
 
   try {
