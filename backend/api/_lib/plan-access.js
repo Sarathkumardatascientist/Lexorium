@@ -1,4 +1,6 @@
 const { getPaidEntitlement, normalizeEmail } = require('../billing/_entitlements');
+const fs = require('fs');
+const path = require('path');
 
 const PLAN_ORDER = ['free', 'pro', 'enterprise'];
 const DEFAULT_UPGRADE_PLAN = 'pro';
@@ -7,6 +9,7 @@ const PLAN_ALIASES = {
   plus: 'pro',
   business: 'enterprise',
 };
+const ENTERPRISE_USERS_FILE = path.join(__dirname, '_data', 'enterprise-users.json');
 
 function parsePositiveInt(value, fallback) {
   const parsed = Number.parseInt(String(value || ''), 10);
@@ -40,6 +43,20 @@ function parseEmailList(value) {
       .map(normalizeEmail)
       .filter(Boolean)
   );
+}
+
+function getEnterpriseUsersFromFile() {
+  try {
+    if (!fs.existsSync(ENTERPRISE_USERS_FILE)) {
+      return new Set();
+    }
+    const data = fs.readFileSync(ENTERPRISE_USERS_FILE, 'utf-8');
+    const users = JSON.parse(data);
+    return new Set(Array.isArray(users) ? users.map(u => normalizeEmail(u.email)).filter(Boolean) : []);
+  } catch (err) {
+    console.error('Error reading enterprise users file:', err);
+    return new Set();
+  }
 }
 
 const PLAN_CONFIG = {
@@ -166,7 +183,8 @@ function getPlanIdFromUser(user) {
 function getPlanForProfile(profile, req) {
   const email = normalizeEmail(profile?.email);
   const enterpriseUsers = parseEmailList(process.env.ENTERPRISE_USER_EMAILS);
-  if (email && enterpriseUsers.has(email)) return 'enterprise';
+  const fileEnterpriseUsers = getEnterpriseUsersFromFile();
+  if (email && (enterpriseUsers.has(email) || fileEnterpriseUsers.has(email))) return 'enterprise';
   const currentPlan = getPlanIdFromUser(profile);
   if (currentPlan !== 'free') return currentPlan;
   const entitlement = req ? getPaidEntitlement(req, profile) : null;
