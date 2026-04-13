@@ -16,6 +16,7 @@
       --white: #FFFFFF;
       --line: rgba(192,192,192,0.12);
       --line2: rgba(192,192,192,0.22);
+      --purple: #8B5CF6;
     }
 
     body {
@@ -32,21 +33,44 @@
     .header {
       text-align: center;
       margin-bottom: 40px;
+      width: 100%;
+      max-width: 500px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
     }
+
+    .header-left { text-align: left; }
 
     .brand {
       font-family: 'Fraunces', serif;
       font-style: italic;
-      font-size: 28px;
-      margin-bottom: 8px;
+      font-size: 24px;
     }
 
-    .brand span { color: #8B5CF6; }
+    .brand span { color: var(--purple); }
 
     .subtitle {
       color: var(--silver);
-      font-size: 14px;
+      font-size: 13px;
       font-weight: 300;
+    }
+
+    .btn-logout {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid var(--line2);
+      color: var(--silver);
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-size: 12px;
+      cursor: pointer;
+      font-family: 'Jost', sans-serif;
+      transition: all 0.2s;
+    }
+
+    .btn-logout:hover {
+      background: rgba(255,255,255,0.1);
+      color: white;
     }
 
     .card {
@@ -85,13 +109,9 @@
       transition: border-color 0.2s;
     }
 
-    input:focus {
-      border-color: rgba(139, 92, 246, 0.5);
-    }
-
-    input::placeholder {
-      color: rgba(255,255,255,0.3);
-    }
+    input:focus { border-color: rgba(139, 92, 246, 0.5); }
+    input:disabled { opacity: 0.5; cursor: not-allowed; }
+    input::placeholder { color: rgba(255,255,255,0.3); }
 
     .btn {
       width: 100%;
@@ -107,20 +127,16 @@
     }
 
     .btn-primary {
-      background: linear-gradient(135deg, #8B5CF6, #6366F1);
+      background: linear-gradient(135deg, var(--purple), #6366F1);
       color: white;
     }
 
-    .btn-primary:hover {
+    .btn-primary:hover:not(:disabled) {
       transform: translateY(-1px);
       box-shadow: 0 8px 24px rgba(139, 92, 246, 0.3);
     }
 
-    .btn-primary:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-      transform: none;
-    }
+    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
 
     .btn-secondary {
       background: rgba(255,255,255,0.06);
@@ -129,9 +145,18 @@
       margin-top: 10px;
     }
 
-    .btn-secondary:hover {
-      background: rgba(255,255,255,0.1);
+    .btn-secondary:hover { background: rgba(255,255,255,0.1); }
+
+    .btn-danger {
+      background: rgba(239, 68, 68, 0.1);
+      color: #f87171;
+      border: 1px solid rgba(239, 68, 68, 0.2);
+      padding: 10px 16px;
+      width: auto;
+      font-size: 12px;
     }
+
+    .btn-danger:hover { background: rgba(239, 68, 68, 0.2); }
 
     .message {
       padding: 14px 16px;
@@ -168,6 +193,17 @@
       text-transform: uppercase;
       color: var(--silver);
       margin-bottom: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .count-badge {
+      background: var(--purple);
+      color: white;
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-size: 11px;
     }
 
     .users-list {
@@ -183,7 +219,10 @@
       background: rgba(255,255,255,0.02);
       border-radius: 8px;
       margin-bottom: 8px;
+      gap: 12px;
     }
+
+    .user-info { flex: 1; min-width: 0; }
 
     .user-email {
       font-size: 13px;
@@ -195,21 +234,7 @@
       font-size: 11px;
       color: var(--silver);
       opacity: 0.6;
-    }
-
-    .btn-remove {
-      background: rgba(239, 68, 68, 0.1);
-      border: 1px solid rgba(239, 68, 68, 0.2);
-      color: #f87171;
-      padding: 6px 12px;
-      border-radius: 6px;
-      font-size: 11px;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-
-    .btn-remove:hover {
-      background: rgba(239, 68, 68, 0.2);
+      margin-top: 2px;
     }
 
     .empty-state {
@@ -231,9 +256,7 @@
       margin-right: 8px;
     }
 
-    @keyframes spin {
-      to { transform: rotate(360deg); }
-    }
+    @keyframes spin { to { transform: rotate(360deg); } }
 
     .back-link {
       color: var(--silver);
@@ -244,19 +267,52 @@
       transition: opacity 0.2s;
     }
 
-    .back-link:hover {
-      opacity: 1;
+    .back-link:hover { opacity: 1; }
+
+    .setup-banner {
+      background: rgba(139, 92, 246, 0.1);
+      border: 1px solid rgba(139, 92, 246, 0.3);
+      border-radius: 10px;
+      padding: 16px;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+
+    .setup-banner strong { color: #a78bfa; }
+    .setup-banner p { color: var(--silver); font-size: 12px; margin-top: 8px; }
+
+    .setup-code {
+      margin-top: 12px;
+      padding: 12px;
+      background: rgba(0,0,0,0.3);
+      border-radius: 8px;
+      text-align: left;
+      font-family: monospace;
+      font-size: 11px;
+      color: #4ade80;
+      word-break: break-all;
+    }
+
+    .change-password-section {
+      margin-top: 24px;
+      padding-top: 24px;
+      border-top: 1px solid var(--line);
     }
   </style>
 </head>
 <body>
 
   <div class="header">
-    <div class="brand">Lexorium <span>Enterprise</span> Admin</div>
-    <div class="subtitle">Manage Enterprise User Access</div>
+    <div class="header-left">
+      <div class="brand">Lexorium <span>Enterprise</span></div>
+      <div class="subtitle">Admin Panel</div>
+    </div>
+    <button class="btn-logout" onclick="logout()">Logout</button>
   </div>
 
   <div class="card">
+    <!-- SETUP_MESSAGE -->
+    
     <div class="form-group">
       <label for="emailInput">User Email Address</label>
       <input type="email" id="emailInput" placeholder="user@company.com" required>
@@ -274,9 +330,27 @@
 
     <div class="divider"></div>
 
-    <div class="section-title">Current Enterprise Users</div>
+    <div class="section-title">
+      Current Enterprise Users
+      <span class="count-badge" id="userCount">0</span>
+    </div>
     <div class="users-list" id="usersList">
       <div class="empty-state">Loading...</div>
+    </div>
+
+    <div class="change-password-section">
+      <div class="section-title">Change Password</div>
+      <div class="form-group">
+        <label for="currentPassword">Current Password</label>
+        <input type="password" id="currentPassword" placeholder="Current password">
+      </div>
+      <div class="form-group">
+        <label for="newPassword">New Password</label>
+        <input type="password" id="newPassword" placeholder="New password (min 6 characters)">
+      </div>
+      <button class="btn btn-secondary" onclick="changePassword()" style="margin-top: 0;">
+        Update Password
+      </button>
     </div>
   </div>
 
@@ -298,9 +372,9 @@
     function setLoading(loading) {
       const btn = document.getElementById('addBtn');
       const input = document.getElementById('emailInput');
-      btn.disabled = loading;
-      input.disabled = loading;
-      btn.innerHTML = loading ? '<span class="loading"></span>Processing...' : 'Activate Enterprise Access';
+      if (btn) btn.disabled = loading;
+      if (input) input.disabled = loading;
+      if (btn) btn.innerHTML = loading ? '<span class="loading"></span>Processing...' : 'Activate Enterprise Access';
     }
 
     async function addEnterpriseUser() {
@@ -366,6 +440,7 @@
 
     async function loadUsers() {
       const list = document.getElementById('usersList');
+      const count = document.getElementById('userCount');
       list.innerHTML = '<div class="empty-state">Loading...</div>';
 
       try {
@@ -373,20 +448,75 @@
         const data = await res.json();
 
         if (data.ok && data.users && data.users.length > 0) {
+          count.textContent = data.users.length;
           list.innerHTML = data.users.map(user => `
             <div class="user-item">
-              <div>
+              <div class="user-info">
                 <div class="user-email">${escapeHtml(user.email)}</div>
                 <div class="user-date">Added: ${formatDate(user.addedAt)}</div>
               </div>
-              <button class="btn-remove" onclick="removeUser('${escapeHtml(user.email)}')">Remove</button>
+              <button class="btn btn-danger" onclick="removeUser('${escapeHtml(user.email).replace(/'/g, "\\'")}')">Remove</button>
             </div>
           `).join('');
         } else {
+          count.textContent = '0';
           list.innerHTML = '<div class="empty-state">No enterprise users yet</div>';
         }
       } catch (err) {
+        count.textContent = '0';
         list.innerHTML = '<div class="empty-state">Failed to load users</div>';
+      }
+    }
+
+    async function changePassword() {
+      const current = document.getElementById('currentPassword').value;
+      const newPass = document.getElementById('newPassword').value;
+
+      if (!current || !newPass) {
+        showMessage('Please fill in both password fields', true);
+        return;
+      }
+
+      if (newPass.length < 6) {
+        showMessage('New password must be at least 6 characters', true);
+        return;
+      }
+
+      try {
+        const res = await fetch(API_BASE, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            action: 'changepassword',
+            currentPassword: current,
+            newPassword: newPass
+          })
+        });
+
+        const data = await res.json();
+
+        if (data.ok) {
+          showMessage('Password changed successfully');
+          document.getElementById('currentPassword').value = '';
+          document.getElementById('newPassword').value = '';
+        } else {
+          showMessage(data.message || 'Failed to change password', true);
+        }
+      } catch (err) {
+        showMessage('Connection error. Please try again.', true);
+      }
+    }
+
+    async function logout() {
+      try {
+        await fetch(API_BASE, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'logout' })
+        });
+        window.location.reload();
+      } catch (err) {
+        window.location.reload();
       }
     }
 
@@ -402,13 +532,11 @@
       return date.toLocaleDateString('en-IN', {
         day: 'numeric',
         month: 'short',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
+        year: 'numeric'
       });
     }
 
-    document.getElementById('emailInput').addEventListener('keypress', (e) => {
+    document.getElementById('emailInput')?.addEventListener('keypress', (e) => {
       if (e.key === 'Enter') addEnterpriseUser();
     });
 
