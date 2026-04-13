@@ -8046,6 +8046,13 @@
 
   async function callWithRouting(mode, text, messages, attachments) {
     updateRoutingIndicator(lastRoutedModel, mode);
+    
+    const hasImages = attachments && attachments.some(a => a.isImage && a.dataUrl);
+    
+    if (hasImages) {
+      return callPuterDirect(messages, attachments, mode);
+    }
+    
     try {
       return await callLexoriumModel('lexorium-auto', messages, attachments, mode);
     } catch (backendError) {
