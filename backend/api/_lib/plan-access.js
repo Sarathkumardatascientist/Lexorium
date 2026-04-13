@@ -183,8 +183,9 @@ function getPlanIdFromUser(user) {
 function getPlanForProfile(profile, req) {
   const email = normalizeEmail(profile?.email);
   const enterpriseUsers = parseEmailList(process.env.ENTERPRISE_USER_EMAILS);
+  const adminEnterpriseUsers = parseEmailList(process.env.LEXORIUM_ENTERPRISE_EMAILS);
   const fileEnterpriseUsers = getEnterpriseUsersFromFile();
-  if (email && (enterpriseUsers.has(email) || fileEnterpriseUsers.has(email))) return 'enterprise';
+  if (email && (enterpriseUsers.has(email) || fileEnterpriseUsers.has(email) || adminEnterpriseUsers.has(email))) return 'enterprise';
   const currentPlan = getPlanIdFromUser(profile);
   if (currentPlan !== 'free') return currentPlan;
   const entitlement = req ? getPaidEntitlement(req, profile) : null;
