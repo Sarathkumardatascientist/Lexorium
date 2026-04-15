@@ -25,6 +25,10 @@
     {
       "source": "/account",
       "destination": "/account.html"
+    },
+    {
+      "source": "/help",
+      "destination": "/help.html"
     }
   ]
 }
