@@ -3677,7 +3677,6 @@
             <div class="settings-title" id="settingsSectionTitle">General</div>
             <div class="settings-subtitle" id="settingsSectionSubtitle">Control response style, account preferences, and voice behavior for this Lexorium workspace.</div>
           </div>
-          <div class="settings-scroll-hint">Scroll for more settings</div>
 
           <div class="settings-section active" data-settings-section="general">
             <div class="settings-row">
@@ -3757,14 +3756,6 @@
                 <option value="balanced">Balanced</option>
                 <option value="detailed">Detailed</option>
               </select>
-            </div>
-            <div class="settings-group-title">Custom instructions</div>
-            <div class="settings-row settings-row-stack">
-              <div class="settings-row-copy">
-                <div class="settings-row-title">Additional behavior, style, and tone preferences</div>
-                <div class="settings-row-desc">These instructions shape presentation only. Lexorium will still stay legal-only and retain the required legal response structure.</div>
-              </div>
-              <textarea class="settings-textarea" id="settingsCustomInstructions" maxlength="320" placeholder="Example: Keep responses concise, use plain English, and highlight practical next steps first." oninput="updatePersonalizationField('customInstructions', this.value, false, false)" onchange="updatePersonalizationField('customInstructions', this.value)"></textarea>
             </div>
           </div>
 
@@ -5116,8 +5107,7 @@
   }
 
   function openHelpCenter() {
-    const supportEmail = authConfig?.contactSalesEmail || 'aisprezzatura@gmail.com';
-    window.location.href = `mailto:${supportEmail}?subject=Lexorium%20Support`;
+    window.open('/help', '_blank');
   }
 
   function previewSelectedVoice() {
@@ -6373,12 +6363,18 @@
   async function clearChatHistory() {
     if (!confirm('Clear all chat history for this account? This cannot be undone.')) return;
     stopMessageSpeech();
-    await fetch(CONVERSATION_CLEAR_API_URL, {
-      method: 'POST',
-      credentials: 'same-origin',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ clear: true }),
-    }).catch(() => null);
+    
+    try {
+      await fetch(CONVERSATION_CLEAR_API_URL, {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ clear: true }),
+      });
+    } catch (_error) {
+      // Ignore network errors
+    }
+    
     chatStore = [];
     history = [];
     chatTitle = 'New conversation';
@@ -6388,12 +6384,30 @@
     lastRoutedModel = null;
     historySearchQuery = '';
     if (historySearchEl) historySearchEl.value = '';
+    
     try {
-      localStorage.removeItem(accountStorageKey(CHAT_HISTORY_STORAGE));
-      localStorage.removeItem(accountStorageKey(CHAT_STATE_STORAGE));
+      const historyKey = accountStorageKey(CHAT_HISTORY_STORAGE);
+      const stateKey = accountStorageKey(CHAT_STATE_STORAGE);
+      const convKey = accountStorageKey('lexorium_conversation_id');
+      const sidebarKey = accountStorageKey('lexorium_sidebar_open');
+      
+      localStorage.removeItem(historyKey);
+      localStorage.removeItem(stateKey);
+      localStorage.removeItem(convKey);
+      localStorage.removeItem(sidebarKey);
+      
+      const keysToRemove = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.includes('lexorium_conversations') || (key && key.includes('lexorium_chat'))) {
+          keysToRemove.push(key);
+        }
+      }
+      keysToRemove.forEach(key => localStorage.removeItem(key));
     } catch (_error) {
       // Ignore storage cleanup failures.
     }
+    
     createConversation('New conversation');
     messagesEl.innerHTML = '';
     emptyEl.style.display = 'flex';
