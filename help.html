@@ -17,7 +17,7 @@
       --white: #FFFFFF;
       --line: rgba(192,192,192,0.12);
       --line2: rgba(192,192,192,0.22);
-      --purple: #8B5CF6;
+      --purple: #C9A84C;
       --gold: #C9A84C;
     }
 
@@ -135,23 +135,36 @@
     }
 
     .toc-list {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 12px;
       list-style: none;
+      padding-left: 0;
+    }
+
+    .toc-list li {
+      padding: 8px 0;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .toc-list li:last-child {
+      border-bottom: none;
     }
 
     .toc-list a {
-      color: var(--white);
+      color: var(--gold);
       text-decoration: none;
-      padding: 10px 16px;
-      background: rgba(255,255,255,0.03);
-      border-radius: 8px;
-      font-size: 14px;
-      transition: background 0.2s;
+      font-size: 15px;
+      transition: color 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 10px;
     }
 
-    .toc-list a:hover { background: rgba(255,255,255,0.08); }
+    .toc-list a::before {
+      content: "•";
+      color: var(--gold);
+      font-size: 18px;
+    }
+
+    .toc-list a:hover { color: var(--white); }
 
     .section {
       margin-bottom: 64px;
@@ -615,7 +628,7 @@
   </div>
 
   <footer>
-    <p>&copy; 2024 Lexorium by <a href="https://sprezzatura.ai">Sprezzatura AI</a>. All rights reserved.</p>
+    <p>&copy; 2026 Lexorium by <a href="https://sprezzatura.ai">Sprezzatura AI</a>. All rights reserved.</p>
     <p style="margin-top: 8px;"><a href="/privacy">Privacy Policy</a> | <a href="/terms">Terms of Service</a></p>
   </footer>
 
