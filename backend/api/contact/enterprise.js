@@ -1,22 +1,53 @@
 const { parseJsonBody, requireMethod, sendError, sendJson } = require('../_lib/http');
-const { getEnterpriseGoogleFormConfig, hasEnterpriseGoogleFormConfig } = require('../_lib/enterprise-google-form');
 
 function clean(value) {
   return String(value || '').trim();
 }
 
-function buildFormPayload(body) {
-  const config = getEnterpriseGoogleFormConfig();
-  return new URLSearchParams({
-    [config.entries.fullName]: clean(body.fullName),
-    [config.entries.workEmail]: clean(body.workEmail),
-    [config.entries.organization]: clean(body.organization),
-    [config.entries.role]: clean(body.role),
-    [config.entries.teamSize]: clean(body.teamSize),
-    [config.entries.queryVolume]: clean(body.queryVolume),
-    [config.entries.useCase]: clean(body.useCase),
-    [config.entries.requirements]: clean(body.requirements),
+async function sendEnterpriseEmail(body) {
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) {
+    throw new Error('RESEND_API_KEY not configured');
+  }
+
+  const toEmail = process.env.ENTERPRISE_TO_EMAIL || 'enterprise@lexoriumai.com';
+  const fromEmail = process.env.ENTERPRISE_FROM_EMAIL || 'Lexorium <noreply@lexoriumai.com>';
+
+  const htmlBody = `
+    <h2>New Enterprise Inquiry</h2>
+    <table style="border-collapse: collapse; width: 100%;">
+      <tr><td style="padding: 8px; border: 1px solid #ddd; font-weight: bold;">Full Name</td><td style="padding: 8px; border: 1px solid #ddd;">${clean(body.fullName)}</td></tr>
+      <tr><td style="padding: 8px; border: 1px solid #ddd; font-weight: bold;">Work Email</td><td style="padding: 8px; border: 1px solid #ddd;">${clean(body.workEmail)}</td></tr>
+      <tr><td style="padding: 8px; border: 1px solid #ddd; font-weight: bold;">Organization</td><td style="padding: 8px; border: 1px solid #ddd;">${clean(body.organization)}</td></tr>
+      <tr><td style="padding: 8px; border: 1px solid #ddd; font-weight: bold;">Role</td><td style="padding: 8px; border: 1px solid #ddd;">${clean(body.role)}</td></tr>
+      <tr><td style="padding: 8px; border: 1px solid #ddd; font-weight: bold;">Team Size</td><td style="padding: 8px; border: 1px solid #ddd;">${clean(body.teamSize)}</td></tr>
+      <tr><td style="padding: 8px; border: 1px solid #ddd; font-weight: bold;">Query Volume</td><td style="padding: 8px; border: 1px solid #ddd;">${clean(body.queryVolume)}</td></tr>
+      <tr><td style="padding: 8px; border: 1px solid #ddd; font-weight: bold;">Use Case</td><td style="padding: 8px; border: 1px solid #ddd;">${clean(body.useCase)}</td></tr>
+      <tr><td style="padding: 8px; border: 1px solid #ddd; font-weight: bold; vertical-align: top;">Requirements</td><td style="padding: 8px; border: 1px solid #ddd;">${clean(body.requirements).replace(/\n/g, '<br>')}</td></tr>
+    </table>
+    <p style="margin-top: 16px; color: #666;">Submitted from Lexorium website</p>
+  `;
+
+  const response = await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      from: fromEmail,
+      to: toEmail,
+      subject: `New Enterprise Inquiry: ${clean(body.organization)}`,
+      html: htmlBody,
+    }),
   });
+
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(`Resend API error: ${error}`);
+  }
+
+  return response.json();
 }
 
 module.exports = async (req, res) => {
@@ -29,25 +60,15 @@ module.exports = async (req, res) => {
     return sendError(res, 400, 'Full name, work email, organization, and requirements are required.');
   }
 
-  if (!hasEnterpriseGoogleFormConfig()) {
-    return sendError(res, 500, 'Enterprise contact form is not configured yet.');
+  if (!process.env.RESEND_API_KEY) {
+    return sendError(res, 500, 'Email service is not configured. Please contact support.');
   }
 
-  const config = getEnterpriseGoogleFormConfig();
-  const response = await fetch(config.actionUrl, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8',
-    },
-    body: buildFormPayload(body).toString(),
-  }).catch((error) => ({ __networkError: error }));
-
-  if (response?.__networkError) {
-    return sendError(res, 502, 'Could not submit the enterprise inquiry to Google Forms.');
-  }
-
-  if (!response.ok) {
-    return sendError(res, 502, 'Google Forms rejected the enterprise inquiry.');
+  try {
+    await sendEnterpriseEmail(body);
+  } catch (error) {
+    console.error('Enterprise email error:', error.message);
+    return sendError(res, 502, 'Failed to send enterprise inquiry email.');
   }
 
   return sendJson(res, 200, {
