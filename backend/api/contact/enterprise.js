@@ -10,8 +10,8 @@ async function sendEnterpriseEmail(body) {
     throw new Error('RESEND_API_KEY not configured');
   }
 
-  const toEmail = process.env.ENTERPRISE_TO_EMAIL || 'enterprise@lexoriumai.com';
-  const fromEmail = process.env.ENTERPRISE_FROM_EMAIL || 'Lexorium <onboarding@resend.dev>';
+  const toEmail = 'aisprezzatura@gmail.com';
+  const fromEmail = 'Lexorium <onboarding@resend.dev>';
 
   const htmlBody = `
     <h2>New Enterprise Inquiry</h2>
