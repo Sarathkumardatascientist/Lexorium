@@ -1,9 +1,13 @@
 import java.io.FileInputStream
 import java.util.Properties
+import java.io.File
 
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
+    if (File("app/google-services.json").exists()) {
+        id("com.google.gms.google-services")
+    }
 }
 
 val keystoreProperties = Properties()
@@ -29,6 +33,8 @@ val hasReleaseSigning = listOf(
     releaseKeyPassword,
 ).all { !it.isNullOrBlank() }
 
+val hasFirebase = File("app/google-services.json").exists()
+
 android {
     namespace = "ai.sprezzatura.lexorium"
     compileSdk = 35
@@ -37,8 +43,8 @@ android {
         applicationId = "ai.sprezzatura.lexorium"
         minSdk = 26
         targetSdk = 35
-        versionCode = 2
-        versionName = "1.0.1"
+        versionCode = 3
+        versionName = "1.0.2"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -48,6 +54,7 @@ android {
         buildConfigField("String", "LEXORIUM_BASE_URL", "\"https://lexoriumai.com\"")
         buildConfigField("String", "LEXORIUM_APP_URL", "\"https://lexoriumai.com/app.html\"")
         buildConfigField("String", "LEXORIUM_PLAY_PRO_PRODUCT_ID", "\"lexorium_pro_monthly\"")
+        buildConfigField("boolean", "HAS_FIREBASE", hasFirebase.toString())
     }
 
     signingConfigs {
@@ -95,4 +102,11 @@ dependencies {
     implementation("androidx.swiperefreshlayout:swiperefreshlayout:1.1.0")
     implementation("androidx.activity:activity-ktx:1.10.1")
     implementation("com.android.billingclient:billing-ktx:7.1.1")
+    
+    // Firebase - only when google-services.json is present
+    if (hasFirebase) {
+        implementation(platform("com.google.firebase:firebase-bom:33.7.0"))
+        implementation("com.google.firebase:firebase-messaging-ktx")
+        implementation("com.google.firebase:firebase-analytics-ktx")
+    }
 }

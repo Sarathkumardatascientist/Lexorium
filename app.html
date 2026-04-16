@@ -4525,6 +4525,19 @@
     }
   }
 
+  function setFcmToken(token) {
+    if (!token) return;
+    window.LexoriumAndroid = window.LexoriumAndroid || {};
+    window.LexoriumAndroid.fcmToken = token;
+    if (currentUserUid) {
+      fetch('/api/user/fcm-token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: token, uid: currentUserUid }),
+      }).catch(() => null);
+    }
+  }
+
   function getApiFailureMessage(response, payload, url) {
     const status = Number(response?.status || 0);
     const target = String(url || '').trim();

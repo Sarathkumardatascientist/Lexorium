@@ -116,6 +116,7 @@ module.exports = async (req, res) => {
       createdAt: user.createdAt,
       features: plan.features,
       retention,
+      fcmToken: user.fcmToken || null,
     },
     plan,
     usage,

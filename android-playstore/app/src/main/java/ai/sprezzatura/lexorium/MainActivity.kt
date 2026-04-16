@@ -33,6 +33,8 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+import com.google.android.gms.tasks.OnCompleteListener
+import com.google.firebase.messaging.FirebaseMessaging
 
 class MainActivity : AppCompatActivity() {
 
@@ -93,6 +95,14 @@ class MainActivity : AppCompatActivity() {
         playBillingManager = LexoriumPlayBillingManager(this, webView, BuildConfig.LEXORIUM_BASE_URL)
         webView.addJavascriptInterface(playBillingManager.getJavascriptBridge(), "LexoriumAndroidBridge")
         playBillingManager.start()
+        
+        FirebaseMessaging.getInstance().token.addOnCompleteListener(OnCompleteListener { task ->
+            if (!task.isSuccessful) {
+                return@OnCompleteListener
+            }
+            val token = task.result
+            webView.post { webView.evaluateJavascript("if(window.LexoriumAndroid){window.LexoriumAndroid.setFcmToken('$token')}", null) }
+        })
 
         if (savedInstanceState != null) {
             webView.restoreState(savedInstanceState)
