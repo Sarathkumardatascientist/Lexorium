@@ -11,7 +11,7 @@ async function sendEnterpriseEmail(body) {
   }
 
   const toEmail = process.env.ENTERPRISE_TO_EMAIL || 'enterprise@lexoriumai.com';
-  const fromEmail = process.env.ENTERPRISE_FROM_EMAIL || 'Lexorium <noreply@lexoriumai.com>';
+  const fromEmail = process.env.ENTERPRISE_FROM_EMAIL || 'Lexorium <onboarding@resend.dev>';
 
   const htmlBody = `
     <h2>New Enterprise Inquiry</h2>
