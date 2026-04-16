@@ -5811,6 +5811,42 @@
     closeSettingsModal();
     sidebarHidden = false;
     applySidebarVisibility();
+    
+    currentUserUid = null;
+    currentProfileName = '';
+    currentProfilePhone = null;
+    currentPlan = { id: 'free', name: 'Free', routeTier: 'free' };
+    currentUsage = null;
+    retentionState = { persona: '', primaryUseCase: '' };
+    
+    if (authName) authName.textContent = 'Lexorium';
+    if (sidebarAccountNameEl) sidebarAccountNameEl.textContent = 'Sign in to Lexorium';
+    if (sidebarAccountPlanEl) sidebarAccountPlanEl.textContent = 'Free plan';
+    if (accountMenuNameEl) accountMenuNameEl.textContent = 'Sign in to Lexorium';
+    if (accountMenuPlanEl) accountMenuPlanEl.textContent = 'Free plan';
+    if (settingsAccountNameEl) settingsAccountNameEl.textContent = 'Sign in to Lexorium';
+    if (settingsAccountMetaEl) settingsAccountMetaEl.textContent = '';
+    
+    chatStore = [];
+    history = [];
+    chatTitle = 'New conversation';
+    currentConversationId = null;
+    messagesEl.innerHTML = '';
+    emptyEl.style.display = 'flex';
+    messagesEl.appendChild(emptyEl);
+    
+    renderGreeting(null);
+    renderPlanStatus();
+    renderSidebarAccount();
+    renderHistoryList();
+    closeAccountMenu();
+    closeHistoryPanel();
+    
+    try {
+      localStorage.removeItem(accountStorageKey(CHAT_HISTORY_STORAGE));
+      localStorage.removeItem(accountStorageKey(CHAT_STATE_STORAGE));
+    } catch (_error) {}
+    
     await clearPuterSessionState();
     if (shouldRedirect) window.location.href = 'index.html#signin';
   }
@@ -6268,6 +6304,17 @@
     }
 
     if (isPDF) {
+      const pdfBytes = new Uint8Array(await file.arrayBuffer());
+      const pdf = await window.pdfjsLib.getDocument({ data: pdfBytes }).promise;
+      const pageCount = pdf.numPages;
+      
+      const isProOrEnterprise = currentPlan?.routeTier === 'pro' || currentPlan?.routeTier === 'enterprise';
+      const FREE_PDF_PAGE_LIMIT = 8;
+      
+      if (!isProOrEnterprise && pageCount > FREE_PDF_PAGE_LIMIT) {
+        throw new Error(`PDF has ${pageCount} pages. Free plan supports up to ${FREE_PDF_PAGE_LIMIT} pages. Upgrade to Pro for unlimited PDF analysis.`);
+      }
+      
       const [textContent, previewUrl] = await Promise.all([
         extractPdfText(file),
         extractPdfPreview(file),
