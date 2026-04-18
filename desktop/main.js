@@ -1,4 +1,4 @@
-const { app, BrowserWindow, shell, ipcMain, desktopCapturer, dialog } = require('electron');
+const { app, BrowserWindow, shell, ipcMain, desktopCapturer, dialog, Notification } = require('electron');
 const fs = require('fs');
 const path = require('path');
 const DESKTOP_ICON_PATH = path.join(__dirname, 'icon.png');
@@ -204,4 +204,23 @@ app.whenReady().then(async () => {
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit();
+});
+
+ipcMain.handle('show-notification', async (_event, { title, body }) => {
+  if (!Notification.isSupported()) return false;
+  const notification = new Notification({
+    title: title || 'Your Response is Ready',
+    body: body || 'Tap to view your Lexorium response.',
+    icon: DESKTOP_ICON_PATH,
+    silent: false,
+  });
+  notification.on('click', () => {
+    const win = BrowserWindow.getAllWindows()[0];
+    if (win) {
+      if (win.isMinimized()) win.restore();
+      win.focus();
+    }
+  });
+  notification.show();
+  return true;
 });

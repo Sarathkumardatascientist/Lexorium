@@ -4488,15 +4488,39 @@
     } catch (_e) {}
   }
 
+  async function showDesktopNotification(title, body) {
+    try {
+      if (window.lexoriumDesktop?.showNotification) {
+        await window.lexoriumDesktop.showNotification(title, body);
+        return true;
+      }
+    } catch (_e) {}
+    return false;
+  }
+
+  function isDesktopHost() {
+    return window.lexoriumDesktop != null;
+  }
+
   function notifyAnswerReady(text) {
     if (!wantsAnswerNotifications()) return;
+    
+    const title = 'Your Response is Ready';
+    const body = buildNotificationPreview(text);
+    const isDesktop = isDesktopHost();
+    
+    if (isDesktop) {
+      showDesktopNotification(title, body);
+      playNotificationSound();
+      return;
+    }
     
     playNotificationSound();
     
     if (document.hidden || !document.hasFocus()) {
       try {
-        new Notification('Your Response is Ready', {
-          body: buildNotificationPreview(text),
+        new Notification(title, {
+          body: body,
           icon: 'assets/lexorium-logo-square.png',
           badge: 'assets/lexorium-logo-square.png',
           tag: 'lexorium-answer-ready',

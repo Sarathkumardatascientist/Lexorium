@@ -5,4 +5,5 @@ contextBridge.exposeInMainWorld('lexoriumDesktop', {
   version: process.versions.electron,
   captureCamera: () => ipcRenderer.invoke('capture-camera'),
   capturePhoto: () => ipcRenderer.invoke('capture-photo'),
+  showNotification: (title, body) => ipcRenderer.invoke('show-notification', { title, body }),
 });
