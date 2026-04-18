@@ -4459,18 +4459,51 @@
     });
   }
 
-  function notifyAnswerReady(text) {
-    if (!wantsAnswerNotifications() || !document.hidden) return;
+  function playNotificationSound() {
     try {
-      new Notification('Lexorium answer ready', {
-        body: buildNotificationPreview(text),
-        icon: 'assets/lexorium-logo-square.png',
-        badge: 'assets/lexorium-logo-square.png',
-        tag: 'lexorium-answer-ready',
-        renotify: true,
-      });
-    } catch (_error) {
-      // Ignore notification failures and keep the answer flow running.
+      const AudioContext = window.AudioContext || window.webkitAudioContext;
+      const ctx = new AudioContext();
+      const now = ctx.currentTime;
+      
+      const osc1 = ctx.createOscillator();
+      const osc2 = ctx.createOscillator();
+      const gain = ctx.createGain();
+      
+      osc1.type = 'sine';
+      osc2.type = 'sine';
+      osc1.frequency.setValueAtTime(880, now);
+      osc2.frequency.setValueAtTime(1320, now + 0.1);
+      
+      gain.gain.setValueAtTime(0.15, now);
+      gain.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
+      
+      osc1.connect(gain);
+      osc2.connect(gain);
+      gain.connect(ctx.destination);
+      
+      osc1.start(now);
+      osc2.start(now + 0.1);
+      osc1.stop(now + 0.4);
+      osc2.stop(now + 0.4);
+    } catch (_e) {}
+  }
+
+  function notifyAnswerReady(text) {
+    if (!wantsAnswerNotifications()) return;
+    
+    playNotificationSound();
+    
+    if (document.hidden || !document.hasFocus()) {
+      try {
+        new Notification('Your Response is Ready', {
+          body: buildNotificationPreview(text),
+          icon: 'assets/lexorium-logo-square.png',
+          badge: 'assets/lexorium-logo-square.png',
+          tag: 'lexorium-answer-ready',
+          renotify: true,
+          requireInteraction: false,
+        });
+      } catch (_error) {}
     }
   }
 

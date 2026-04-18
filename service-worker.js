@@ -8,6 +8,35 @@ const APP_SHELL = [
   '/assets/lexorium-logo-square.png',
 ];
 
+self.addEventListener('push', (event) => {
+  const data = event.data?.json() || {};
+  const title = data.title || 'Your Response is Ready';
+  const options = {
+    body: data.body || 'Tap to view your Lexorium response.',
+    icon: 'assets/lexorium-logo-square.png',
+    badge: 'assets/lexorium-logo-square.png',
+    tag: 'lexorium-notification',
+    renotify: true,
+    requireInteraction: false,
+    vibrate: [200, 100, 200],
+  };
+  event.waitUntil(self.registration.showNotification(title, options));
+});
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clients) => {
+      for (const client of clients) {
+        if (client.url.includes('/app') && 'focus' in client) {
+          return client.focus();
+        }
+      }
+      return self.clients.openWindow('/app.html');
+    })
+  );
+});
+
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME)
