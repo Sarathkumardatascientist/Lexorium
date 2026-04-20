@@ -33,6 +33,10 @@
     {
       "source": "/legal-insights",
       "destination": "/legal-insights.html"
+    },
+    {
+      "source": "/legal-insights-admin",
+      "destination": "/legal-insights-admin.html"
     }
   ]
 }

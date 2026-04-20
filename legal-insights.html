@@ -218,12 +218,7 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 .ad-container { padding: 20px 40px; max-width: 1200px; margin: 0 auto; }
 .ad-box { background: var(--bg2); border: 1px solid var(--line); border-radius: 14px; padding: 20px; text-align: center; min-height: 120px; display: flex; align-items: center; justify-content: center; }
 
-/* Admin Panel (Hidden) */
-.admin-panel { display: none; }
-.admin-panel.open { display: block; }
-.admin-toggle { position: fixed; bottom: 90px; right: 24px; padding: 8px 14px; background: var(--bg2); border: 1px solid var(--line); border-radius: 8px; font-size: 11px; color: var(--silver); z-index: 90; cursor: pointer; }
-.admin-toggle:hover { border-color: var(--gold); color: var(--gold); }
-.admin-content { background: var(--bg2); border: 1px solid var(--gold); border-radius: 14px; padding: 28px; margin: 20px 40px; max-width: 800px; }
+/* Admin Panel (Hidden) - Removed, use /legal-insights-admin */
 .admin-content h3 { font-family: 'Fraunces', serif; font-size: 22px; color: var(--gold); margin-bottom: 20px; }
 .admin-form { display: flex; flex-direction: column; gap: 14px; }
 .admin-form input, .admin-form textarea, .admin-form select { padding: 12px 14px; background: var(--bg); border: 1px solid var(--line); border-radius: 8px; color: var(--white); font-family: inherit; font-size: 14px; }
@@ -330,37 +325,7 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
     <p class="footer-brand">Lexorium — Legal Intelligence</p>
   </footer>
 
-  <button class="admin-toggle" onclick="toggleAdmin()">⚙ Admin</button>
-
-  <div class="admin-panel" id="adminPanel">
-    <div class="admin-content">
-      <h3>Add New Legal Insight</h3>
-      <form class="admin-form" id="addInsightForm">
-        <input type="text" id="insightTitle" placeholder="Title (e.g., What is FIR?)" required>
-        <select id="insightCategory" required>
-          <option value="">Select Category</option>
-          <option value="Criminal Law">Criminal Law</option>
-          <option value="Corporate Law">Corporate Law</option>
-          <option value="Contract Law">Contract Law</option>
-          <option value="Constitutional Law">Constitutional Law</option>
-          <option value="Taxation">Taxation</option>
-          <option value="IP Law">IP Law</option>
-          <option value="Banking & Finance">Banking & Finance</option>
-          <option value="Labour Law">Labour Law</option>
-        </select>
-        <input type="text" id="insightMeaning" placeholder="One-line Meaning" required>
-        <textarea id="insightWhy" placeholder="Why It Matters" required></textarea>
-        <textarea id="insightRule" placeholder="Core Rule" required></textarea>
-        <textarea id="insightExample" placeholder="Example" required></textarea>
-        <textarea id="insightTakeaway" placeholder="Takeaway" required></textarea>
-        <label style="display:flex;align-items:center;gap:10px;margin:8px 0;">
-          <input type="checkbox" id="insightFeatured"> Mark as Featured
-        </label>
-        <button type="submit">Add Insight</button>
-      </form>
-      <div class="admin-insights-list" id="adminInsightsList"></div>
-    </div>
-  </div>
+  
 
   <div class="insight-modal" id="insightModal">
     <div class="insight-modal-content">
@@ -515,54 +480,6 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 
     document.getElementById('insightModal').addEventListener('click', (e) => { if (e.target.id === 'insightModal') closeModal(); });
     document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeModal(); });
-
-    // Admin functions
-    function toggleAdmin() { document.getElementById('adminPanel').classList.toggle('open'); }
-
-    function renderAdminList() {
-      const list = document.getElementById('adminInsightsList');
-      list.innerHTML = legalInsights.map(i => `
-        <div class="admin-insight-item">
-          <span>${i.title} (${i.category})</span>
-          <span class="delete-btn" onclick="deleteInsight(${i.id})">Delete</span>
-        </div>
-      `).join('');
-    }
-
-    document.getElementById('addInsightForm').addEventListener('submit', (e) => {
-      e.preventDefault();
-      const newInsight = {
-        id: Date.now(),
-        title: document.getElementById('insightTitle').value,
-        category: document.getElementById('insightCategory').value,
-        readTime: "1 min",
-        oneLineMeaning: document.getElementById('insightMeaning').value,
-        whyItMatters: document.getElementById('insightWhy').value,
-        coreRule: document.getElementById('insightRule').value,
-        example: document.getElementById('insightExample').value,
-        takeaway: document.getElementById('insightTakeaway').value,
-        featured: document.getElementById('insightFeatured').checked
-      };
-      legalInsights.unshift(newInsight);
-      saveInsights();
-      e.target.reset();
-      renderFeatured();
-      renderInsights(legalInsights);
-      renderTrending();
-      renderAdminList();
-      alert('Insight added successfully!');
-    });
-
-    function deleteInsight(id) {
-      if (confirm('Delete this insight?')) {
-        legalInsights = legalInsights.filter(i => i.id !== id);
-        saveInsights();
-        renderFeatured();
-        renderInsights(legalInsights);
-        renderTrending();
-        renderAdminList();
-      }
-    }
 
     document.addEventListener('DOMContentLoaded', init);
   </script>
