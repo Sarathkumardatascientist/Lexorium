@@ -6,37 +6,13 @@
     }
   },
   "rewrites": [
-    {
-      "source": "/api/:route*",
-      "destination": "/api?route=:route*"
-    },
-    {
-      "source": "/app",
-      "destination": "/app.html"
-    },
-    {
-      "source": "/privacy",
-      "destination": "/privacy.html"
-    },
-    {
-      "source": "/terms",
-      "destination": "/terms.html"
-    },
-    {
-      "source": "/account",
-      "destination": "/account.html"
-    },
-    {
-      "source": "/help",
-      "destination": "/help.html"
-    },
-    {
-      "source": "/legal-insights",
-      "destination": "/legal-insights.html"
-    },
-    {
-      "source": "/legal-insights-admin",
-      "destination": "/legal-insights-admin.html"
-    }
+    {"source": "/api(.*)", "destination": "/api"},
+    {"source": "/app", "destination": "/app.html"},
+    {"source": "/privacy", "destination": "/privacy.html"},
+    {"source": "/terms", "destination": "/terms.html"},
+    {"source": "/account", "destination": "/account.html"},
+    {"source": "/help", "destination": "/help.html"},
+    {"source": "/legal-insights", "destination": "/legal-insights.html"},
+    {"source": "/legal-insights-admin", "destination": "/legal-insights-admin.html"}
   ]
 }
