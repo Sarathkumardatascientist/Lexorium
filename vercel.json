@@ -29,6 +29,10 @@
     {
       "source": "/help",
       "destination": "/help.html"
+    },
+    {
+      "source": "/legal-insights",
+      "destination": "/legal-insights.html"
     }
   ]
 }
