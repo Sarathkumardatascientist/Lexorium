@@ -506,9 +506,12 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
     function openInsight(id) {
       const insight = legalInsights.find(i => i.id === id);
       if (!insight) return;
+      
+      window.location.hash = 'insight-' + id;
+      
       const modal = document.getElementById('insightModal');
       const content = document.getElementById('modalContent');
-      const shareUrl = `${window.location.origin}/legal-insights`;
+      const shareUrl = `${window.location.origin}/legal-insights#insight-${id}`;
       const shareTitle = `📚 ${insight.title}`;
       const shareMeaning = `\n\n💡 ${insight.oneLineMeaning}`;
       const shareWhy = `\n\n⚖️ Why: ${insight.whyItMatters.substring(0, 100)}...`;
@@ -592,7 +595,22 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
     document.getElementById('insightModal').addEventListener('click', (e) => { if (e.target.id === 'insightModal') closeModal(); });
     document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeModal(); });
 
-    document.addEventListener('DOMContentLoaded', init);
+    function checkHashOnLoad() {
+      const hash = window.location.hash;
+      if (hash && hash.startsWith('#insight-')) {
+        const id = parseInt(hash.replace('#insight-', ''));
+        if (id && !isNaN(id)) {
+          setTimeout(() => openInsight(id), 300);
+        }
+      }
+    }
+    
+    window.addEventListener('hashchange', checkHashOnLoad);
+
+    document.addEventListener('DOMContentLoaded', () => {
+      init();
+      checkHashOnLoad();
+    });
   </script>
 </body>
 </html>
