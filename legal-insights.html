@@ -503,17 +503,18 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
       renderInsights(legalInsights);
     }
 
-    function openInsight(id) {
+    function openInsight(id, fromHash = false) {
       const insight = legalInsights.find(i => i.id === id);
       if (!insight) return;
       
-      if (!window.location.hash.includes('insight-' + id)) {
-        window.location.hash = 'insight-' + id;
+      if (!fromHash) {
+        const newUrl = window.location.origin + '/legal-insights#insight-' + id;
+        history.pushState(null, '', newUrl);
       }
       
       const modal = document.getElementById('insightModal');
       const content = document.getElementById('modalContent');
-      const shareUrl = `${window.location.origin}/legal-insights#insight-${id}`;
+      const shareUrl = window.location.origin + '/legal-insights#insight-' + id;
       const shareTitle = `📚 ${insight.title}`;
       const shareMeaning = `\n\n💡 ${insight.oneLineMeaning}`;
       const shareWhy = `\n\n⚖️ Why: ${insight.whyItMatters.substring(0, 100)}...`;
@@ -558,6 +559,9 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
     function closeModal() {
       document.getElementById('insightModal').classList.remove('open');
       document.body.style.overflow = '';
+      if (window.location.hash.startsWith('#insight-')) {
+        history.pushState(null, '', window.location.pathname);
+      }
     }
 
     function shareInsight(event, id) {
@@ -605,7 +609,7 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
         if (id && !isNaN(id)) {
           setTimeout(() => {
             window.scrollTo(0, 0);
-            openInsight(id);
+            openInsight(id, true);
           }, 100);
         }
       }
