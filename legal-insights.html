@@ -7,13 +7,13 @@
   <title>Legal Insights - Lexorium</title>
   <link rel="icon" href="/assets/lexorium-logo-square.png">
   <meta property="og:title" content="Lexorium Legal Insights - Learn Law in 60 Seconds">
-  <meta property="og:description" content="One legal concept. One minute. Master essential law concepts with Lexorium's premium legal insights.">
+  <meta property="og:description" content="One legal concept. One minute. Master essential law concepts with Lexorium's premium legal insights. Free daily legal learning.">
   <meta property="og:url" content="https://lexoriumai.com/legal-insights">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="Lexorium">
   <meta name="twitter:card" content="summary">
   <meta name="twitter:title" content="Lexorium Legal Insights">
-  <meta name="twitter:description" content="Learn Law in 60 Seconds">
+  <meta name="twitter:description" content="Learn Law in 60 Seconds - Free legal insights">
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5063782774394478" crossorigin="anonymous"></script>
   <style>
 @import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,200;0,9..144,300;0,9..144,400;1,9..144,200;1,9..144,300;1,9..144,400&family=Jost:wght@200;300;400;500;600&display=swap');
@@ -507,7 +507,9 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
       const insight = legalInsights.find(i => i.id === id);
       if (!insight) return;
       
-      window.location.hash = 'insight-' + id;
+      if (!window.location.hash.includes('insight-' + id)) {
+        window.location.hash = 'insight-' + id;
+      }
       
       const modal = document.getElementById('insightModal');
       const content = document.getElementById('modalContent');
@@ -598,9 +600,13 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
     function checkHashOnLoad() {
       const hash = window.location.hash;
       if (hash && hash.startsWith('#insight-')) {
-        const id = parseInt(hash.replace('#insight-', ''));
+        const idStr = hash.replace('#insight-', '');
+        const id = parseInt(idStr);
         if (id && !isNaN(id)) {
-          setTimeout(() => openInsight(id), 300);
+          setTimeout(() => {
+            window.scrollTo(0, 0);
+            openInsight(id);
+          }, 100);
         }
       }
     }
