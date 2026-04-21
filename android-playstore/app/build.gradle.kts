@@ -5,9 +5,6 @@ import java.io.File
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
-    if (File("app/google-services.json").exists()) {
-        id("com.google.gms.google-services")
-    }
 }
 
 val keystoreProperties = Properties()
@@ -33,7 +30,10 @@ val hasReleaseSigning = listOf(
     releaseKeyPassword,
 ).all { !it.isNullOrBlank() }
 
-val hasFirebase = File("app/google-services.json").exists()
+val hasFirebase = file("google-services.json").exists()
+if (hasFirebase) {
+    apply(plugin = "com.google.gms.google-services")
+}
 
 android {
     namespace = "ai.sprezzatura.lexorium"
@@ -103,10 +103,8 @@ dependencies {
     implementation("androidx.activity:activity-ktx:1.10.1")
     implementation("com.android.billingclient:billing-ktx:7.1.1")
     
-    // Firebase - only when google-services.json is present
-    if (hasFirebase) {
-        implementation(platform("com.google.firebase:firebase-bom:33.7.0"))
-        implementation("com.google.firebase:firebase-messaging-ktx")
-        implementation("com.google.firebase:firebase-analytics-ktx")
-    }
+    // Firebase
+    implementation(platform("com.google.firebase:firebase-bom:33.7.0"))
+    implementation("com.google.firebase:firebase-messaging-ktx")
+    implementation("com.google.firebase:firebase-analytics-ktx")
 }

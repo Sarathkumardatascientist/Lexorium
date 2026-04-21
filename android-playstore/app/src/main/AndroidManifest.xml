@@ -51,7 +51,7 @@
             android:resource="@color/lexorium_gold" />
         <meta-data
             android:name="com.google.firebase.messaging.default_notification_channel_id"
-            android:resource="lexorium_answers" />
+            android:value="lexorium_answers" />
 
     </application>
 
