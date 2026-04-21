@@ -49,7 +49,7 @@ module.exports = async function (req, res) {
     const REPO_OWNER = process.env.GITHUB_REPO_OWNER || 'Sarathkumardatascientist';
     const REPO_NAME = process.env.GITHUB_REPO_NAME || 'Lexorium';
     
-    if (GITHUB_TOKEN && GITHUB_TOKEN.startsWith('ghp_')) {
+    if (GITHUB_TOKEN) {
       try {
         const filePath = 'insights-data.json';
         const content = JSON.stringify(insights, null, 2);
