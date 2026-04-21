@@ -72,7 +72,8 @@ body {
 
 .export-section { margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--line); }
 .export-section button { padding: 10px 18px; background: transparent; border: 1px solid var(--line); color: var(--silver); border-radius: 6px; cursor: pointer; margin-right: 10px; }
-.export-section button:hover { border-color: var(--silver); color: var(--white); }
+    .export-section button:hover { border-color: var(--silver); color: var(--white); }
+    .export-section button[style*="background: var(--gold)"] { border: none; }
   </style>
 </head>
 <body>
@@ -120,10 +121,12 @@ body {
       <div class="admin-panel" style="margin-top:20px;">
         <h2>Manage Data</h2>
         <div class="export-section">
-          <button onclick="exportData()">📤 Export Data</button>
-          <button onclick="importData()">📥 Import Data</button>
-          <button onclick="resetData()" style="border-color:#ff6b6b;color:#ff6b6b;">🔄 Reset to Default</button>
+          <button onclick="exportForWebsite()" style="background:var(--gold);color:var(--bg);">📤 Save to Website</button>
+          <button onclick="exportData()">📥 Export Backup</button>
+          <button onclick="importData()">📥 Import Backup</button>
+          <button onclick="resetData()" style="border-color:#ff6b6b;color:#ff6b6b;">🔄 Reset</button>
         </div>
+        <p style="margin-top:12px;font-size:12px;color:var(--silver);">Click "Save to Website" to download insights-data.json, then replace the file in project and push to GitHub.</p>
       </div>
     </div>
     
@@ -245,8 +248,19 @@ body {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = 'legal-insights-' + Date.now() + '.json';
+      a.download = 'legal-insights-backup-' + Date.now() + '.json';
       a.click();
+    }
+
+    function exportForWebsite() {
+      const data = JSON.stringify(legalInsights, null, 2);
+      const blob = new Blob([data], {type:'application/json'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'insights-data.json';
+      a.click();
+      alert('Downloaded insights-data.json! Replace this file in your project and push to GitHub. Vercel will auto-deploy and update the website.');
     }
 
     function importData() {
