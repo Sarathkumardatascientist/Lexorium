@@ -119,20 +119,11 @@ body {
       </div>
       
       <div class="admin-panel" style="margin-top:20px;">
-        <h2>Publish to Website</h2>
+        <h2>Update Website</h2>
         <div class="export-section">
-          <button onclick="publishToWebsite()" id="publishBtn" style="background:var(--gold);color:var(--bg);">🚀 Publish & Deploy</button>
+          <button onclick="publishInsights()" id="publishBtn" style="background:var(--gold);color:var(--bg);width:100%;">💾 Save & Publish</button>
         </div>
-        <p style="margin-top:12px;font-size:12px;color:var(--silver);" id="publishStatus">Click to publish changes and auto-deploy to Vercel.</p>
-      </div>
-      
-      <div class="admin-panel" style="margin-top:20px;">
-        <h2>Manage Data</h2>
-        <div class="export-section">
-          <button onclick="exportData()">📥 Export Backup</button>
-          <button onclick="importData()">📥 Import Backup</button>
-          <button onclick="resetData()" style="border-color:#ff6b6b;color:#ff6b6b;">🔄 Reset</button>
-        </div>
+        <p style="margin-top:12px;font-size:12px;color:var(--silver);" id="publishStatus">Click to save changes to backend - website updates automatically.</p>
       </div>
     </div>
     
@@ -174,12 +165,28 @@ body {
 
     function save() { localStorage.setItem('legalInsightsData', JSON.stringify(legalInsights)); }
 
+    async function syncWithBackend() {
+      try {
+        const res = await fetch('/api/insights');
+        const data = await res.json();
+        if (data.insights) {
+          legalInsights = data.insights;
+          save();
+          renderCategories();
+          renderList();
+        }
+      } catch (err) {
+        console.log('Using local data');
+      }
+    }
+
     function getCategories() {
       const cats = [...new Set(legalInsights.map(i => i.category))].sort();
       return ['all', ...cats];
     }
 
-    function init() {
+    async function init() {
+      await syncWithBackend();
       renderCategories();
       renderList();
       document.getElementById('totalCount').textContent = legalInsights.length;
@@ -258,43 +265,37 @@ body {
       a.click();
     }
 
-    function publishToWebsite() {
+    async function publishInsights() {
       const btn = document.getElementById('publishBtn');
       const status = document.getElementById('publishStatus');
       btn.disabled = true;
-      btn.textContent = 'Publishing...';
+      btn.textContent = 'Saving...';
       
-      const content = JSON.stringify(legalInsights, null, 2);
-      
-      fetch('/api/admin/publish-insights', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          content: content,
-          message: 'Update legal insights - ' + new Date().toLocaleString()
-        })
-      })
-      .then(res => res.json())
-      .then(data => {
+      try {
+        const res = await fetch('/api/insights', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ insights: legalInsights })
+        });
+        const data = await res.json();
         if (data.success) {
-          status.textContent = '✅ Published! Vercel is auto-deploying...';
-          btn.textContent = '✅ Published!';
-          setTimeout(() => {
-            btn.disabled = false;
-            btn.textContent = '🚀 Publish & Deploy';
-            status.textContent = 'Click to publish changes and auto-deploy to Vercel.';
-          }, 3000);
+          status.innerHTML = '✅ <b>Saved!</b> Website updated.';
+          btn.textContent = '✅ Saved!';
         } else {
-          status.textContent = '❌ Error: ' + (data.error || 'Failed to publish');
-          btn.disabled = false;
-          btn.textContent = '🚀 Publish & Deploy';
+          status.innerHTML = '❌ Failed to save';
+          btn.textContent = '💾 Save & Publish';
         }
-      })
-      .catch(err => {
-        status.textContent = '❌ Error: ' + err.message;
+      } catch (err) {
+        localStorage.setItem('legalInsightsData', JSON.stringify(legalInsights));
+        status.innerHTML = '✅ <b>Saved locally!</b> Will sync when online.';
+        btn.textContent = '✅ Saved!';
+      }
+      
+      setTimeout(() => {
         btn.disabled = false;
-        btn.textContent = '🚀 Publish & Deploy';
-      });
+        btn.textContent = '💾 Save & Publish';
+        status.textContent = 'Click to save changes to backend - website updates automatically.';
+      }, 3000);
     }
 
     function importData() {
@@ -327,6 +328,17 @@ body {
         renderList();
         alert('Reset to default!');
       }
+    }
+
+    function downloadJson() {
+      const content = JSON.stringify(legalInsights, null, 2);
+      const blob = new Blob([content], {type:'application/json'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'insights-data.json';
+      a.click();
+      document.getElementById('publishStatus').textContent = 'Downloaded insights-data.json - upload to your GitHub repo';
     }
 
     init();

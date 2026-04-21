@@ -384,9 +384,10 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
     // Load from external JSON file - always fresh from server
     async function fetchInsights() {
       try {
-        const res = await fetch('/insights-data.json');
+        const res = await fetch('/api/insights');
         if (res.ok) {
-          legalInsights = await res.json();
+          const data = await res.json();
+          legalInsights = data.insights || data || defaultInsights;
         } else {
           legalInsights = defaultInsights;
         }
