@@ -373,35 +373,26 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 
   <div class="share-toast" id="shareToast">Link copied to clipboard!</div>
 
-  <script>
-    // Store insights in localStorage, fallback to default if empty
+<script>
+    // Default insights - used only if JSON file fails to load
     const defaultInsights = [
-      {id:1,title:"What is an FIR?",category:"Criminal Law",readTime:"1 min",oneLineMeaning:"First Information Report is the initial document that registers a crime with the police.",whyItMatters:"Filing an FIR sets the criminal justice process in motion. Without it, most criminal cases cannot proceed.",coreRule:"Under CrPC Section 154, any person can report a cognizable offense to the police, who must register it and investigate.",example:"If you witness a theft, you file an FIR at the police station, leading to investigation and possible recovery of property.",takeaway:"An FIR is the first step. Delay or refusal to register can be challenged in court.",featured:true},
-      {id:2,title:"What is Anticipatory Bail?",category:"Criminal Law",readTime:"1 min",oneLineMeaning:"Advance bail granted before arrest to protect against imminent custody.",whyItMatters:"Allows individuals to avoid pre-trial detention when they fear false accusations.",coreRule:"Section 438 of CrPC enables courts to grant anticipatory bail to prevent arrest in bailable offenses.",example:"A businessperson anticipating false fraud charges can seek anticipatory bail to maintain freedom during investigation.",takeaway:"Protects against harassment while ensuring cooperation with investigation.",featured:false},
-      {id:3,title:"What is Arbitration?",category:"Contract Law",readTime:"1 min",oneLineMeaning:"Private dispute resolution by a neutral third party instead of court.",whyItMatters:"Faster, confidential, and cheaper than traditional litigation.",coreRule:"The Arbitration and Conciliation Act, 1996 enforces arbitration agreements and awards as court judgments.",example:"A contract dispute between two companies is resolved by an arbitrator whose decision is binding.",takeaway:"Include arbitration clauses in contracts for efficient dispute resolution.",featured:false},
-      {id:4,title:"What is Money Laundering?",category:"Criminal Law",readTime:"1 min",oneLineMeaning:"Processing illegal money to appear legitimate through hidden transactions.",whyItMatters:"A serious crime that finances terrorism and organized crime. PMLA imposes strict penalties.",coreRule:"The Prevention of Money Laundering Act, 2002 criminalizes possession/transfer of proceeds of crime.",example:"Breaking large cash deposits into smaller amounts to avoid reporting is classic money laundering.",takeaway:"Compliance and KYC are essential defenses against money laundering accusations.",featured:false},
-      {id:5,title:"What is Consideration in Contracts?",category:"Contract Law",readTime:"1 min",oneLineMeaning:"Something of value exchanged between parties to form a valid contract.",whyItMatters:"Without consideration, a contract is generally unenforceable as a promise.",coreRule:"Indian Contract Act, Section 2(d) defines consideration as something given at the promisor's request.",example:"You pay ₹500 for a book - the payment is consideration for the seller's promise to deliver.",takeaway:"Always ensure consideration is clearly stated in agreements.",featured:false},
-      {id:6,title:"What is Significant Influence?",category:"Corporate Law",readTime:"1 min",oneLineMeaning:"Power to affect company decisions without formal control.",whyItMatters:"Determines corporate group relationships and accounting consolidation.",coreRule:"AS 21 under Indian GAAP defines significant influence as holding 20%+ voting power.",example:"A 25% shareholder influencing board decisions exercises significant influence.",takeaway:"Key for understanding group structures and related party transactions.",featured:false},
-      {id:7,title:"What is Oppression and Mismanagement?",category:"Corporate Law",readTime:"1 min",oneLineMeaning:"Minority shareholder protection against majority abuse.",whyItMatters:"Provides legal remedy when shareholders treating unfairly.",coreRule:"Section 397-398 of Companies Act allows petition to National Company Law Tribunal.",example:"Minority shareholders ousted from management can petition NCLT for relief.",takeaway:"Document oppression and mismanagement with evidence before petitioning.",featured:false},
-      {id:8,title:"What is Insider Trading?",category:"Corporate Law",readTime:"1 min",oneLineMeaning:"Trading securities using unpublished price-sensitive information.",whyItMatters:"Serious offense that undermines market integrity and investor confidence.",coreRule:"SEBI (Prohibition of Insider Trading) Regulations, 2015 prohibit trading on unpublished UPSI.",example:"A CEO selling shares before announcing poor earnings is insider trading.",takeaway:"Maintain Chinese walls and compliance programs to prevent violations.",featured:false},
-      {id:9,title:"What is a Writ Petition?",category:"Constitutional Law",readTime:"1 min",oneLineMeaning:"Direct constitutional remedy against state action violating fundamental rights.",whyItMatters:"Fastest way to challenge government violations of constitutional rights.",coreRule:"Article 32 (Supreme Court) and Article 226 (High Court) enable writ petitions.",example:"Filing habeas corpus if wrongly detained by police.",takeaway:"Writs are extraordinary remedies - exhaust other remedies first if possible.",featured:false},
-      {id:10,title:"What is Corporate Veil?",category:"Corporate Law",readTime:"1 min",oneLineMeaning:"Legal separation between a company and its owners/shareholders.",whyItMatters:"Protects shareholders from personal liability for company debts.",coreRule:"Courts can pierce the corporate veil under exceptional circumstances like fraud or evasion.",example:"Using company to evade personal debts may result in veil piercing.",takeaway:"Maintain proper corporate formalities to preserve limited liability protection.",featured:false},
-      {id:11,title:"What is Specific Performance?",category:"Contract Law",readTime:"1 min",oneLineMeaning:"Court order enforcing contract execution rather than awarding damages.",whyItMatters:"Unique goods or services cannot be substituted with money damages.",coreRule:"Specific Relief Act enables specific performance for unique obligations.",example:"Court ordering sale of a specific heritage property instead of money damages.",takeaway:"Specific performance is discretionary - adequate remedies preferred.",featured:false},
-      {id:12,title:"What is Defamation?",category:"Constitutional Law",readTime:"1 min",oneLineMeaning:"False statement harming another's reputation.",whyItMatters:"Protects personal and professional reputation from false attacks.",coreRule:"Indian Penal Code Sections 499-500 criminalize and civil law remedies defamation.",example:"Publishing false allegations of corruption damages professional reputation.",takeaway:"Truth is a defense. Opinion differs from fact.",featured:false},
-      {id:13,title:"What is Mens Rea?",category:"Criminal Law",readTime:"1 min",oneLineMeaning:"Guilty mind - criminal intent or knowledge of wrongdoing.",whyItMatters:"Essential element for most criminal liability and sentencing.",coreRule:"Criminal liability requires both actus reus (guilty act) and mens rea (guilty mind).",example:"Accidental death vs. knowing murder - different mens rea, different charges.",takeaway:"Understand mens rea requirements for proper defense strategy.",featured:false},
-      {id:14,title:"What is Res Judicata?",category:"Contract Law",readTime:"1 min",oneLineMeaning:"Same matter cannot be litigated twice - final judgment bars re-litigation.",whyItMatters:"Prevents endless litigation and promotes finality of judgments.",coreRule:"Civil Procedure Code Section 11 bars same cause of action between same parties after final judgment.",example:"Suing for property ownership and losing bars same suit again.",takeaway:"One final judgment ends the matter - appeal, don't re-litigate.",featured:false},
-      {id:15,title:"What is Cheque Bounce?",category:"Criminal Law",readTime:"1 min",oneLineMeaning:"Dishonor of cheque due to insufficient funds or irregularities.",whyItMatters:"Criminal offense carrying imprisonment up to 2 years under Section 138 of Negotiable Instruments Act.",coreRule:"Cheque bounce is criminal when presented within validity period and notice given.",example:"Give cheque for payment - cheque bounces due to stop payment.",takeaway:"Cheque bounce can lead to criminal liability. Always ensure funds.",featured:false},
-      {id:16,title:"What is Copyright Infringement?",category:"IP Law",readTime:"1 min",oneLineMeaning:"Unauthorized use of protected creative works.",whyItMatters:"Protects creators' intellectual property and ensures fair compensation.",coreRule:"Copyright Act, 1957 protects original works. Infringement requires copying substantial part.",example:"Using song lyrics without permission infringes copyright.",takeaway:"Fair use exceptions exist. Always seek permission or license.",featured:false},
-      {id:17,title:"What is Limited Liability?",category:"Corporate Law",readTime:"1 min",oneLineMeaning:"Shareholder liability limited to unpaid share capital.",whyItMatters:"Protects personal assets from business debts and liabilities.",coreRule:"Limited liability companies shield owners from personal debt liability.",example:"Company debts are company debts, not shareholders' personal debts.",takeaway:"Maintain corporate formalities to preserve limited liability.",featured:false},
-      {id:18,title:"What is a Show Cause Notice?",category:"Criminal Law",readTime:"1 min",oneLineMeaning:"Formal notice requiring explanation before adverse action.",whyItMatters:"Procedural requirement before penalties or prosecution.",coreRule:"Natural justice requires opportunity to explain before adverse orders.",example:"Tax department issuing show cause before penalty.",takeaway:"Always respond to show cause notices within deadline.",featured:false}
+      {id:1,title:"What is an FIR?",category:"Criminal Law",readTime:"1 min",oneLineMeaning:"First Information Report is the initial document that registers a crime with the police.",whyItMatters:"Filing an FIR sets the criminal justice process in motion. Without it, most criminal cases cannot proceed.",coreRule:"Under CrPC Section 154, any person can report a cognizable offense to the police, who must register it and investigate.",example:"If you witness a theft, you file an FIR at the police station.",takeaway:"An FIR is the first step.",featured:true}
     ];
 
-    // Load insights from localStorage or use defaults
-    let legalInsights = JSON.parse(localStorage.getItem('legalInsightsData')) || defaultInsights;
+    let legalInsights = [];
 
-    // Save to localStorage helper
-    function saveInsights() {
-      localStorage.setItem('legalInsightsData', JSON.stringify(legalInsights));
+    // Load from external JSON file - always fresh from server
+    async function fetchInsights() {
+      try {
+        const res = await fetch('/insights-data.json');
+        if (res.ok) {
+          legalInsights = await res.json();
+        } else {
+          legalInsights = defaultInsights;
+        }
+      } catch(e) {
+        legalInsights = defaultInsights;
+      }
     }
 
     const savedInsights = new Set(JSON.parse(localStorage.getItem('savedInsights') || '[]'));
@@ -628,7 +619,8 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
     
     window.addEventListener('popstate', handleDeepLink);
 
-    document.addEventListener('DOMContentLoaded', () => {
+    document.addEventListener('DOMContentLoaded', async () => {
+      await fetchInsights();
       init();
       handleDeepLink();
     });
