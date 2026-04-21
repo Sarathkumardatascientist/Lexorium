@@ -508,13 +508,13 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
       if (!insight) return;
       
       if (!fromHash) {
-        const newUrl = window.location.origin + '/legal-insights#insight-' + id;
+        const newUrl = window.location.origin + '/legal-insights?id=' + id;
         history.pushState(null, '', newUrl);
       }
       
       const modal = document.getElementById('insightModal');
       const content = document.getElementById('modalContent');
-      const shareUrl = window.location.origin + '/legal-insights#insight-' + id;
+      const shareUrl = window.location.origin + '/legal-insights?id=' + id;
       const shareTitle = `📚 ${insight.title}`;
       const shareMeaning = `\n\n💡 ${insight.oneLineMeaning}`;
       const shareWhy = `\n\n⚖️ Why: ${insight.whyItMatters.substring(0, 100)}...`;
@@ -559,8 +559,10 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
     function closeModal() {
       document.getElementById('insightModal').classList.remove('open');
       document.body.style.overflow = '';
-      if (window.location.hash.startsWith('#insight-')) {
-        history.pushState(null, '', window.location.pathname);
+      const url = new URL(window.location);
+      if (url.searchParams.has('id')) {
+        url.searchParams.delete('id');
+        history.pushState(null, '', url.pathname);
       }
     }
 
@@ -592,34 +594,43 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 
     function copyLink(url) {
       navigator.clipboard.writeText(url).then(() => {
-        const toast = document.getElementById('shareToast');
-        toast.classList.add('show');
-        setTimeout(() => toast.classList.remove('show'), 2000);
+        showToast('Link copied!');
+      }).catch(() => {
+        showToast('Link copied!');
       });
+    }
+
+    function showToast(message) {
+      const toast = document.getElementById('shareToast');
+      toast.textContent = message;
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 2000);
     }
 
     document.getElementById('insightModal').addEventListener('click', (e) => { if (e.target.id === 'insightModal') closeModal(); });
     document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeModal(); });
 
-    function checkHashOnLoad() {
-      const hash = window.location.hash;
-      if (hash && hash.startsWith('#insight-')) {
-        const idStr = hash.replace('#insight-', '');
-        const id = parseInt(idStr);
-        if (id && !isNaN(id)) {
-          setTimeout(() => {
-            window.scrollTo(0, 0);
-            openInsight(id, true);
-          }, 100);
-        }
+    function handleDeepLink() {
+      const url = new URL(window.location);
+      let id = null;
+      
+      if (url.searchParams.has('id')) {
+        id = parseInt(url.searchParams.get('id'));
+      }
+      
+      if (id && !isNaN(id)) {
+        setTimeout(() => {
+          window.scrollTo(0, 0);
+          openInsight(id, true);
+        }, 100);
       }
     }
     
-    window.addEventListener('hashchange', checkHashOnLoad);
+    window.addEventListener('popstate', handleDeepLink);
 
     document.addEventListener('DOMContentLoaded', () => {
       init();
-      checkHashOnLoad();
+      handleDeepLink();
     });
   </script>
 </body>
