@@ -14,33 +14,55 @@ If the issue is uncertain, choose "DEPENDS".
 Respond in this exact JSON format:
 {"status": "LEGAL|ILLEGAL|DEPENDS", "answer": "1-2 sentence direct answer", "explanation": "Simple explanation in max 4 lines", "law": "Relevant law, section, article, or principle", "example": "One practical real-life example", "takeaway": "One-line summary", "confidence": "Low|Medium|High"}`;
 
-async function callOpenRouter(messages) {
+async function callOpenRouter(messages, model = 'deepseek/deepseek-chat') {
   if (!OPENROUTER_API_KEY) {
-    throw new Error('OpenRouter API key not configured');
+    throw new Error('OpenRouter API key not configured. Add OPENROUTER_API_KEY in Vercel env.');
   }
-  const response = await fetch(`${OPENROUTER_BASE}/chat/completions`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
-      'HTTP-Referer': 'https://lexorium.com',
-      'X-Title': 'Lexorium',
-    },
-    body: JSON.stringify({
-      model: 'meta-llama/llama-3.1-8b-instruct',
-      messages: messages,
-      temperature: 0.3,
-      max_tokens: 500
-    }),
-  });
+  try {
+    var response = await fetch(`${OPENROUTER_BASE}/chat/completions`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
+        'HTTP-Referer': 'https://lexorium.com',
+        'X-Title': 'Lexorium',
+      },
+      body: JSON.stringify({
+        model: model,
+        messages: messages,
+        temperature: 0.3,
+        max_tokens: 500
+      }),
+    });
 
-  if (!response.ok) {
-    const err = await response.text();
-    throw new Error('OpenRouter API error: ' + response.status + ' - ' + err);
+    if (!response.ok && model !== 'meta-llama/llama-3.1-8b-instruct') {
+      response = await fetch(`${OPENROUTER_BASE}/chat/completions`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
+          'HTTP-Referer': 'https://lexorium.com',
+          'X-Title': 'Lexorium',
+        },
+        body: JSON.stringify({
+          model: 'meta-llama/llama-3.1-8b-instruct',
+          messages: messages,
+          temperature: 0.3,
+          max_tokens: 500
+        }),
+      });
+    }
+
+    if (!response.ok) {
+      const err = await response.text();
+      throw new Error('OpenRouter API error: ' + response.status + ' - ' + err);
+    }
+
+    const result = await response.json();
+    return result?.choices?.[0]?.message?.content || '';
+  } catch (e) {
+    throw new Error('OpenRouter failed: ' + e.message);
   }
-
-  const result = await response.json();
-  return result?.choices?.[0]?.message?.content || '';
 }
 
 module.exports = async function (req, res) {
@@ -82,6 +104,6 @@ module.exports = async function (req, res) {
     return sendJson(res, 200, { answer });
   } catch (error) {
     console.error('Is It Legal API error:', error.message);
-    return sendError(res, 500, error.message);
+    return sendJson(res, 500, { error: error.message });
   }
 };
