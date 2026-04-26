@@ -1,6 +1,6 @@
 const { getJsonBody, sendJson } = require('../_lib/http');
 
-const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
+const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY || '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';
 const OPENROUTER_BASE = 'https://openrouter.ai/api/v1';
 
 const SYSTEM_PROMPT = `You are the legal intelligence engine for an Indian platform called Lexorium.
