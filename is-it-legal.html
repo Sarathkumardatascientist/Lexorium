@@ -196,9 +196,8 @@ footer {
     <span>Lex<span>orium</span></span>
   </a>
   <div class="nav-links">
-    <a href="#features">Features</a>
-    <a href="#how">How It Works</a>
-    <a href="#platform">Platform</a>
+    <a href="/">Home</a>
+    <a href="/is-it-legal" class="active">Is It Legal?</a>
     <a href="/help">Help</a>
   </div>
   <a href="/app" class="nav-cta">Launch App</a>
@@ -285,6 +284,10 @@ async function submitQuestion(e) {
     error.textContent = 'Error: ' + err.message;
     results.innerHTML = '';
   }
+  
+  btn.disabled = false;
+  btn.textContent = 'Ask';
+}
   
   btn.disabled = false;
   btn.textContent = 'Ask';

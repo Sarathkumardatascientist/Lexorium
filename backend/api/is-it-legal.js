@@ -1,4 +1,4 @@
-const { getJsonBody, sendJson, sendError } = require('../_lib/http');
+const { getJsonBody, sendJson } = require('../_lib/http');
 
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
 const OPENROUTER_BASE = 'https://openrouter.ai/api/v1';
@@ -11,57 +11,42 @@ Do not give long disclaimers.
 Use clear categories and confidence level.
 If the issue is uncertain, choose "DEPENDS".
 
-Respond in this exact JSON format:
-{"status": "LEGAL|ILLEGAL|DEPENDS", "answer": "1-2 sentence direct answer", "explanation": "Simple explanation in max 4 lines", "law": "Relevant law, section, article, or principle", "example": "One practical real-life example", "takeaway": "One-line summary", "confidence": "Low|Medium|High"}`;
+Respond in this EXACT JSON format - no extra text:
+{"status":"LEGAL","answer":"answer here","explanation":"explanation","law":"law section","example":"example","takeaway":"takeaway","confidence":"High"}`;
 
-async function callOpenRouter(messages, model = 'deepseek/deepseek-chat') {
+async function callOpenRouter(messages) {
   if (!OPENROUTER_API_KEY) {
-    throw new Error('OpenRouter API key not configured. Add OPENROUTER_API_KEY in Vercel env.');
+    throw new Error('API key not set. Add OPENROUTER_API_KEY env in Vercel.');
   }
+
+  const response = await fetch(`${OPENROUTER_BASE}/chat/completions`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
+      'HTTP-Referer': 'https://lexorium.com',
+      'X-Title': 'Lexorium',
+    },
+    body: JSON.stringify({
+      model: 'deepseek/deepseek-chat',
+      messages: messages,
+      temperature: 0.3,
+      max_tokens: 500,
+      response_format: { type: 'json_object' }
+    }),
+  });
+
+  const text = await response.text();
+  
+  if (!response.ok) {
+    throw new Error('OpenRouter error ' + response.status + ': ' + text.slice(0, 200));
+  }
+
   try {
-    var response = await fetch(`${OPENROUTER_BASE}/chat/completions`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
-        'HTTP-Referer': 'https://lexorium.com',
-        'X-Title': 'Lexorium',
-      },
-      body: JSON.stringify({
-        model: model,
-        messages: messages,
-        temperature: 0.3,
-        max_tokens: 500
-      }),
-    });
-
-    if (!response.ok && model !== 'meta-llama/llama-3.1-8b-instruct') {
-      response = await fetch(`${OPENROUTER_BASE}/chat/completions`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
-          'HTTP-Referer': 'https://lexorium.com',
-          'X-Title': 'Lexorium',
-        },
-        body: JSON.stringify({
-          model: 'meta-llama/llama-3.1-8b-instruct',
-          messages: messages,
-          temperature: 0.3,
-          max_tokens: 500
-        }),
-      });
-    }
-
-    if (!response.ok) {
-      const err = await response.text();
-      throw new Error('OpenRouter API error: ' + response.status + ' - ' + err);
-    }
-
-    const result = await response.json();
+    const result = JSON.parse(text);
     return result?.choices?.[0]?.message?.content || '';
-  } catch (e) {
-    throw new Error('OpenRouter failed: ' + e.message);
+  } catch {
+    throw new Error('Invalid JSON response: ' + text.slice(0, 100));
   }
 }
 
@@ -74,7 +59,7 @@ module.exports = async function (req, res) {
   const { question } = body;
 
   if (!question) {
-    return sendError(res, 400, 'Question is required');
+    return sendJson(res, 400, { error: 'Question is required' });
   }
 
   try {
@@ -85,25 +70,22 @@ module.exports = async function (req, res) {
     
     let answer;
     try {
-      const jsonMatch = content.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        answer = JSON.parse(jsonMatch[0]);
-      }
-    } catch (parseErr) {
+      answer = JSON.parse(content);
+    } catch {
       answer = {
         status: 'DEPENDS',
-        answer: content.slice(0, 100) || content,
-        explanation: 'Could not parse structured answer. Consult a lawyer.',
+        answer: content.slice(0, 100),
+        explanation: 'Could not parse. Consult a lawyer.',
         law: '',
         example: '',
-        takeaway: 'Consult a lawyer for definitive advice.',
+        takeaway: 'Get professional legal advice.',
         confidence: 'Low'
       };
     }
 
     return sendJson(res, 200, { answer });
   } catch (error) {
-    console.error('Is It Legal API error:', error.message);
+    console.error('Is It Legal error:', error.message);
     return sendJson(res, 500, { error: error.message });
   }
 };
