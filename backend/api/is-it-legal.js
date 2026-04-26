@@ -1,5 +1,29 @@
 const { getJsonBody, sendJson, sendError } = require('../_lib/http');
-const { executeWithPuter } = require('../_lib/puter-client');
+
+const PUTER_API_ORIGIN = 'https://api.puter.com';
+
+async function callPuter(messages) {
+  const response = await fetch(`${PUTER_API_ORIGIN}/puterai/openai/v1/chat/completions`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-20250514',
+      messages: messages,
+      temperature: 0.3,
+      max_tokens: 500
+    }),
+  });
+
+  if (!response.ok) {
+    const err = await response.text();
+    throw new Error('Puter API error: ' + response.status);
+  }
+
+  const result = await response.json();
+  return result?.choices?.[0]?.message?.content || '';
+}
 
 module.exports = async function (req, res) {
   if (req.method !== 'POST') {
@@ -7,7 +31,7 @@ module.exports = async function (req, res) {
   }
 
   const body = await getJsonBody(req);
-  const { question, systemPrompt } = body;
+  const { question } = body;
 
   if (!question) {
     return sendError(res, 400, 'Question is required');
@@ -24,20 +48,11 @@ If the issue is uncertain, choose "DEPENDS".
 Respond in this exact JSON format:
 {"status": "LEGAL|ILLEGAL|DEPENDS", "answer": "1-2 sentence direct answer", "explanation": "Simple explanation in max 4 lines", "law": "Relevant law, section, article, or principle", "example": "One practical real-life example", "takeaway": "One-line summary", "confidence": "Low|Medium|High"}`;
 
-  const userPrompt = systemPrompt || defaultPrompt;
-
   try {
-    const response = await executeWithPuter('/chat', {
-      messages: [
-        { role: 'system', content: userPrompt },
-        { role: 'user', content: question }
-      ],
-      model: 'claude-sonnet-4-20250514',
-      temperature: 0.3,
-      maxTokens: 500
-    });
-
-    const content = response?.choices?.[0]?.message?.content || '';
+    const content = await callPuter([
+      { role: 'system', content: defaultPrompt },
+      { role: 'user', content: question }
+    ]);
     
     let answer;
     try {
@@ -48,8 +63,8 @@ Respond in this exact JSON format:
     } catch (parseErr) {
       answer = {
         status: 'DEPENDS',
-        answer: content.slice(0, 100),
-        explanation: 'Could not parse structured answer.',
+        answer: content.slice(0, 100) || content,
+        explanation: 'Could not parse structured answer. Consult a lawyer.',
         law: '',
         example: '',
         takeaway: 'Consult a lawyer for definitive advice.',
