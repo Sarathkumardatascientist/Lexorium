@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Is It Legal? - Lexorium</title>
+  <meta name="description" content="Ask real-world legal questions in simple English.">
+  <link rel="icon" href="/assets/lexorium-logo-square.png">
+  <style>
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,200;0,9..144,300;0,9..144,400;1,9..144,200;1,9..144,300;1,9..144,400&family=Jost:wght@200;300;400;500;600&display=swap');
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+:root {
+  --bg: #0A0A0A;
+  --bg2: #111111;
+  --bg3: #181818;
+  --silver: #C0C0C0;
+  --white: #FFFFFF;
+  --gold: #C9A84C;
+  --green: #22c55e;
+  --red: #ef4444;
+  --yellow: #eab308;
+  --line: rgba(192,192,192,0.1);
+}
+
+body {
+  background: var(--bg);
+  color: var(--white);
+  font-family: 'Jost', sans-serif;
+  font-size: 15px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+}
+
+.nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 24px;
+  background: var(--bg);
+  border-bottom: 1px solid var(--line);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.nav-logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+.nav-logo img { width: 32px; height: 32px; }
+.nav-logo span { font-family: 'Fraunces', serif; font-style: italic; font-size: 20px; color: var(--gold); }
+.nav-logo span span { color: var(--white); font-style: normal; }
+.nav-links { display: flex; gap: 24px; }
+.nav-links a { color: var(--silver); text-decoration: none; font-size: 14px; }
+.nav-links a:hover, .nav-links a.active { color: var(--gold); }
+.nav-cta { padding: 10px 20px; background: var(--gold); color: var(--bg); text-decoration: none; border-radius: 8px; font-weight: 500; font-size: 14px; }
+
+.hero {
+  text-align: center;
+  padding: 60px 24px 40px;
+  max-width: 700px;
+  margin: 0 auto;
+}
+.hero h1 { font-family: 'Fraunces', serif; font-style: italic; font-size: 48px; color: var(--white); margin-bottom: 12px; }
+.hero h1 em { color: var(--gold); }
+.hero p { color: var(--silver); font-size: 18px; margin-bottom: 40px; }
+
+.search-box {
+  background: var(--bg2);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 8px;
+  display: flex;
+  gap: 12px;
+  max-width: 600px;
+  margin: 0 auto 40px;
+}
+.search-box input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: var(--white);
+  font-size: 16px;
+  padding: 12px 16px;
+  font-family: inherit;
+}
+.search-box input:focus { outline: none; }
+.search-box input::placeholder { color: var(--silver); }
+.search-box button {
+  padding: 14px 28px;
+  background: var(--gold);
+  color: var(--bg);
+  border: none;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 15px;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+.search-box button:hover { transform: translateY(-2px); }
+.search-box button:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.error-msg {
+  color: var(--red);
+  font-size: 14px;
+  margin-top: -30px;
+  margin-bottom: 30px;
+}
+
+.results { max-width: 700px; margin: 0 auto 60px; padding: 0 24px; }
+
+.result-card {
+  background: var(--bg2);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 32px;
+  margin-bottom: 24px;
+}
+.result-card.legal { border-color: var(--green); }
+.result-card.illegal { border-color: var(--red); }
+.result-card.depends { border-color: var(--yellow); }
+
+.status-badge {
+  display: inline-block;
+  padding: 6px 16px;
+  border-radius: 20px;
+  font-weight: 600;
+  font-size: 14px;
+  margin-bottom: 20px;
+}
+.status-badge.legal { background: rgba(34,197,94,0.15); color: var(--green); }
+.status-badge.illegal { background: rgba(239,68,68,0.15); color: var(--red); }
+.status-badge.depends { background: rgba(234,179,8,0.15); color: var(--yellow); }
+
+.answer-text { font-size: 20px; font-weight: 500; margin-bottom: 24px; line-height: 1.5; }
+
+.result-section { margin-bottom: 16px; }
+.result-section h4 { color: var(--gold); font-size: 13px; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px; }
+.result-section p { color: var(--silver); font-size: 14px; line-height: 1.6; }
+
+.example-box {
+  background: var(--bg);
+  border-radius: 10px;
+  padding: 16px;
+  margin-top: 8px;
+}
+.example-box p { font-style: italic; }
+
+.confidence-badge {
+  display: inline-block;
+  padding: 4px 12px;
+  background: var(--bg);
+  border-radius: 6px;
+  font-size: 12px;
+  color: var(--silver);
+}
+.confidence-badge.high { color: var(--green); }
+.confidence-badge.medium { color: var(--yellow); }
+.confidence-badge.low { color: var(--red); }
+
+.loading {
+  text-align: center;
+  padding: 60px;
+  color: var(--silver);
+}
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid var(--line);
+  border-top-color: var(--gold);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 16px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+footer {
+  text-align: center;
+  padding: 40px 24px;
+  color: var(--silver);
+  font-size: 13px;
+  border-top: 1px solid var(--line);
+}
+
+@media (max-width: 600px) {
+  .nav-links { display: none; }
+  .hero h1 { font-size: 32px; }
+  .search-box { flex-direction: column; }
+  .search-box button { width: 100%; }
+}
+  </style>
+</head>
+<body>
+<nav class="nav">
+  <a href="/" class="nav-logo">
+    <img src="/assets/lexorium-logo.png" alt="Lexorium">
+    <span>Lex<span>orium</span></span>
+  </a>
+  <div class="nav-links">
+    <a href="#features">Features</a>
+    <a href="#how">How It Works</a>
+    <a href="#platform">Platform</a>
+    <a href="/help">Help</a>
+  </div>
+  <a href="/app" class="nav-cta">Launch App</a>
+</nav>
+
+<section class="hero">
+  <h1>Is It <em>Legal</em>?</h1>
+  <p>Ask real-world legal questions in simple English.</p>
+  
+  <form id="searchForm" onsubmit="submitQuestion(event)">
+    <div class="search-box">
+      <input type="text" id="questionInput" placeholder="e.g., Is recording a phone call legal in India?" autocomplete="off">
+      <button type="submit" id="submitBtn">Ask</button>
+    </div>
+    <p class="error-msg" id="errorMsg"></p>
+  </form>
+</section>
+
+<div class="results" id="results"></div>
+
+<footer>
+  <p>Lexorium Legal Intelligence</p>
+</footer>
+
+<script>
+const LEGAL_SYSTEM_PROMPT = `You are the legal intelligence engine for an Indian platform called Lexorium.
+Answer only Indian-law "Is it legal?" questions.
+Keep answers simple, original, and under 120 words.
+Do not copy from any source.
+Do not give long disclaimers.
+Use clear categories and confidence level.
+If the issue is uncertain, choose "DEPENDS".
+
+Respond in this exact JSON format:
+{"status": "LEGAL|ILLEGAL|DEPENDS", "answer": "1-2 sentence direct answer", "explanation": "Simple explanation in max 4 lines", "law": "Relevant law, section, article, or principle", "example": "One practical real-life example", "takeaway": "One-line summary", "confidence": "Low|Medium|High"}`;
+
+async function submitQuestion(e) {
+  e.preventDefault();
+  const input = document.getElementById('questionInput');
+  const btn = document.getElementById('submitBtn');
+  const error = document.getElementById('errorMsg');
+  const results = document.getElementById('results');
+  
+  const question = input.value.trim();
+  
+  error.textContent = '';
+  
+  if (!question) {
+    error.textContent = 'Please enter a legal question.';
+    return;
+  }
+  
+  if (!isLegalQuestion(question)) {
+    error.textContent = 'Please ask a legal question related to Indian law.';
+    return;
+  }
+  
+  btn.disabled = true;
+  btn.textContent = 'Thinking...';
+  results.innerHTML = '<div class="loading"><div class="loading-spinner"></div>Analyzing...</div>';
+  
+  try {
+    const res = await fetch('/api/is-it-legal', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ 
+        question: question,
+        systemPrompt: LEGAL_SYSTEM_PROMPT
+      })
+    });
+    
+    const data = await res.json();
+    
+    if (data.error) {
+      error.textContent = data.error;
+      results.innerHTML = '';
+    } else if (data.answer) {
+      renderAnswer(data.answer);
+    } else {
+      error.textContent = 'Could not get an answer. Try again.';
+      results.innerHTML = '';
+    }
+  } catch (err) {
+    error.textContent = 'Error: ' + err.message;
+    results.innerHTML = '';
+  }
+  
+  btn.disabled = false;
+  btn.textContent = 'Ask';
+}
+
+function isLegalQuestion(q) {
+  const lower = q.toLowerCase();
+  const legalKeywords = ['legal', 'law', 'allowed', 'permitted', 'crime', 'punishment', 'section', 'act', 'india', 'court', 'offense', 'illegal', 'right', 'constitution', 'criminal', 'civil', 'contract', 'property', 'marriage', 'divorce', 'cheque', 'bail', 'fir', 'arrest', 'detention', 'license', 'permit', 'tax', 'gst', 'income tax', ' filing', 'betting', 'gambling', 'vod', 'online', 'digital', 'privacy', 'data', 'software', 'copyright', 'patent', 'trademark'];
+  return legalKeywords.some(k => lower.includes(k));
+}
+
+function renderAnswer(ans) {
+  const results = document.getElementById('results');
+  const statusClass = ans.status?.toLowerCase() || 'depends';
+  
+  results.innerHTML = `
+    <div class="result-card ${statusClass}">
+      <span class="status-badge ${statusClass}">${ans.status || 'DEPENDS'}</span>
+      <p class="answer-text">${ans.answer || ''}</p>
+      
+      <div class="result-section">
+        <h4>Legal Explanation</h4>
+        <p>${ans.explanation || ''}</p>
+      </div>
+      
+      <div class="result-section">
+        <h4>Relevant Law</h4>
+        <p>${ans.law || ''}</p>
+      </div>
+      
+      <div class="result-section">
+        <h4>Example</h4>
+        <div class="example-box">
+          <p>${ans.example || ''}</p>
+        </div>
+      </div>
+      
+      <div class="result-section">
+        <h4>Takeaway</h4>
+        <p><strong>${ans.takeaway || ''}</strong></p>
+      </div>
+      
+      <div style="margin-top: 20px;">
+        <span class="confidence-badge ${ans.confidence?.toLowerCase() || 'medium'}">${ans.confidence || 'Medium'} Confidence</span>
+      </div>
+    </div>
+  `;
+}
+</script>
+</body>
+</html>

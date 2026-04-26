@@ -12,6 +12,8 @@
     {"source": "/privacy", "destination": "/privacy.html"},
     {"source": "/terms", "destination": "/terms.html"},
     {"source": "/account", "destination": "/account.html"},
-    {"source": "/help", "destination": "/help.html"}
+    {"source": "/help", "destination": "/help.html"},
+    {"source": "/is-it-legal", "destination": "/is-it-legal.html"},
+    {"source": "/api/is-it-legal", "destination": "/api/is-it-legal.js"}
   ]
 }
