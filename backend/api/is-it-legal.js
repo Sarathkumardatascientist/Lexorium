@@ -1,6 +1,6 @@
 const { getJsonBody, sendJson, sendError } = require('../_lib/http');
 
-const OPENROUTER_API_KEY = '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';
+const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
 const OPENROUTER_BASE = 'https://openrouter.ai/api/v1';
 
 const SYSTEM_PROMPT = `You are the legal intelligence engine for an Indian platform called Lexorium.
@@ -15,6 +15,9 @@ Respond in this exact JSON format:
 {"status": "LEGAL|ILLEGAL|DEPENDS", "answer": "1-2 sentence direct answer", "explanation": "Simple explanation in max 4 lines", "law": "Relevant law, section, article, or principle", "example": "One practical real-life example", "takeaway": "One-line summary", "confidence": "Low|Medium|High"}`;
 
 async function callOpenRouter(messages) {
+  if (!OPENROUTER_API_KEY) {
+    throw new Error('OpenRouter API key not configured');
+  }
   const response = await fetch(`${OPENROUTER_BASE}/chat/completions`, {
     method: 'POST',
     headers: {
