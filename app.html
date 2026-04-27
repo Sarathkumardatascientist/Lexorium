@@ -2942,6 +2942,23 @@
     border-radius: 50%;
     background: var(--silver);
   }
+  
+  /* Activated mode glow effect */
+  .mode-badge.activated {
+    border-color: var(--gold);
+    box-shadow: 0 0 12px rgba(201,168,76,0.4), inset 0 0 8px rgba(201,168,76,0.1);
+  }
+  .mode-badge.activated .mode-badge-dot {
+    background: var(--gold);
+    box-shadow: 0 0 8px var(--gold);
+  }
+  .mode-badge-dot.pulse {
+    animation: pulse 1.5s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; box-shadow: 0 0 8px var(--gold); }
+    50% { opacity: 0.6; box-shadow: 0 0 16px var(--gold); }
+  }
 
   .mode-badge-remove {
     background: none; border: none; color: var(--silver);
@@ -3929,6 +3946,15 @@
         </button>
         <div class="attach-menu" id="attachMenu">
 
+          <!-- Is It Legal? mode (FREE for all) -->
+          <div class="attach-group-label">Quick Check</div>
+          <div class="attach-item" onclick="setMode('is-it-legal')">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><circle cx="8" cy="8" r="6"/><path d="M8 5v3"/><path d="M8 10v1"/></svg>
+            Is It Legal? (FREE)
+          </div>
+
+          <div class="attach-separator"></div>
+
           <!-- Draft mode -->
           <div class="attach-group-label">Draft</div>
           <div class="attach-item" onclick="setMode('draft')">
@@ -4139,6 +4165,7 @@
   });
 
   const MODES = {
+    'is-it-legal': { label: 'Is It Legal?', color: '#C9A84C', placeholder: 'Ask if something is legal in India. E.g., Is recording a phone call legal in India?' },
     draft: { label: 'Contract Drafting', color: '#a78bfa', placeholder: 'What contract or legal draft would you like prepared? e.g. an NDA, employment contract, or legal notice...' },
     summarize: { label: 'Summarise', color: '#f59e0b', placeholder: 'What legal text would you like summarised? e.g. a clause, notice, or case extract...' },
     analyse: { label: 'Analyse', color: '#60a5fa', placeholder: 'What would you like to analyse? e.g. paste or describe a contract clause...' },
@@ -6216,6 +6243,16 @@
   function setMode(mode) {
     closeAttachMenu();
     const premiumMode = ['draft', 'summarize', 'analyse', 'research', 'risk'].includes(mode);
+    
+    // Is It Legal? is FREE for all users
+    if (mode === 'is-it-legal') {
+      activeMode = mode;
+      inputEl.placeholder = MODES[mode].placeholder;
+      inputEl.focus();
+      renderAttachPreview();
+      return;
+    }
+    
     const featureMap = {
       draft: 'Contract Drafting is available on Lexorium Pro.',
       summarize: 'Summarise is available on Lexorium Pro.',
@@ -8177,6 +8214,12 @@
 
   async function callWithRouting(mode, text, messages, attachments) {
     updateRoutingIndicator(lastRoutedModel, mode);
+    
+    // Handle Is It Legal? mode separately
+    if (mode === 'is-it-legal') {
+      return await callIsItLegal(text);
+    }
+    
     try {
       return await callLexoriumModel('lexorium-auto', messages, attachments, mode);
     } catch (backendError) {
@@ -8185,6 +8228,42 @@
       if (!providerUnavailable) throw backendError;
       return callPuterDirect(messages, attachments, mode);
     }
+  }
+  
+  async function callIsItLegal(question) {
+    const res = await fetch('/api/is-it-legal', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ question, mode: 'is-it-legal' })
+    });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    
+    // Format the response as a nice display
+    const a = data.answer;
+    const formatted = formatIsItLegalResponse(a);
+    return { 
+      role: 'assistant', 
+      content: formatted,
+      meta: { mode: 'is-it-legal' }
+    };
+  }
+  
+  function formatIsItLegalResponse(ans) {
+    const statusColors = { LEGAL: '#22c55e', ILLEGAL: '#ef4444', DEPENDS: '#eab308' };
+    const color = statusColors[ans.status] || '#C0C0C0';
+    return `<div style="font-family:'Jost',sans-serif;max-width:600px;margin:0 auto;padding:20px;">
+      <div style="background:rgba(${ans.status==='LEGAL'?'34,197,94':ans.status==='ILLEGAL'?'239,68,68':'234,179,8'},0.15);border:1px solid ${color};border-radius:12px;padding:20px;margin-bottom:16px;">
+        <div style="font-size:24px;font-weight:600;color:${color};margin-bottom:12px;">${ans.status || 'DEPENDS'}</div>
+        <div style="font-size:18px;font-weight:500;margin-bottom:16px;">${ans.answer || ''}</div>
+        ${ans.explanation ? `<div style="margin-bottom:12px;"><strong style="color:#C9A84C;">Explanation:</strong><p style="color:#C0C0C0;margin-top:4px;">${ans.explanation}</p></div>` : ''}
+        ${ans.law ? `<div style="margin-bottom:12px;"><strong style="color:#C9A84C;">Law:</strong><p style="color:#C0C0C0;margin-top:4px;">${ans.law}</p></div>` : ''}
+        ${ans.example ? `<div style="margin-bottom:12px;background:rgba(255,255,255,0.05);border-radius:8px;padding:12px;"><strong style="color:#C9A84C;">Example:</strong><p style="color:#C0C0C0;margin-top:4px;font-style:italic;">${ans.example}</p></div>` : ''}
+        ${ans.takeaway ? `<div style="margin-bottom:12px;padding:12px;background:rgba(201,168,76,0.1);border-radius:8px;"><strong style="color:#C9A84C;">Takeaway:</strong><p style="color:#FFFFFF;margin-top:4px;">${ans.takeaway}</p></div>` : ''}
+        ${ans.warning ? `<div style="margin-top:12px;padding:12px;background:rgba(255,100,100,0.1);border:1px solid rgba(255,100,100,0.3);border-radius:8px;"><strong style="color:#ff6b6b;">⚠ Warning:</strong><p style="color:#ff6b6b;margin-top:4px;">${ans.warning}</p></div>` : ''}
+        <div style="margin-top:16px;font-size:12px;color:#666;">Confidence: ${ans.confidence || 'Medium'}</div>
+      </div>
+    </div>`;
   }
 
   function updateSendBtn() {
@@ -8211,9 +8290,9 @@
     let html = '';
     if (hasBadge) {
       const m = MODES[activeMode];
-      html += `<div class="mode-badge">
-        <span class="mode-badge-dot" style="background:${m.color}"></span>
-        ${m.label} mode
+      html += `<div class="mode-badge activated">
+        <span class="mode-badge-dot pulse" style="background:${m.color}"></span>
+        ${m.label} mode is ACTIVE
         <button class="mode-badge-remove" onclick="clearMode()">x</button>
       </div>`;
     }
@@ -8283,6 +8362,7 @@
     const attachmentContext = inferAttachmentRequestContext(attachments);
     const effectiveMode = activeMode || (attachments.length ? 'analyse' : null);
     const modePrefixes = {
+      'is-it-legal': 'Is the following legal in India? Answer in JSON: ',
       draft:    'Prepare the following contract or legal draft for me: ',
       summarize: 'Summarise the following legal text in a structured manner: ',
       analyse:  'Analyse the following and provide a detailed legal assessment: ',
