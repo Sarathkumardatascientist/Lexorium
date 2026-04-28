@@ -67,26 +67,32 @@ async function callAI(messages) {
 }
 
 module.exports = async function (req, res) {
+  console.log('[is-it-legal] Request method:', req.method, 'url:', req.url);
+  
   if (req.method !== 'POST') {
     return sendJson(res, 405, { error: 'Method not allowed' });
   }
 
   const body = await getJsonBody(req);
   const { question, mode } = body;
+  
+  console.log('[is-it-legal] Question:', question, 'mode:', mode);
 
   if (!question || mode !== 'is-it-legal') {
     return sendJson(res, 400, { error: 'Invalid request' });
   }
 
   try {
+    console.log('[is-it-legal] Calling AI...');
     const answer = await callAI([
       { role: 'system', content: SYSTEM_PROMPT },
       { role: 'user', content: question }
     ]);
+    console.log('[is-it-legal] AI response:', JSON.stringify(answer).slice(0, 200));
 
     return sendJson(res, 200, { answer });
   } catch (error) {
-    console.error('IsItLegal error:', error.message);
+    console.error('[isItLegal error]:', error.message);
     return sendJson(res, 500, { error: error.message });
   }
 };
