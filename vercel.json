@@ -6,6 +6,7 @@
     }
   },
   "rewrites": [
+    {"source": "/api/is-it-legal", "destination": "/api/is-it-legal.js"},
     {"source": "/api(.*)", "destination": "/api"},
     {"source": "/api/admin/publish-insights", "destination": "/api/admin/publish-insights.js"},
     {"source": "/app", "destination": "/app.html"},
