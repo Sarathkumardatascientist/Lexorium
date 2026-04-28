@@ -8231,31 +8231,56 @@
   }
   
   async function callIsItLegal(question) {
-    const res = await fetch('/api/is-it-legal', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ question, mode: 'is-it-legal' })
-    });
-    const data = await res.json();
-    if (data.error) throw new Error(data.error);
-    
-    // Format the response as a nice display
-    const a = data.answer;
-    const formatted = formatIsItLegalResponse(a);
-    return { 
-      role: 'assistant', 
-      content: formatted,
-      meta: { mode: 'is-it-legal' }
-    };
+    try {
+      const res = await fetch('/api/is-it-legal', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ question, mode: 'is-it-legal' })
+      });
+      const data = await res.json();
+      
+      if (data.error) {
+        return { 
+          role: 'assistant', 
+          content: `<div style="padding:20px;color:#ff6b6b;">Error: ${data.error}</div>`,
+          meta: { mode: 'is-it-legal' }
+        };
+      }
+      
+      if (!data.answer) {
+        return { 
+          role: 'assistant', 
+          content: `<div style="padding:20px;color:#C0C0C0;">No answer received. Please try again.</div>`,
+          meta: { mode: 'is-it-legal' }
+        };
+      }
+      
+      const a = data.answer;
+      const formatted = formatIsItLegalResponse(a);
+      return { 
+        role: 'assistant', 
+        content: formatted,
+        meta: { mode: 'is-it-legal' }
+      };
+    } catch (err) {
+      return { 
+        role: 'assistant', 
+        content: `<div style="padding:20px;color:#ff6b6b;">Error: ${err.message}</div>`,
+        meta: { mode: 'is-it-legal' }
+      };
+    }
   }
   
   function formatIsItLegalResponse(ans) {
+    if (!ans) {
+      return '<div style="padding:20px;">No answer available.</div>';
+    }
     const statusColors = { LEGAL: '#22c55e', ILLEGAL: '#ef4444', DEPENDS: '#eab308' };
     const color = statusColors[ans.status] || '#C0C0C0';
     return `<div style="font-family:'Jost',sans-serif;max-width:600px;margin:0 auto;padding:20px;">
       <div style="background:rgba(${ans.status==='LEGAL'?'34,197,94':ans.status==='ILLEGAL'?'239,68,68':'234,179,8'},0.15);border:1px solid ${color};border-radius:12px;padding:20px;margin-bottom:16px;">
         <div style="font-size:24px;font-weight:600;color:${color};margin-bottom:12px;">${ans.status || 'DEPENDS'}</div>
-        <div style="font-size:18px;font-weight:500;margin-bottom:16px;">${ans.answer || ''}</div>
+        <div style="font-size:18px;font-weight:500;margin-bottom:16px;">${ans.answer || 'No answer'}</div>
         ${ans.explanation ? `<div style="margin-bottom:12px;"><strong style="color:#C9A84C;">Explanation:</strong><p style="color:#C0C0C0;margin-top:4px;">${ans.explanation}</p></div>` : ''}
         ${ans.law ? `<div style="margin-bottom:12px;"><strong style="color:#C9A84C;">Law:</strong><p style="color:#C0C0C0;margin-top:4px;">${ans.law}</p></div>` : ''}
         ${ans.example ? `<div style="margin-bottom:12px;background:rgba(255,255,255,0.05);border-radius:8px;padding:12px;"><strong style="color:#C9A84C;">Example:</strong><p style="color:#C0C0C0;margin-top:4px;font-style:italic;">${ans.example}</p></div>` : ''}

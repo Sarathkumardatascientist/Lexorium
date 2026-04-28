@@ -20,35 +20,49 @@ Respond in this EXACT JSON format:
 Keep answers under 120 words. Use "DEPENDS" if uncertain. Format as JSON only.`;
 
 async function callAI(messages) {
-  const response = await fetch(`${OPENROUTER_BASE}/chat/completions`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
-      'HTTP-Referer': 'https://lexorium.com',
-      'X-Title': 'Lexorium',
-    },
-    body: JSON.stringify({
-      model: 'deepseek/deepseek-chat',
-      messages: messages,
-      temperature: 0.3,
-      max_tokens: 600,
-      response_format: { type: 'json_object' }
-    }),
-  });
-
-  if (!response.ok) {
-    const err = await response.text();
-    throw new Error('AI error: ' + response.status);
-  }
-
-  const result = await response.json();
-  const content = result?.choices?.[0]?.message?.content || '';
-  
   try {
+    const response = await fetch(`${OPENROUTER_BASE}/chat/completions`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
+        'HTTP-Referer': 'https://lexorium.com',
+        'X-Title': 'Lexorium',
+      },
+      body: JSON.stringify({
+        model: 'deepseek/deepseek-chat',
+        messages: messages,
+        temperature: 0.3,
+        max_tokens: 600,
+        response_format: { type: 'json_object' }
+      }),
+    });
+
+    if (!response.ok) {
+      const err = await response.text();
+      throw new Error('AI error: ' + response.status + ' - ' + err.slice(0, 100));
+    }
+
+    const result = await response.json();
+    const content = result?.choices?.[0]?.message?.content || '';
+    
+    if (!content) {
+      throw new Error('Empty response from AI');
+    }
+    
     return JSON.parse(content);
-  } catch {
-    return JSON.parse('{"status":"DEPENDS","answer":"Could not parse","explanation":"Try again","law":"","example":"","takeaway":"Consult a lawyer","confidence":"Low","warning":""}');
+  } catch (err) {
+    console.error('callAI error:', err.message);
+    return {
+      status: 'DEPENDS',
+      answer: 'Service temporarily unavailable. Please try again.',
+      explanation: 'Could not get a response from the legal AI.',
+      law: '',
+      example: '',
+      takeaway: 'Consult a qualified lawyer for legal advice.',
+      confidence: 'Low',
+      warning: ''
+    };
   }
 }
 
