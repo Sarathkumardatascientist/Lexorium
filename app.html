@@ -3946,13 +3946,6 @@
         </button>
         <div class="attach-menu" id="attachMenu">
 
-          <!-- Is It Legal? mode (FREE for all) -->
-          <div class="attach-group-label">Quick Check</div>
-          <div class="attach-item" onclick="setMode('is-it-legal')">
-            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><circle cx="8" cy="8" r="6"/><path d="M8 5v3"/><path d="M8 10v1"/></svg>
-            Is It Legal?
-          </div>
-
           <div class="attach-separator"></div>
 
           <!-- Draft mode -->
@@ -4014,7 +4007,7 @@
 
       <textarea
         id="input"
-        placeholder="Ask a legal or compliance question..."
+        placeholder="Ask a legal or compliance question"
         rows="1"
         onkeydown="handleKey(event)"
         oninput="autoResize(this); updateSendBtn();"
@@ -4165,7 +4158,6 @@
   });
 
   const MODES = {
-    'is-it-legal': { label: 'Is It Legal?', color: '#C9A84C', placeholder: 'Ask if something is legal in India. E.g., Is recording a phone call legal?' },
     draft: { label: 'Contract Drafting', color: '#a78bfa', placeholder: 'What contract or legal draft would you like prepared? e.g. an NDA, employment contract, or legal notice...' },
     summarize: { label: 'Summarise', color: '#f59e0b', placeholder: 'What legal text would you like summarised? e.g. a clause, notice, or case extract...' },
     analyse: { label: 'Analyse', color: '#60a5fa', placeholder: 'What would you like to analyse? e.g. paste or describe a contract clause...' },
@@ -5756,7 +5748,7 @@
     composerLockedReason = null;
     document.body.classList.remove('composer-locked');
     inputEl.disabled = false;
-    inputEl.placeholder = activeMode ? MODES[activeMode].placeholder : 'Ask a legal or compliance question...';
+    inputEl.placeholder = activeMode ? MODES[activeMode].placeholder : 'Ask a legal or compliance question';
     
     const usageAction = document.getElementById('usageActionContainer');
     if (usageAction) usageAction.style.display = 'none';
@@ -6243,16 +6235,6 @@
   function setMode(mode) {
     closeAttachMenu();
     const premiumMode = ['draft', 'summarize', 'analyse', 'research', 'risk'].includes(mode);
-    
-    // Is It Legal? is FREE for all users
-    if (mode === 'is-it-legal') {
-      activeMode = mode;
-      inputEl.placeholder = MODES[mode].placeholder;
-      inputEl.focus();
-      renderAttachPreview();
-      return;
-    }
-    
     const featureMap = {
       draft: 'Contract Drafting is available on Lexorium Pro.',
       summarize: 'Summarise is available on Lexorium Pro.',
@@ -8214,12 +8196,6 @@
 
   async function callWithRouting(mode, text, messages, attachments) {
     updateRoutingIndicator(lastRoutedModel, mode);
-    
-    // Handle Is It Legal? mode separately
-    if (mode === 'is-it-legal') {
-      return await callIsItLegal(text);
-    }
-    
     try {
       return await callLexoriumModel('lexorium-auto', messages, attachments, mode);
     } catch (backendError) {
@@ -8228,67 +8204,6 @@
       if (!providerUnavailable) throw backendError;
       return callPuterDirect(messages, attachments, mode);
     }
-  }
-  
-  async function callIsItLegal(question) {
-    try {
-      const res = await fetch('/api/is-it-legal', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ question, mode: 'is-it-legal' })
-      });
-      const data = await res.json();
-      
-      if (data.error) {
-        return { 
-          role: 'assistant', 
-          content: `<div style="padding:20px;color:#ff6b6b;">Error: ${data.error}</div>`,
-          meta: { mode: 'is-it-legal' }
-        };
-      }
-      
-      if (!data.answer) {
-        return { 
-          role: 'assistant', 
-          content: `<div style="padding:20px;color:#C0C0C0;">No answer received. Please try again.</div>`,
-          meta: { mode: 'is-it-legal' }
-        };
-      }
-      
-      const a = data.answer;
-      const formatted = formatIsItLegalResponse(a);
-      return { 
-        role: 'assistant', 
-        content: formatted,
-        meta: { mode: 'is-it-legal' }
-      };
-    } catch (err) {
-      return { 
-        role: 'assistant', 
-        content: `<div style="padding:20px;color:#ff6b6b;">Error: ${err.message}</div>`,
-        meta: { mode: 'is-it-legal' }
-      };
-    }
-  }
-  
-  function formatIsItLegalResponse(ans) {
-    if (!ans) {
-      return '<div style="padding:20px;">No answer available.</div>';
-    }
-    const statusColors = { LEGAL: '#22c55e', ILLEGAL: '#ef4444', DEPENDS: '#eab308' };
-    const color = statusColors[ans.status] || '#C0C0C0';
-    return `<div style="font-family:'Jost',sans-serif;max-width:600px;margin:0 auto;padding:20px;">
-      <div style="background:rgba(${ans.status==='LEGAL'?'34,197,94':ans.status==='ILLEGAL'?'239,68,68':'234,179,8'},0.15);border:1px solid ${color};border-radius:12px;padding:20px;margin-bottom:16px;">
-        <div style="font-size:24px;font-weight:600;color:${color};margin-bottom:12px;">${ans.status || 'DEPENDS'}</div>
-        <div style="font-size:18px;font-weight:500;margin-bottom:16px;">${ans.answer || 'No answer'}</div>
-        ${ans.explanation ? `<div style="margin-bottom:12px;"><strong style="color:#C9A84C;">Explanation:</strong><p style="color:#C0C0C0;margin-top:4px;">${ans.explanation}</p></div>` : ''}
-        ${ans.law ? `<div style="margin-bottom:12px;"><strong style="color:#C9A84C;">Law:</strong><p style="color:#C0C0C0;margin-top:4px;">${ans.law}</p></div>` : ''}
-        ${ans.example ? `<div style="margin-bottom:12px;background:rgba(255,255,255,0.05);border-radius:8px;padding:12px;"><strong style="color:#C9A84C;">Example:</strong><p style="color:#C0C0C0;margin-top:4px;font-style:italic;">${ans.example}</p></div>` : ''}
-        ${ans.takeaway ? `<div style="margin-bottom:12px;padding:12px;background:rgba(201,168,76,0.1);border-radius:8px;"><strong style="color:#C9A84C;">Takeaway:</strong><p style="color:#FFFFFF;margin-top:4px;">${ans.takeaway}</p></div>` : ''}
-        ${ans.warning ? `<div style="margin-top:12px;padding:12px;background:rgba(255,100,100,0.1);border:1px solid rgba(255,100,100,0.3);border-radius:8px;"><strong style="color:#ff6b6b;">⚠ Warning:</strong><p style="color:#ff6b6b;margin-top:4px;">${ans.warning}</p></div>` : ''}
-        <div style="margin-top:16px;font-size:12px;color:#666;">Confidence: ${ans.confidence || 'Medium'}</div>
-      </div>
-    </div>`;
   }
 
   function updateSendBtn() {
@@ -8387,7 +8302,6 @@
     const attachmentContext = inferAttachmentRequestContext(attachments);
     const effectiveMode = activeMode || (attachments.length ? 'analyse' : null);
     const modePrefixes = {
-      'is-it-legal': 'Is the following legal in India? Answer in JSON: ',
       draft:    'Prepare the following contract or legal draft for me: ',
       summarize: 'Summarise the following legal text in a structured manner: ',
       analyse:  'Analyse the following and provide a detailed legal assessment: ',
