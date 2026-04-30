@@ -3887,9 +3887,6 @@
     </div>
     <!-- Row 2: automatic routing status -->
     <div class="header-row2">
-        <div style="background:rgba(201,168,76,0.12);border:1px solid rgba(201,168,76,0.25);color:#C9A84C;font-size:12px;padding:6px 14px;border-radius:20px;text-align:center;">
-          ⚠ AI-generated content. Not legal advice. Verify before reliance.
-        </div>
       <div class="routing-status" id="routingStatus">
         <div class="routing-pill">
           <span class="routing-dot"></span>
@@ -4048,37 +4045,6 @@
 <script src="https://js.puter.com/v2/" async defer></script>
 <script src="https://sdk.cashfree.com/js/v3/cashfree.js" async defer></script>
 <script>
-  // First-use consent check
-  function checkConsent() {
-    const consented = localStorage.getItem('lexorium_consent');
-    if (consented === 'true') return true;
-    
-    const modal = document.createElement('div');
-    modal.id = 'consentModal';
-    modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;';
-    modal.innerHTML = `
-      <div style="background:#111;max-width:560px;width:100%;border:1px solid rgba(201,168,76,0.3);border-radius:28px;padding:40px;color:#fff;font-family:'Jost',sans-serif;">
-        <h2 style="font-family:'Fraunces',serif;font-style:italic;font-size:28px;color:#C9A84C;margin-bottom:16px;">Welcome to Lexorium</h2>
-        <p style="color:#C0C0C0;font-size:14px;line-height:1.7;margin-bottom:20px;">
-          By accessing or using LexoriumAI, you expressly agree to our 
-          <a href="terms.html" style="color:#C9A84C;">Terms of Service</a>, 
-          <a href="privacy.html" style="color:#C9A84C;">Privacy Policy</a>, 
-          <a href="compliance-safety.html" style="color:#C9A84C;">Disclaimer</a>, and 
-          <a href="compliance-safety.html" style="color:#C9A84C;">Compliance & Safety Notice.</a>
-        </p>
-        <button onclick="acceptConsent()" style="width:100%;padding:14px;background:#C9A84C;color:#0A0A0A;border:none;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer;">I Agree & Continue</button>
-      </div>
-    `;
-    document.body.appendChild(modal);
-    return false;
-  }
-  
-  function acceptConsent() {
-    localStorage.setItem('lexorium_consent', 'true');
-    const modal = document.getElementById('consentModal');
-    if (modal) modal.remove();
-  }
-  
   async function bootstrapApp() {
     const refreshed = await refreshClientShellIfNeeded();
     if (refreshed) return;
@@ -4092,24 +4058,22 @@
     updateRoutingIndicator(lastRoutedModel, null);
     inputEl.focus();
   }
+
+  window.addEventListener('lexorium:play-billing-result', (event) => {
+    handleAndroidBillingResult(event?.detail || {}).catch(() => null);
+  });
   
-  if (checkConsent()) {
-    window.addEventListener('lexorium:play-billing-result', (event) => {
-      handleAndroidBillingResult(event?.detail || {}).catch(() => null);
-    });
-    
-    window.addEventListener('focus', () => {
-      if (!currentUserUid) return;
-      scheduleUsageRefresh();
-    });
-    
-    document.addEventListener('visibilitychange', () => {
-      if (document.visibilityState !== 'visible' || !currentUserUid) return;
-      scheduleUsageRefresh();
-    });
-    
-    bootstrapApp();
-  }
+  window.addEventListener('focus', () => {
+    if (!currentUserUid) return;
+    scheduleUsageRefresh();
+  });
+  
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState !== 'visible' || !currentUserUid) return;
+    scheduleUsageRefresh();
+  });
+  
+  bootstrapApp();
   </script>
 </body>
 </html>
