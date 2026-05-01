@@ -2189,62 +2189,93 @@ footer {
   position: relative;
   overflow: hidden;
 }
-.testimonials-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 20px;
-  max-width: 1200px;
+.testimonials-carousel {
+  position: relative;
+  max-width: 860px;
   margin: 40px auto 0;
+  min-height: 280px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 .testimonial-card {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
   background: var(--bg2);
   border: 1px solid var(--line);
   border-radius: 20px;
-  padding: 24px;
+  padding: 40px;
   display: flex;
   flex-direction: column;
   gap: 16px;
-  transition: transform 0.3s ease, background 0.3s ease;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.6s ease, visibility 0.6s ease, transform 0.6s ease;
+  transform: translateY(10px) scale(0.98);
 }
-.testimonial-card:hover {
-  transform: translateY(-4px);
-  background: var(--bg3);
+.testimonial-card.active {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0) scale(1);
+  position: relative;
+  z-index: 2;
 }
-.testimonial-text {
+.testimonial-category-badge {
+  display: inline-block;
   font-family: 'Jost', sans-serif;
-  font-size: 14px;
-  font-weight: 300;
-  color: rgba(192,192,192,0.8);
-  line-height: 1.6;
-  flex-grow: 1;
-}
-.testimonial-author {
-  font-family: 'Fraunces', serif;
-  font-size: 14px;
-  font-style: italic;
-  color: var(--white);
-  border-top: 1px solid var(--line2);
-  padding-top: 12px;
-}
-.testimonial-category {
-  grid-column: 1 / -1;
-  font-family: 'Jost', sans-serif;
-  font-size: 12px;
+  font-size: 11px;
   letter-spacing: 0.15em;
   text-transform: uppercase;
+  color: rgba(192,192,192,0.8);
+  background: rgba(192,192,192,0.06);
+  border: 1px solid rgba(192,192,192,0.1);
+  padding: 6px 12px;
+  border-radius: 999px;
+  margin-bottom: 8px;
+  align-self: flex-start;
+}
+.testimonial-text {
+  font-family: 'Fraunces', serif;
+  font-size: 20px;
+  font-style: italic;
+  font-weight: 300;
+  color: var(--white);
+  line-height: 1.6;
+}
+.testimonial-author {
+  font-family: 'Jost', sans-serif;
+  font-size: 14px;
   color: rgba(192,192,192,0.6);
-  margin-top: 24px;
-  border-bottom: 1px solid var(--line2);
-  padding-bottom: 8px;
-  text-align: left;
+  margin-top: 10px;
+}
+.carousel-indicators {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 32px;
+}
+.carousel-indicators .indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(192,192,192,0.2);
+  border: none;
+  cursor: pointer;
+  transition: background 0.3s ease, transform 0.3s ease;
+  padding: 0;
+}
+.carousel-indicators .indicator.active {
+  background: var(--white);
+  transform: scale(1.3);
 }
 
-@media (max-width: 1024px) {
-  .testimonials-grid { grid-template-columns: repeat(2, 1fr); }
-}
 @media (max-width: 768px) {
   .testimonials-section { padding: 60px 20px; }
-  .testimonials-grid { grid-template-columns: 1fr; }
+  .testimonial-text { font-size: 16px; }
+  .testimonial-card { padding: 24px; }
+  .testimonials-carousel { min-height: 320px; }
 }
 
 /* ─── HAMBURGER BUTTON ─── */
@@ -3054,42 +3085,47 @@ footer {
 <section class="testimonials-section">
   <p class="section-eyebrow reveal">Social Proof</p>
   <h2 class="section-title reveal">Trusted by <span>professionals</span></h2>
-  <div class="testimonials-grid reveal">
+  <div class="testimonials-carousel reveal" id="testimonialCarousel">
     
-    <div class="testimonial-category">🎓 Students & Aspirants</div>
-    <div class="testimonial-card">
+    <div class="testimonial-card active">
+      <div class="testimonial-category-badge">🎓 Students & Aspirants</div>
       <div class="testimonial-text">"LexoriumAI has completely changed how I approach legal research. What used to take hours now takes minutes, and the structured insights help me actually understand the law rather than just memorize it."</div>
       <div class="testimonial-author">— Anjali Nair, Law Student</div>
     </div>
     <div class="testimonial-card">
+      <div class="testimonial-category-badge">🎓 Students & Aspirants</div>
       <div class="testimonial-text">"As someone preparing for judicial services, staying updated is critical. LexoriumAI’s concise legal insights and summaries have become part of my daily routine."</div>
       <div class="testimonial-author">— Rahul Verma, Judiciary Aspirant</div>
     </div>
 
-    <div class="testimonial-category">🏛️ Legal Professionals</div>
     <div class="testimonial-card">
+      <div class="testimonial-category-badge">🏛️ Legal Professionals</div>
       <div class="testimonial-text">"The platform is an excellent starting point for legal research. While I always verify independently, the speed at which LexoriumAI surfaces relevant information is impressive."</div>
       <div class="testimonial-author">— Adv. Karthik Menon, Practicing Lawyer</div>
     </div>
     <div class="testimonial-card">
+      <div class="testimonial-category-badge">🏛️ Legal Professionals</div>
       <div class="testimonial-text">"LexoriumAI bridges the gap between technology and law in a very practical way. It enhances productivity without compromising the need for professional judgment."</div>
       <div class="testimonial-author">— Adv. Sneha Iyer</div>
     </div>
 
-    <div class="testimonial-category">📊 Corporate / Business Users</div>
     <div class="testimonial-card">
+      <div class="testimonial-category-badge">📊 Corporate / Business Users</div>
       <div class="testimonial-text">"For a startup founder, legal compliance can be overwhelming. LexoriumAI simplifies complex legal concepts into actionable insights, saving both time and cost."</div>
       <div class="testimonial-author">— Rohan Mehta, Founder</div>
     </div>
     <div class="testimonial-card">
+      <div class="testimonial-category-badge">📊 Corporate / Business Users</div>
       <div class="testimonial-text">"The risk scoring and analysis features provide a helpful preliminary view before consulting our legal advisors. It’s a smart tool for early-stage decision-making."</div>
       <div class="testimonial-author">— Priya Kapoor, Business Consultant</div>
     </div>
     <div class="testimonial-card">
+      <div class="testimonial-category-badge">📊 Corporate / Business Users</div>
       <div class="testimonial-text">"I use LexoriumAI to understand legal topics without getting lost in jargon. It’s like having a legal assistant available anytime."</div>
       <div class="testimonial-author">— Vishal Gupta</div>
     </div>
     <div class="testimonial-card">
+      <div class="testimonial-category-badge">📊 Corporate / Business Users</div>
       <div class="testimonial-text">"Clean interface, fast results, and insightful summaries — LexoriumAI makes legal knowledge accessible to everyone."</div>
       <div class="testimonial-author">— Meera Nair</div>
     </div>
@@ -4144,6 +4180,42 @@ footer {
     }
   }
 
+  // Testimonial Carousel
+  let currentTestimonial = 0;
+  let testimonialInterval;
+
+  function initTestimonialCarousel() {
+    const cards = document.querySelectorAll('#testimonialCarousel .testimonial-card');
+    if (!cards.length) return;
+    startTestimonialCarousel();
+  }
+
+  function startTestimonialCarousel() {
+    clearInterval(testimonialInterval);
+    testimonialInterval = setInterval(() => {
+      const cards = document.querySelectorAll('#testimonialCarousel .testimonial-card');
+      if (!cards.length) return;
+      let next = (currentTestimonial + 1) % cards.length;
+      goToTestimonial(next);
+    }, 5000);
+  }
+
+  window.goToTestimonial = function(index) {
+    const cards = document.querySelectorAll('#testimonialCarousel .testimonial-card');
+    const indicators = document.querySelectorAll('#carouselIndicators .indicator');
+    if (!cards.length || index < 0 || index >= cards.length) return;
+
+    cards[currentTestimonial].classList.remove('active');
+    if (indicators[currentTestimonial]) indicators[currentTestimonial].classList.remove('active');
+
+    currentTestimonial = index;
+
+    cards[currentTestimonial].classList.add('active');
+    if (indicators[currentTestimonial]) indicators[currentTestimonial].classList.add('active');
+
+    startTestimonialCarousel();
+  };
+
   // Scroll reveal
   const reveals = document.querySelectorAll('.reveal');
   const observer = new IntersectionObserver((entries) => {
@@ -4186,6 +4258,7 @@ footer {
     initPremiumCursor();
     initHeroMotion();
     initStatCounters();
+    initTestimonialCarousel();
   });
 
   // Legal Modal
