@@ -294,17 +294,47 @@
       background: var(--bg2);
       border: 1px solid var(--line2);
       border-radius: 12px;
-      padding: 20px 24px;
       margin-bottom: 12px;
     }
 
-    .faq-item h4 {
+    .faq-item summary {
+      padding: 20px 24px;
       font-size: 16px;
       font-weight: 500;
-      margin-bottom: 8px;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      list-style: none;
     }
 
-    .faq-item p {
+    .faq-item summary::-webkit-details-marker {
+      display: none;
+    }
+
+    .faq-item summary::after {
+      content: "▼";
+      font-size: 12px;
+      color: var(--silver);
+      transition: transform 0.3s ease;
+    }
+
+    .faq-item[open] summary::after {
+      transform: rotate(180deg);
+      color: var(--white);
+    }
+
+    .faq-item summary h4 {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 500;
+    }
+
+    .faq-answer {
+      padding: 0 24px 20px;
+    }
+
+    .faq-answer p {
       margin: 0;
       font-size: 14px;
       color: var(--silver);
@@ -589,35 +619,47 @@
     <section class="section" id="faq">
       <h2>Frequently Asked Questions</h2>
 
-      <div class="faq-item">
-        <h4>Is Lexorium a substitute for a lawyer?</h4>
-        <p>No. Lexorium provides legal information to help you understand legal concepts. It is not legal advice and should not replace consultation with a qualified lawyer.</p>
-      </div>
+      <details class="faq-item">
+        <summary><h4>Is Lexorium a substitute for a lawyer?</h4></summary>
+        <div class="faq-answer">
+          <p>No. Lexorium provides legal information to help you understand legal concepts. It is not legal advice and should not replace consultation with a qualified lawyer.</p>
+        </div>
+      </details>
 
-      <div class="faq-item">
-        <h4>What jurisdiction does Lexorium cover?</h4>
-        <p>Lexorium defaults to Indian law but can answer questions about any jurisdiction. Specify the jurisdiction in your question for accurate results.</p>
-      </div>
+      <details class="faq-item">
+        <summary><h4>What jurisdiction does Lexorium cover?</h4></summary>
+        <div class="faq-answer">
+          <p>Lexorium defaults to Indian law but can answer questions about any jurisdiction. Specify the jurisdiction in your question for accurate results.</p>
+        </div>
+      </details>
 
-      <div class="faq-item">
-        <h4>How accurate are the legal answers?</h4>
-        <p>Lexorium provides structured, well-reasoned responses based on legal principles. Always verify critical information with primary sources or legal counsel.</p>
-      </div>
+      <details class="faq-item">
+        <summary><h4>How accurate are the legal answers?</h4></summary>
+        <div class="faq-answer">
+          <p>Lexorium provides structured, well-reasoned responses based on legal principles. Always verify critical information with primary sources or legal counsel.</p>
+        </div>
+      </details>
 
-      <div class="faq-item">
-        <h4>Is my data secure?</h4>
-        <p>Yes. Your conversations are encrypted and stored securely. We do not share your data with third parties for marketing.</p>
-      </div>
+      <details class="faq-item">
+        <summary><h4>Is my data secure?</h4></summary>
+        <div class="faq-answer">
+          <p>Yes. Your conversations are encrypted and stored securely. We do not share your data with third parties for marketing.</p>
+        </div>
+      </details>
 
-      <div class="faq-item">
-        <h4>Can I export my conversations?</h4>
-        <p>Yes, on Pro and Enterprise plans. Use the export option in the chat menu to download your conversation history.</p>
-      </div>
+      <details class="faq-item">
+        <summary><h4>Can I export my conversations?</h4></summary>
+        <div class="faq-answer">
+          <p>Yes, on Pro and Enterprise plans. Use the export option in the chat menu to download your conversation history.</p>
+        </div>
+      </details>
 
-      <div class="faq-item">
-        <h4>What happens when I hit my daily limit?</h4>
-        <p>You'll see a limit message. Upgrade to Pro for more queries or wait until midnight (IST) for your daily reset.</p>
-      </div>
+      <details class="faq-item">
+        <summary><h4>What happens when I hit my daily limit?</h4></summary>
+        <div class="faq-answer">
+          <p>You'll see a limit message. Upgrade to Pro for more queries or wait until midnight (IST) for your daily reset.</p>
+        </div>
+      </details>
     </section>
 
     <section class="cta-section">
