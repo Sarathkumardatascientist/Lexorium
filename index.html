@@ -2181,6 +2181,72 @@ footer {
   }
 }
 
+/* ────── TESTIMONIALS SECTION ────── */
+.testimonials-section {
+  padding: 80px 60px;
+  background: var(--bg);
+  border-top: 1px solid var(--line);
+  position: relative;
+  overflow: hidden;
+}
+.testimonials-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+  max-width: 1200px;
+  margin: 40px auto 0;
+}
+.testimonial-card {
+  background: var(--bg2);
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  transition: transform 0.3s ease, background 0.3s ease;
+}
+.testimonial-card:hover {
+  transform: translateY(-4px);
+  background: var(--bg3);
+}
+.testimonial-text {
+  font-family: 'Jost', sans-serif;
+  font-size: 14px;
+  font-weight: 300;
+  color: rgba(192,192,192,0.8);
+  line-height: 1.6;
+  flex-grow: 1;
+}
+.testimonial-author {
+  font-family: 'Fraunces', serif;
+  font-size: 14px;
+  font-style: italic;
+  color: var(--white);
+  border-top: 1px solid var(--line2);
+  padding-top: 12px;
+}
+.testimonial-category {
+  grid-column: 1 / -1;
+  font-family: 'Jost', sans-serif;
+  font-size: 12px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: rgba(192,192,192,0.6);
+  margin-top: 24px;
+  border-bottom: 1px solid var(--line2);
+  padding-bottom: 8px;
+  text-align: left;
+}
+
+@media (max-width: 1024px) {
+  .testimonials-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 768px) {
+  .testimonials-section { padding: 60px 20px; }
+  .testimonials-grid { grid-template-columns: 1fr; }
+}
+
 /* ─── HAMBURGER BUTTON ─── */
 .nav-hamburger {
   display: none;
@@ -2854,21 +2920,6 @@ footer {
     </a>
   </div>
   
-  <div class="hero-social-proof reveal">
-    <div class="proof-avatars">
-      <div class="avatar-stack">
-        <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='14' fill='%23fff'/%3E%3Cpath d='M10 16l4 4 8-8' stroke='%23D4AF37' stroke-width='2.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E" alt=""/>
-      </div>
-      <div class="proof-text">
-        <strong>100,000+</strong> lawyers trust Lexorium
-      </div>
-    </div>
-    <div class="proof-rating">
-      <span class="stars">★★★★★</span>
-      <span>4.9/5 rating from 5,000+ reviews</span>
-    </div>
-  </div>
-  
   <div class="hero-trust">
     <div class="trust-badge">
       <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 2L3 5v4c0 3 2.5 5.5 5 6.5 2.5-1 5-3.5 5-6.5V5L8 2z"/></svg>
@@ -2994,6 +3045,53 @@ footer {
       </div>
       <div class="feature-title">Automated Legal Routing</div>
       <p class="feature-desc">Lexorium routes each legal question through the right workflow automatically, so users stay focused on the matter instead of the model stack.</p>
+    </div>
+
+  </div>
+</section>
+
+<!-- TESTIMONIALS -->
+<section class="testimonials-section">
+  <p class="section-eyebrow reveal">Social Proof</p>
+  <h2 class="section-title reveal">Trusted by <span>professionals</span></h2>
+  <div class="testimonials-grid reveal">
+    
+    <div class="testimonial-category">🎓 Students & Aspirants</div>
+    <div class="testimonial-card">
+      <div class="testimonial-text">"LexoriumAI has completely changed how I approach legal research. What used to take hours now takes minutes, and the structured insights help me actually understand the law rather than just memorize it."</div>
+      <div class="testimonial-author">— Anjali Nair, Law Student</div>
+    </div>
+    <div class="testimonial-card">
+      <div class="testimonial-text">"As someone preparing for judicial services, staying updated is critical. LexoriumAI’s concise legal insights and summaries have become part of my daily routine."</div>
+      <div class="testimonial-author">— Rahul Verma, Judiciary Aspirant</div>
+    </div>
+
+    <div class="testimonial-category">🏛️ Legal Professionals</div>
+    <div class="testimonial-card">
+      <div class="testimonial-text">"The platform is an excellent starting point for legal research. While I always verify independently, the speed at which LexoriumAI surfaces relevant information is impressive."</div>
+      <div class="testimonial-author">— Adv. Karthik Menon, Practicing Lawyer</div>
+    </div>
+    <div class="testimonial-card">
+      <div class="testimonial-text">"LexoriumAI bridges the gap between technology and law in a very practical way. It enhances productivity without compromising the need for professional judgment."</div>
+      <div class="testimonial-author">— Adv. Sneha Iyer</div>
+    </div>
+
+    <div class="testimonial-category">📊 Corporate / Business Users</div>
+    <div class="testimonial-card">
+      <div class="testimonial-text">"For a startup founder, legal compliance can be overwhelming. LexoriumAI simplifies complex legal concepts into actionable insights, saving both time and cost."</div>
+      <div class="testimonial-author">— Rohan Mehta, Founder</div>
+    </div>
+    <div class="testimonial-card">
+      <div class="testimonial-text">"The risk scoring and analysis features provide a helpful preliminary view before consulting our legal advisors. It’s a smart tool for early-stage decision-making."</div>
+      <div class="testimonial-author">— Priya Kapoor, Business Consultant</div>
+    </div>
+    <div class="testimonial-card">
+      <div class="testimonial-text">"I use LexoriumAI to understand legal topics without getting lost in jargon. It’s like having a legal assistant available anytime."</div>
+      <div class="testimonial-author">— Vishal Gupta</div>
+    </div>
+    <div class="testimonial-card">
+      <div class="testimonial-text">"Clean interface, fast results, and insightful summaries — LexoriumAI makes legal knowledge accessible to everyone."</div>
+      <div class="testimonial-author">— Meera Nair</div>
     </div>
 
   </div>
