@@ -11,7 +11,9 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="assets/lexorium-logo-square.png">
 <title>Lexorium - Powering the Future of Law</title>
-<style>
+  <meta name="robots" content="noai, noimageai">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self' https://fonts.googleapis.com https://fonts.gstatic.com https://js.puter.com https://sdk.cashfree.com; script-src 'self' https://js.puter.com https://sdk.cashfree.com 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;">
+  <style>
 @import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,200;0,9..144,300;0,9..144,400;1,9..144,200;1,9..144,300;1,9..144,400&family=Jost:wght@200;300;400;500;600&display=swap');
 
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -3468,9 +3470,40 @@ footer {
   </div>
 </div>
 
-<script src="https://js.puter.com/v2/"></script>
-<script src="https://sdk.cashfree.com/js/v3/cashfree.js" async defer></script>
-<script>
+  <script src="https://js.puter.com/v2/"></script>
+  <script src="https://sdk.cashfree.com/js/v3/cashfree.js" async defer></script>
+  <script>
+    // Anti-scraping deterrents (client-side only - server-side headers required for real protection)
+    console.log('%c⚠️ Lexorium - Unauthorized scraping is prohibited.', 'color: #C0C0C0; font-size: 16px; font-weight: bold;');
+    console.log('%cThis is a protected legal intelligence platform by Sprezzatura AI.', 'color: #E8D8BF; font-size: 12px;');
+
+    // Disable right-click context menu (deterrent only)
+    document.addEventListener('contextmenu', (e) => {
+      if (!e.target.closest('input, textarea, .legal-body')) e.preventDefault();
+    });
+
+    // Disable text selection on key elements (deterrent only)
+    document.querySelectorAll('nav, .hero, .features-grid, .pricing-grid, .plans-grid').forEach(el => {
+      el.style.userSelect = 'none';
+      el.style.webkitUserSelect = 'none';
+    });
+
+    // Detect devtools (basic deterrent)
+    let devtoolsOpen = false;
+    const detectDevTools = () => {
+      const threshold = 160;
+      if (window.outerWidth - window.innerWidth > threshold || window.outerHeight - window.innerHeight > threshold) {
+        if (!devtoolsOpen) {
+          devtoolsOpen = true;
+          console.clear();
+          console.log('%c🔒 Access Restricted', 'color: #ff6b6b; font-size: 20px;');
+        }
+      }
+    };
+    window.addEventListener('resize', detectDevTools);
+    setInterval(detectDevTools, 1000);
+  </script>
+  <script>
   const APP_URL = 'app.html';
   const AUTH_CONFIG_URL = 'api/auth/config';
   const SESSION_URL = 'api/auth/session';
