@@ -61,15 +61,13 @@
   .shell {
     display: grid;
     grid-template-rows: auto 1fr auto;
+    height: 100vh;
     height: 100dvh;
     flex: 1;
     min-width: 0;
     min-height: 0;
-    max-width: none;
-    margin: 0;
-    border-left: none;
-    border-right: 1px solid var(--line);
   }
+  .shell > * { min-height: 0; }
 
   /* ?? HEADER ?? */
   header {
@@ -946,6 +944,7 @@
   .settings-content {
     padding: 22px 28px 36px;
     overflow-y: auto;
+    min-height: 0;
     scroll-behavior: smooth;
     overscroll-behavior: contain;
     scrollbar-width: thin;
@@ -1596,6 +1595,7 @@
     gap: 0;
     scroll-behavior: smooth;
     min-width: 0;
+    min-height: 0;
     overscroll-behavior: contain;
   }
 
@@ -3635,7 +3635,7 @@
     <div class="modal-overlay" id="advancedModal">
     <div class="modal" style="text-align: center;">
       <div class="modal-title">Advanced Computing Required</div>
-      <div class="upgrade-modal-copy" style="margin-top: 12px; font-size: 14px; opacity: 0.85;">Advanced processing may require compute access. You stay in control ∩┐╜ any additional compute usage will be shown before execution.</div>
+      <div class="upgrade-modal-copy" style="margin-top: 12px; font-size: 14px; opacity: 0.85;">Advanced processing may require compute access. You stay in control — any additional compute usage will be shown before execution.</div>
       <div class="modal-actions" style="margin-top: 24px;">
         <button class="modal-btn" onclick="closeAdvancedModal()">Cancel</button>
         <button class="modal-btn primary" onclick="confirmAdvancedModal()">Proceed</button>
@@ -5035,7 +5035,7 @@
     if (settingsAccountNameEl) settingsAccountNameEl.textContent = currentProfileName || authName.textContent || 'Sign in to Lexorium';
     if (settingsAccountMetaEl) {
       const remaining = currentPlan?.unmetered ? 'Priority access enabled' : 'Daily legal access active';
-      settingsAccountMetaEl.textContent = `${currentPlan?.name || 'Free'} plan ∩┐╜ ${remaining}`;
+      settingsAccountMetaEl.textContent = `${currentPlan?.name || 'Free'} plan — ${remaining}`;
     }
     if (voicePlanLabelEl) voicePlanLabelEl.textContent = currentPlan?.name || 'Free';
     if (voicePlanCopyEl) {
@@ -7170,7 +7170,7 @@
       .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
       .replace(/\*(.+?)\*/g, '<em>$1</em>')
       .replace(/^---$/gm, '<hr>')
-      .replace(/^[-*∩┐╜] (.+)$/gm, '<li>$1</li>')
+      .replace(/^[-*—] (.+)$/gm, '<li>$1</li>')
       .replace(/^\d+\. (.+)$/gm, '<oli>$1</oli>');
     html = html.replace(/(<li>.*?<\/li>\n?)+/gs, m => `<ul>${m}</ul>`);
     html = html.replace(/(<oli>.*?<\/oli>\n?)+/gs, m => `<ol>${m.replace(/<oli>/g,'<li>').replace(/<\/oli>/g,'</li>')}</ol>`);
@@ -7608,7 +7608,7 @@
 
       const isStructuredBlock =
         /^#{1,3}\s/.test(block) ||
-        /^[-*∩┐╜]\s/m.test(block) ||
+        /^[-*—]\s/m.test(block) ||
         /^\d+\.\s/m.test(block) ||
         /^```/.test(block);
 
@@ -8403,12 +8403,12 @@
         const roleNode = msgDiv.querySelector('.msg-role');
         if (roleNode) roleNode.textContent = 'Lexorium';
         const limitMessage = currentPlan?.id === 'free'
-          ? 'You∩┐╜ve reached today∩┐╜s 20-query Free plan limit. Upgrade to continue using Lexorium.'
+          ? 'You\u2019ve reached today\u2019s 20-query Free plan limit. Upgrade to continue using Lexorium.'
           : 'Daily plan limit reached. Upgrade to continue using Lexorium.';
         await animateResponse(msgDiv, limitMessage);
         const limitUpgradePlan = 'pro';
         openUpgradeModal({
-          title: currentPlan?.id === 'free' ? 'You∩┐╜ve reached today∩┐╜s 20-query limit.' : 'Daily plan limit reached.',
+          title: currentPlan?.id === 'free' ? 'You\u2019ve reached today\u2019s 20-query limit.' : 'Daily plan limit reached.',
           message: currentPlan?.id === 'free' ? 'Upgrade to Lexorium Pro for increased daily limits and premium legal intelligence tools.' : 'Upgrade this account to Lexorium Pro or Enterprise.',
           reason: 'limit_reached',
           planId: limitUpgradePlan,
