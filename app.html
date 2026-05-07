@@ -1596,6 +1596,7 @@
     scroll-behavior: smooth;
     min-width: 0;
     min-height: 0;
+    height: 100%;
     overscroll-behavior: contain;
   }
 
@@ -2612,6 +2613,19 @@
     text-transform: uppercase;
     white-space: normal;
     overflow-wrap: anywhere;
+  }
+
+  .footer-disclaimer {
+    margin-top: 6px;
+    font-family: 'Jost', sans-serif;
+    font-size: 9px;
+    color: var(--silver);
+    opacity: 0.25;
+    letter-spacing: 0.06em;
+    text-align: center;
+    font-weight: 300;
+    line-height: 1.5;
+    padding: 0 4px;
   }
 
   .error-msg {
@@ -4013,6 +4027,7 @@
       <button class="settings-inline-btn primary" onclick="openUpgradeModal({reason:'limit_reached'})">Upgrade to Pro</button>
     </div>
     <div class="footer-hint">Enter send &nbsp;|&nbsp; Shift+Enter newline &nbsp;|&nbsp; legal-only workspace</div>
+    <div class="footer-disclaimer">Do not upload confidential or sensitive information. AI-generated responses may be inaccurate and do not constitute legal advice.</div>
   </footer>
 </div>
 
