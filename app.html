@@ -6,8 +6,12 @@
 <meta name="theme-color" content="#0A0A0A">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Lexorium">
-<link rel="manifest" href="manifest.webmanifest">
+  <meta name="apple-mobile-web-app-title" content="Lexorium">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdnjs.cloudflare.com https://unpkg.com https://cdn.jsdelivr.net https://js.puter.com https://sdk.cashfree.com https://fonts.googleapis.com 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob:; connect-src 'self' https://*.puter.com https://api.cashfree.com; font-src 'self' https://fonts.gstatic.com; frame-src 'none'; base-uri 'self'; form-action 'self';">
+  <meta http-equiv="X-Content-Type-Options" content="nosniff">
+  <meta name="referrer" content="no-referrer">
+  <meta name="format-detection" content="telephone=no">
+  <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="assets/lexorium-logo-square.png">
 <title>Lexorium</title>
 <style>
@@ -4038,6 +4042,55 @@
 <script src="https://js.puter.com/v2/"></script>
 <script src="https://sdk.cashfree.com/js/v3/cashfree.js" async defer></script>
 <script>
+  // Security hardening
+  (function() {
+    // Enforce HTTPS (except localhost)
+    if (location.protocol !== 'https:' && !/^localhost$|^127\./.test(location.hostname) && location.hostname !== '') {
+      location.replace('https://' + location.host + location.pathname + location.search);
+    }
+
+    // Prevent prototype pollution on Object
+    const origDefineProperty = Object.defineProperty;
+    Object.defineProperty = function(obj, prop, desc) {
+      if (prop === '__proto__' || prop === 'constructor' || prop === 'prototype') {
+        if (typeof desc === 'object' && desc !== null) {
+          throw new Error('Prototype pollution attempt blocked');
+        }
+      }
+      return origDefineProperty.call(Object, obj, prop, desc);
+    };
+
+    // Override dangerous methods on Element prototype
+    const dangerousAttrs = ['onerror', 'onload', 'onclick', 'onfocus', 'onmouseover', 'onmouseout'];
+    const origSetAttribute = Element.prototype.setAttribute;
+    Element.prototype.setAttribute = function(name, value) {
+      if (dangerousAttrs.includes(name.toLowerCase()) && typeof value === 'string' && (value.includes('(') || value.includes('javascript:'))) {
+        console.warn('[Security] Blocked dangerous attribute: ' + name);
+        return;
+      }
+      return origSetAttribute.call(this, name, value);
+    };
+
+    // CSP violation reporting
+    if (typeof ReportingObserver !== 'undefined') {
+      try {
+        const reporter = new ReportingObserver((reports) => {
+          reports.forEach((report) => {
+            if (report.type === 'csp-violation') {
+              console.warn('[CSP Violation] Blocked: ' + (report.body?.blockedURI || 'unknown'));
+            }
+          });
+        }, { types: ['csp-violation'] });
+        reporter.observe();
+      } catch (_e) { /* ignore */ }
+    }
+
+    // Console security notice
+    console.log('%c🔒 Lexorium Security Active', 'color: #4ade80; font-size: 14px; font-weight: bold;');
+    console.log('%cThis is a protected legal intelligence platform. All activity is monitored.', 'color: #C0C0C0; font-size: 11px;');
+  })();
+</script>
+<script>
   const messagesEl = document.getElementById('messages');
   const inputEl = document.getElementById('input');
   const sendBtn = document.getElementById('sendBtn');
@@ -7702,7 +7755,7 @@
 
   function removeThinking() { const t = document.getElementById('thinking'); if (t) t.remove(); }
   function scrollToBottom() { messagesEl.scrollTop = messagesEl.scrollHeight; }
-  function escapeHtml(str) { return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+  function escapeHtml(str) { return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#x27;').replace(/\//g,'&#x2F;'); }
   function buildAssistantBodyHtml(contentHtml) {
     return `
       <div class="assistant-brand-row">
@@ -8283,6 +8336,14 @@
 
   async function sendMessage() {
     const text = inputEl.value.trim();
+    if (text.length > 5000) {
+      showError('Input too long. Please limit your query to 5000 characters.');
+      return;
+    }
+    if (/<[a-z][\s\S]*>/i.test(text) && /javascript:|onerror=|onload=/i.test(text)) {
+      showError('Invalid input detected.');
+      return;
+    }
     if (composerLockedReason) {
       openUpgradeModal({
         title: 'Upgrade to continue using Lexorium',

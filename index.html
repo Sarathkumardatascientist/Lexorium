@@ -12,7 +12,10 @@
 <link rel="apple-touch-icon" href="assets/lexorium-logo-square.png">
 <title>Lexorium - Powering the Future of Law</title>
   <meta name="robots" content="noai, noimageai">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self' https://fonts.googleapis.com https://fonts.gstatic.com https://js.puter.com https://sdk.cashfree.com; script-src 'self' https://js.puter.com https://sdk.cashfree.com 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://js.puter.com https://sdk.cashfree.com https://fonts.googleapis.com 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob:; connect-src 'self' https://*.puter.com https://api.cashfree.com; font-src 'self' https://fonts.gstatic.com; frame-src 'none'; base-uri 'self'; form-action 'self';">
+  <meta http-equiv="X-Content-Type-Options" content="nosniff">
+  <meta name="referrer" content="no-referrer">
+  <meta name="format-detection" content="telephone=no">
   <style>
 @import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,200;0,9..144,300;0,9..144,400;1,9..144,200;1,9..144,300;1,9..144,400&family=Jost:wght@200;300;400;500;600&display=swap');
 
@@ -3504,6 +3507,32 @@ footer {
     setInterval(detectDevTools, 1000);
   </script>
   <script>
+  // Security hardening
+  (function() {
+    if (location.protocol !== 'https:' && !/^localhost$|^127\./.test(location.hostname) && location.hostname !== '') {
+      location.replace('https://' + location.host + location.pathname + location.search);
+    }
+    const origDefineProperty = Object.defineProperty;
+    Object.defineProperty = function(obj, prop, desc) {
+      if (prop === '__proto__' || prop === 'constructor' || prop === 'prototype') {
+        if (typeof desc === 'object' && desc !== null) {
+          throw new Error('Prototype pollution attempt blocked');
+        }
+      }
+      return origDefineProperty.call(Object, obj, prop, desc);
+    };
+    const dangerousAttrs = ['onerror', 'onload', 'onclick', 'onfocus', 'onmouseover', 'onmouseout'];
+    const origSetAttribute = Element.prototype.setAttribute;
+    Element.prototype.setAttribute = function(name, value) {
+      if (dangerousAttrs.includes(name.toLowerCase()) && typeof value === 'string' && (value.includes('(') || value.includes('javascript:'))) {
+        console.warn('[Security] Blocked dangerous attribute: ' + name);
+        return;
+      }
+      return origSetAttribute.call(this, name, value);
+    };
+    console.log('%c🔒 Lexorium Security Active', 'color: #4ade80; font-size: 14px; font-weight: bold;');
+  })();
+
   const APP_URL = 'app.html';
   const AUTH_CONFIG_URL = 'api/auth/config';
   const SESSION_URL = 'api/auth/session';
