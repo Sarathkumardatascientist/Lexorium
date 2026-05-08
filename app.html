@@ -3676,6 +3676,10 @@
               <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="2.1"/><path d="M8 1.8v1.7"/><path d="M8 12.5v1.7"/><path d="M1.8 8h1.7"/><path d="M12.5 8h1.7"/><path d="M3.3 3.3l1.2 1.2"/><path d="M11.5 11.5l1.2 1.2"/><path d="M12.7 3.3l-1.2 1.2"/><path d="M4.5 11.5l-1.2 1.2"/></svg>
               <span>General</span>
             </button>
+            <button class="settings-nav-btn" type="button" data-settings-nav="languages" onclick="setSettingsSection('languages')">
+              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="6"/><line x1="2" y1="8" x2="14" y2="8"/><path d="M8 2a9.3 9.3 0 010 12A9.3 9.3 0 018 2z"/></svg>
+              <span>Languages</span>
+            </button>
             <button class="settings-nav-btn" type="button" data-settings-nav="personalization" onclick="setSettingsSection('personalization')">
               <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2.2a5.8 5.8 0 105.8 5.8A5.8 5.8 0 008 2.2z"/><path d="M8 5.1v3.2l2.3 1.5"/></svg>
               <span>Personalization</span>
@@ -3734,6 +3738,38 @@
                 <div class="settings-row-desc">Turn on browser notifications so Lexorium can alert you when a response is ready while you are in another tab.</div>
               </div>
               <button class="settings-toggle" id="settingsAnswerNotifications" type="button" onclick="toggleAnswerNotificationsSetting()" aria-label="Toggle answer notifications"></button>
+            </div>
+          </div>
+
+          <div class="settings-section" data-settings-section="languages">
+            <div class="settings-group-title">App Language</div>
+            <div class="settings-row">
+              <div class="settings-row-copy">
+                <div class="settings-row-title">Interface & AI Response Language</div>
+                <div class="settings-row-desc">Choose the language for the Lexorium interface and AI responses. AI responses will be instructed to reply in the selected language.</div>
+              </div>
+            </div>
+            <div id="appLangSelector" style="display:flex;flex-direction:column;gap:8px;padding:12px 20px;">
+              <label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:9px 12px;border-radius:8px;background:rgba(255,255,255,0.04);transition:background 0.2s;">
+                <input type="radio" name="appLang" value="en" onchange="setAppLang('en')" style="accent-color:#a78bfa;width:16px;height:16px;">
+                <span style="font-size:14px;font-weight:500;">English</span>
+                <span style="font-size:12px;opacity:0.5;margin-left:4px;">English</span>
+              </label>
+              <label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:9px 12px;border-radius:8px;background:rgba(255,255,255,0.04);transition:background 0.2s;">
+                <input type="radio" name="appLang" value="ml" onchange="setAppLang('ml')" style="accent-color:#a78bfa;width:16px;height:16px;">
+                <span style="font-size:14px;font-weight:500;">മലയാളം</span>
+                <span style="font-size:12px;opacity:0.5;margin-left:4px;">Malayalam</span>
+              </label>
+              <label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:9px 12px;border-radius:8px;background:rgba(255,255,255,0.04);transition:background 0.2s;">
+                <input type="radio" name="appLang" value="hi" onchange="setAppLang('hi')" style="accent-color:#a78bfa;width:16px;height:16px;">
+                <span style="font-size:14px;font-weight:500;">हिन्दी</span>
+                <span style="font-size:12px;opacity:0.5;margin-left:4px;">Hindi</span>
+              </label>
+              <label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:9px 12px;border-radius:8px;background:rgba(255,255,255,0.04);transition:background 0.2s;">
+                <input type="radio" name="appLang" value="fr" onchange="setAppLang('fr')" style="accent-color:#a78bfa;width:16px;height:16px;">
+                <span style="font-size:14px;font-weight:500;">Français</span>
+                <span style="font-size:12px;opacity:0.5;margin-left:4px;">French</span>
+              </label>
             </div>
           </div>
 
@@ -3905,7 +3941,7 @@
       <div class="empty-sub" id="emptySub">Legal Intelligence | Always On</div>
       <div class="empty-habit" id="emptyHabit">Use Lexorium daily for legal clarity.</div>
       <div class="onboarding-card" id="onboardingCard">
-        <div class="onboarding-kicker" id="onboardingKicker">First Impression</div>
+        <div class="onboarding-kicker" id="onboardingKicker"></div>
         <div class="onboarding-title" id="onboardingTitle">What do you want to use Lexorium for?</div>
         <div class="onboarding-copy" id="onboardingCopy">Choose your legal workflow so Lexorium can tune starter prompts and follow-up guidance from the first answer.</div>
         <div class="persona-actions" id="personaActions">
@@ -4181,6 +4217,10 @@
       title: 'General',
       subtitle: 'Set the default answer style, speed, and spoken language for this Lexorium workspace.',
     },
+    languages: {
+      title: 'Languages',
+      subtitle: 'Choose the language for the Lexorium interface and AI responses.',
+    },
     personalization: {
       title: 'Personalization',
       subtitle: 'Shape the tone and formatting of Lexorium responses without changing the legal structure or accuracy guardrails.',
@@ -4194,6 +4234,291 @@
       subtitle: 'Review the current account, plan access, and quick actions for sign-in and upgrades.',
     },
   };
+  const LANGUAGES = {
+    en: { label: 'English', nativeLabel: 'English' },
+    ml: { label: 'Malayalam', nativeLabel: 'മലയാളം' },
+    hi: { label: 'Hindi', nativeLabel: 'हिन्दी' },
+    fr: { label: 'French', nativeLabel: 'Français' },
+  };
+  const LANG_KEYS = Object.keys(LANGUAGES);
+  const TRANSLATIONS = {
+    en: {
+      'lang.label': 'Language',
+      'lang.switchTo': 'Switch language',
+      'lang.current': 'Current language',
+      'lang.systemPrompt': 'You must respond in English.',
+    },
+    ml: {
+      'lang.label': 'ഭാഷ',
+      'lang.switchTo': 'ഭാഷ മാറ്റുക',
+      'lang.current': 'നിലവിലെ ഭാഷ',
+      'lang.systemPrompt': 'നിങ്ങൾ മലയാളത്തിൽ മറുപടി നൽകണം. മലയാളത്തിൽ മാത്രം ഉത്തരം നൽകുക, ഇംഗ്ലീഷിലോ മറ്റ് ഭാഷകളിലോ ഉത്തരം നൽകരുത്.',
+      'settings.nav.general': 'പൊതുവായ',
+      'settings.nav.languages': 'ഭാഷകൾ',
+      'settings.nav.personalization': 'വ്യക്തിവൽക്കരണം',
+      'settings.nav.voice': 'ശബ്ദം',
+      'settings.nav.account': 'അക്കൗണ്ട്',
+      'settings.general.title': 'പൊതുവായ',
+      'settings.general.subtitle': 'ഈ Lexorium വർക്ക്സ്പേസിനായി സ്ഥിര ഉത്തര ശൈലി, വേഗത, സംസാര ഭാഷ എന്നിവ സജ്ജമാക്കുക.',
+      'settings.languages.title': 'ഭാഷകൾ',
+      'settings.languages.subtitle': 'Lexorium ഇന്റർഫേസിനും AI പ്രതികരണങ്ങൾക്കുമായി ഭാഷ തിരഞ്ഞെടുക്കുക.',
+      'settings.personalization.title': 'വ്യക്തിവൽക്കരണം',
+      'settings.personalization.subtitle': 'Lexorium പ്രതികരണങ്ങളുടെ സ്വരവും ഫോർമാറ്റിംഗും രൂപപ്പെടുത്തുക.',
+      'settings.voice.title': 'ശബ്ദം',
+      'settings.voice.subtitle': 'പിന്തുണയ്ക്കുന്ന പ്ലാനുകൾക്കും ബ്രൗസറുകൾക്കുമായി ശബ്ദ വിശകലനവും വായനയും നിയന്ത്രിക്കുക.',
+      'settings.account.title': 'അക്കൗണ്ട്',
+      'settings.account.subtitle': 'നിലവിലെ അക്കൗണ്ട്, പ്ലാൻ ആക്സസ്, സൈൻ-ഇൻ, അപ്ഗ്രേഡുകൾ എന്നിവ അവലോകനം ചെയ്യുക.',
+      'sidebar.newChat': 'പുതിയ ചാറ്റ്',
+      'sidebar.searchChats': 'ചാറ്റുകൾ തിരയുക',
+      'sidebar.yourChats': 'നിങ്ങളുടെ ചാറ്റുകൾ',
+      'header.brand': 'Lexorium',
+      'empty.title': 'എനിക്ക് ഇന്ന് എങ്ങനെ സഹായിക്കാനാകും?',
+      'empty.subtitle': 'ലീഗൽ ഇന്റലിജൻസ് | എപ്പോഴും ഓൺ',
+      'empty.habit': 'നിയമ വ്യക്തതയ്ക്കായി Lexorium ദൈനംദിനം ഉപയോഗിക്കുക.',
+      'onboarding.title': 'Lexorium എന്തിനുവേണ്ടി ഉപയോഗിക്കാൻ ആഗ്രഹിക്കുന്നു?',
+      'onboarding.copy': 'നിങ്ങളുടെ നിയമ വർക്ക്ഫ്ലോ തിരഞ്ഞെടുക്കുക, അതുവഴി Lexorium ആദ്യ ഉത്തരം മുതൽ പ്രോംപ്റ്റുകളും മാർഗ്ഗനിർദ്ദേശവും ക്രമീകരിക്കും.',
+      'onboarding.lawStudent': 'നിയമ വിദ്യാർത്ഥി',
+      'onboarding.advocate': 'അഭിഭാഷകൻ',
+      'onboarding.businessUser': 'ബിസിനസ് ഉപയോക്താവ്',
+      'starter.heading': 'ഈ നിയമ പ്രോംപ്റ്റുകളിൽ ഒന്നിൽ നിന്ന് ആരംഭിക്കുക',
+      'composer.placeholder': 'ഒരു നിയമ അല്ലെങ്കിൽ കംപ്ലയൻസ് ചോദ്യം ചോദിക്കുക...',
+      'composer.footer': 'Enter അയയ്ക്കുക | Shift+Enter പുതിയ വരി | നിയമ-മാത്രം വർക്ക്സ്പേസ്',
+      'message.you': 'നിങ്ങൾ',
+      'message.lexorium': 'Lexorium',
+      'message.processing': 'പ്രോസസ്സ് ചെയ്യുന്നു',
+      'message.analysing': 'അറ്റാച്ച്മെന്റുകൾ വിശകലനം ചെയ്യുന്നു',
+    },
+    hi: {
+      'lang.label': 'भाषा',
+      'lang.switchTo': 'भाषा बदलें',
+      'lang.current': 'वर्तमान भाषा',
+      'lang.systemPrompt': 'आपको हिंदी में उत्तर देना है। केवल हिंदी में उत्तर दें, अंग्रेज़ी या अन्य भाषाओं में नहीं।',
+      'settings.nav.general': 'सामान्य',
+      'settings.nav.languages': 'भाषाएँ',
+      'settings.nav.personalization': 'वैयक्तिकरण',
+      'settings.nav.voice': 'आवाज़',
+      'settings.nav.account': 'खाता',
+      'settings.general.title': 'सामान्य',
+      'settings.general.subtitle': 'इस Lexorium वर्कस्पेस के लिए डिफ़ॉल्ट उत्तर शैली, गति और बोली जाने वाली भाषा सेट करें।',
+      'settings.languages.title': 'भाषाएँ',
+      'settings.languages.subtitle': 'Lexorium इंटरफ़ेस और AI प्रतिक्रियाओं के लिए भाषा चुनें।',
+      'settings.personalization.title': 'वैयक्तिकरण',
+      'settings.personalization.subtitle': 'कानूनी संरचना बनाए रखते हुए Lexorium प्रतिक्रियाओं के स्वर और फ़ॉर्मेटिंग को आकार दें।',
+      'settings.voice.title': 'आवाज़',
+      'settings.voice.subtitle': 'समर्थित योजनाओं और ब्राउज़रों के लिए आवाज़ विश्लेषण और पठन व्यवहार प्रबंधित करें।',
+      'settings.account.title': 'खाता',
+      'settings.account.subtitle': 'वर्तमान खाता, योजना पहुँच, और साइन-इन और अपग्रेड के लिए त्वरित कार्रवाइयाँ देखें।',
+      'sidebar.newChat': 'नया चैट',
+      'sidebar.searchChats': 'चैट खोजें',
+      'sidebar.yourChats': 'आपके चैट',
+      'header.brand': 'Lexorium',
+      'empty.title': 'आज मैं आपकी कैसे सहायता कर सकता हूँ?',
+      'empty.subtitle': 'कानूनी बुद्धिमत्ता | हमेशा चालू',
+      'empty.habit': 'कानूनी स्पष्टता के लिए प्रतिदिन Lexorium का उपयोग करें।',
+      'onboarding.title': 'आप Lexorium का उपयोग किसके लिए करना चाहते हैं?',
+      'onboarding.copy': 'अपना कानूनी वर्कफ़्लो चुनें ताकि Lexorium पहले उत्तर से ही प्रॉम्प्ट और मार्गदर्शन को ट्यून कर सके।',
+      'onboarding.lawStudent': 'विधि छात्र',
+      'onboarding.advocate': 'अधिवक्ता',
+      'onboarding.businessUser': 'व्यावसायिक उपयोगकर्ता',
+      'starter.heading': 'इन कानूनी प्रॉम्प्ट में से किसी एक से शुरू करें',
+      'composer.placeholder': 'कोई कानूनी या अनुपालन प्रश्न पूछें...',
+      'composer.footer': 'Enter भेजें | Shift+Enter नई पंक्ति | केवल कानूनी कार्यक्षेत्र',
+      'message.you': 'आप',
+      'message.lexorium': 'Lexorium',
+      'message.processing': 'प्रोसेसिंग',
+      'message.analysing': 'अटैचमेंट का विश्लेषण',
+    },
+    fr: {
+      'lang.label': 'Langue',
+      'lang.switchTo': 'Changer la langue',
+      'lang.current': 'Langue actuelle',
+      'lang.systemPrompt': 'Vous devez répondre en français. Répondez uniquement en français, pas en anglais ni dans d\'autres langues.',
+      'settings.nav.general': 'Général',
+      'settings.nav.languages': 'Langues',
+      'settings.nav.personalization': 'Personnalisation',
+      'settings.nav.voice': 'Voix',
+      'settings.nav.account': 'Compte',
+      'settings.general.title': 'Général',
+      'settings.general.subtitle': 'Définissez le style, la vitesse et la langue parlée par défaut pour cet espace de travail Lexorium.',
+      'settings.languages.title': 'Langues',
+      'settings.languages.subtitle': 'Choisissez la langue pour l\'interface Lexorium et les réponses AI.',
+      'settings.personalization.title': 'Personnalisation',
+      'settings.personalization.subtitle': 'Façonnez le ton et le formatage des réponses Lexorium sans modifier la structure juridique.',
+      'settings.voice.title': 'Voix',
+      'settings.voice.subtitle': 'Gérez l\'analyse vocale et la lecture pour les forfaits et navigateurs pris en charge.',
+      'settings.account.title': 'Compte',
+      'settings.account.subtitle': 'Consultez le compte actuel, l\'accès au forfait et les actions rapides de connexion et de mise à niveau.',
+      'sidebar.newChat': 'Nouveau chat',
+      'sidebar.searchChats': 'Rechercher des conversations',
+      'sidebar.yourChats': 'Vos conversations',
+      'sidebar.accountMenu.upgrade': 'Mettre à niveau',
+      'sidebar.accountMenu.personalization': 'Personnalisation',
+      'sidebar.accountMenu.profile': 'Profil',
+      'sidebar.accountMenu.settings': 'Paramètres',
+      'sidebar.accountMenu.help': 'Aide',
+      'sidebar.accountMenu.logOut': 'Déconnexion',
+      'settings.baseTone.title': 'Style et ton de base',
+      'settings.baseTone.desc': 'Définissez le ressenti par défaut des réponses Lexorium tout en les gardant juridiquement précises et structurées.',
+      'settings.baseTone.options.default': 'Par défaut',
+      'settings.baseTone.options.professional': 'Professionnel',
+      'settings.baseTone.options.concise': 'Concis',
+      'settings.baseTone.options.supportive': 'Bienveillant',
+      'settings.spokenLanguage.title': 'Langue parlée',
+      'settings.spokenLanguage.desc': 'Utilisée pour l\'entrée vocale et la lecture des réponses lorsque votre navigateur prend en charge ces fonctionnalités.',
+      'settings.spokenLanguage.options.auto': 'Détection auto',
+      'settings.spokenLanguage.options.en-IN': 'Anglais (Inde)',
+      'settings.spokenLanguage.options.en-US': 'Anglais (États-Unis)',
+      'settings.spokenLanguage.options.en-GB': 'Anglais (Royaume-Uni)',
+      'settings.answerSpeed.title': 'Vitesse de réponse',
+      'settings.answerSpeed.desc': 'Les réponses instantanées réduisent le temps d\'animation. Désactivez si vous préférez un dévoilement plus lent.',
+      'settings.answerNotifications.title': 'Notifications de réponse',
+      'settings.answerNotifications.desc': 'Activez les notifications pour être alerté lorsqu\'une réponse est prête dans un autre onglet.',
+      'settings.warmth.title': 'Chaleur',
+      'settings.warmth.desc': 'Choisissez à quel point Lexorium doit sembler chaleureux tout en restant professionnel.',
+      'settings.warmth.options.default': 'Par défaut',
+      'settings.warmth.options.subtle': 'Léger',
+      'settings.warmth.options.balanced': 'Équilibré',
+      'settings.warmth.options.high': 'Élevé',
+      'settings.enthusiasm.title': 'Enthousiasme',
+      'settings.enthusiasm.desc': 'Contrôlez l\'énergie du phrasé dans les questions-réponses juridiques quotidiennes.',
+      'settings.enthusiasm.options.default': 'Par défaut',
+      'settings.enthusiasm.options.low': 'Faible',
+      'settings.enthusiasm.options.balanced': 'Équilibré',
+      'settings.enthusiasm.options.high': 'Élevé',
+      'settings.headersLists.title': 'En-têtes et listes',
+      'settings.headersLists.desc': 'Ajustez le formatage tout en conservant la structure juridique obligatoire.',
+      'settings.headersLists.options.default': 'Par défaut',
+      'settings.headersLists.options.minimal': 'Minimal',
+      'settings.headersLists.options.balanced': 'Équilibré',
+      'settings.headersLists.options.detailed': 'Détaillé',
+      'settings.voicePreference.title': 'Préférence vocale',
+      'settings.voicePreference.desc': 'Choisissez comment Lexorium sélectionne une voix de lecture.',
+      'settings.voicePreference.options.google': 'Google préféré',
+      'settings.voicePreference.options.system': 'Système par défaut',
+      'settings.answerPlayback.title': 'Lecture des réponses',
+      'settings.answerPlayback.desc': 'Utilisez le bouton lecture sur les réponses pour entendre le texte sans le flowchart.',
+      'settings.voiceAnalysis.title': 'Analyse vocale',
+      'settings.voiceAnalysis.desc': 'Les comptes Pro et Enterprise peuvent poser des questions juridiques par voix.',
+      'settings.account.signIn': 'Connectez-vous à Lexorium',
+      'settings.account.freePlan': 'Forfait gratuit',
+      'settings.account.upgrade': 'Mettre à niveau',
+      'settings.account.renameChat': 'Renommer la conversation',
+      'settings.account.clearHistory': 'Effacer l\'historique',
+      'settings.account.hideSidebar': 'Masquer le panneau',
+      'settings.account.voiceSettings': 'Paramètres vocaux',
+      'settings.account.logOut': 'Déconnexion',
+      'header.brand': 'Lexorium',
+      'header.tagline': 'L\'avenir du droit',
+      'empty.title': 'Comment puis-je vous aider aujourd\'hui ?',
+      'empty.subtitle': 'Intelligence Juridique | Toujours Active',
+      'empty.habit': 'Utilisez Lexorium quotidiennement pour des éclaircissements juridiques.',
+      'onboarding.title': 'Pourquoi voulez-vous utiliser Lexorium ?',
+      'onboarding.copy': 'Choisissez votre flux de travail juridique pour que Lexorium adapte les suggestions dès la première réponse.',
+      'onboarding.lawStudent': 'Étudiant en droit',
+      'onboarding.advocate': 'Avocat',
+      'onboarding.businessUser': 'Utilisateur professionnel',
+      'starter.heading': 'Commencez par l\'un de ces prompts juridiques',
+      'composer.placeholder': 'Posez une question juridique ou de conformité...',
+      'composer.footer': 'Enter envoyer | Shift+Enter nouvelle ligne | espace juridique uniquement',
+      'composer.footer.disclaimer': 'Ne téléchargez pas d\'informations confidentielles. Les réponses générées par l\'IA peuvent être inexactes et ne constituent pas un avis juridique.',
+      'composer.attach.draft': 'Rédaction',
+      'composer.attach.contract': 'Rédaction de contrat',
+      'composer.attach.summarise': 'Résumer un document',
+      'composer.attach.analyse': 'Analyser',
+      'composer.attach.analyseDoc': 'Analyser un document',
+      'composer.attach.risk': 'Évaluation des risques',
+      'composer.attach.voice': 'Analyse vocale',
+      'composer.attach.research': 'Recherche',
+      'composer.attach.researchTopic': 'Rechercher un sujet',
+      'composer.attach.attach': 'Joindre',
+      'composer.attach.photo': 'Photo',
+      'composer.attach.camera': 'Appareil photo',
+      'composer.attach.file': 'Fichier / PDF',
+      'message.you': 'Vous',
+      'message.lexorium': 'Lexorium',
+      'message.legalIntelligence': 'Intelligence Juridique',
+      'message.processing': 'Traitement',
+      'message.analysing': 'Analyse des pièces jointes',
+      'message.thinking.copy': 'Lexorium prépare votre réponse.',
+      'message.thinking.analysingCopy': 'Lexorium examine les documents téléchargés et prépare une réponse juridique précise.',
+      'message.copy': 'Copier la réponse',
+      'message.share': 'Partager la réponse',
+      'message.pdf': 'Télécharger PDF',
+      'message.docx': 'Télécharger DOCX',
+      'message.readAloud': 'Lire à voix haute',
+      'message.stopReadAloud': 'Arrêter la lecture',
+      'message.structuredFlow': 'Flux structuré',
+      'message.imageAnalysis': 'Analyse d\'image',
+      'message.fileAnalysis': 'Analyse de fichier',
+      'message.imageAttached': 'Image jointe',
+      'message.pdfAttached': 'PDF joint',
+      'message.docAttached': 'Document joint',
+      'message.fileAttached': 'Fichier joint',
+      'modal.rename.title': 'Renommer la conversation',
+      'modal.rename.placeholder': 'Entrez un nom...',
+      'modal.rename.cancel': 'Annuler',
+      'modal.rename.save': 'Enregistrer',
+      'modal.upgrade.title': 'Passer à Lexorium',
+      'modal.upgrade.copy': 'Mettez à niveau ce compte vers Lexorium Pro.',
+      'modal.upgrade.name': 'Nom complet',
+      'modal.upgrade.phone': 'Numéro de mobile',
+      'modal.upgrade.notNow': 'Pas maintenant',
+      'modal.upgrade.upgrade': 'Mettre à niveau',
+      'modal.advanced.title': 'Calcul avancé requis',
+      'modal.advanced.body': 'Un traitement avancé peut nécessiter un accès de calcul. Vous restez maître — toute utilisation supplémentaire vous sera montrée avant exécution.',
+      'modal.advanced.cancel': 'Annuler',
+      'modal.advanced.proceed': 'Continuer',
+      'modal.deleteChat.title': 'Supprimer cette conversation ? Cette action est irréversible.',
+      'modal.clearHistory.title': 'Effacer tout l\'historique ? Cette action est irréversible.',
+      'modal.newChat.title': 'Nouvelle conversation ? La conversation actuelle sera effacée.',
+      'toast.settingsSaved': 'Paramètres enregistrés',
+      'toast.copied': 'Copié',
+      'toast.shared': 'Partagé',
+      'toast.downloaded': 'Téléchargé',
+      'toast.chatCleared': 'Historique effacé',
+      'toast.conversationDeleted': 'Conversation supprimée',
+      'toast.newChat': 'Nouvelle conversation démarrée',
+    },
+  };
+  function t(key) {
+    const lang = typeof personalizationState?.appLang === 'string' && LANG_KEYS.includes(personalizationState.appLang) ? personalizationState.appLang : 'en';
+    return TRANSLATIONS[lang]?.[key] ?? TRANSLATIONS.en[key] ?? key;
+  }
+  function applyLanguage() {
+    const lang = typeof personalizationState?.appLang === 'string' && LANG_KEYS.includes(personalizationState.appLang) ? personalizationState.appLang : 'en';
+    document.documentElement.lang = lang;
+    const navBtns = document.querySelectorAll('.settings-nav-btn span');
+    navBtns.forEach(btn => {
+      const key = btn.textContent.trim();
+      const map = { 'General': 'settings.nav.general', 'Languages': 'settings.nav.languages', 'Personalization': 'settings.nav.personalization', 'Voice': 'settings.nav.voice', 'Account': 'settings.nav.account' };
+      if (map[key]) btn.textContent = t(map[key]);
+    });
+    const sidebarNewChat = document.querySelector('.sidebar-primary-btn');
+    if (sidebarNewChat) {
+      sidebarNewChat.textContent = t('sidebar.newChat');
+    }
+    const historySearch = document.getElementById('historySearch');
+    if (historySearch) historySearch.placeholder = t('sidebar.searchChats');
+    const historyLabel = document.querySelector('.history-sidebar-label');
+    if (historyLabel) historyLabel.textContent = t('sidebar.yourChats');
+    const headerBrand = document.querySelector('.header-brand-wordmark');
+    if (headerBrand) headerBrand.textContent = t('header.brand');
+    const headerTagline = document.querySelector('.header-tagline');
+    if (headerTagline) headerTagline.textContent = 'Powering the Future of Law';
+    const emptyTitle = document.getElementById('emptyTitle');
+    if (emptyTitle) emptyTitle.textContent = t('empty.title');
+    const emptySub = document.getElementById('emptySub');
+    if (emptySub) emptySub.textContent = t('empty.subtitle');
+    const emptyHabit = document.getElementById('emptyHabit');
+    if (emptyHabit) emptyHabit.textContent = t('empty.habit');
+    const onboardingTitle = document.getElementById('onboardingTitle');
+    if (onboardingTitle) onboardingTitle.textContent = t('onboarding.title');
+    const onboardingCopy = document.getElementById('onboardingCopy');
+    if (onboardingCopy) onboardingCopy.textContent = t('onboarding.copy');
+    const starterHeading = document.getElementById('starterHeading');
+    if (starterHeading) starterHeading.textContent = t('starter.heading');
+    renderSettingsPanel(activeSettingsSection);
+  }
   const PERSONALIZATION_DEFAULTS = Object.freeze({
     baseTone: 'default',
     warmth: 'default',
@@ -4204,6 +4529,7 @@
     instantAnswers: true,
     answerNotifications: false,
     customInstructions: '',
+    appLang: 'en',
   });
 
   const MODES = {
@@ -4917,6 +5243,7 @@
     currentUsage = session?.usage || currentUsage || null;
     retentionState = session?.retention || profile?.retention || retentionState;
     loadPersonalizationState();
+    applyLanguage();
     loadSidebarPreference();
     const remainingFallback = currentPlan?.dailyLimit ?? 1;
     if (Number(currentUsage?.remaining ?? remainingFallback) <= 0) lockComposer('limit_reached');
@@ -5032,6 +5359,7 @@
       instantAnswers: typeof source.instantAnswers === 'boolean' ? source.instantAnswers : PERSONALIZATION_DEFAULTS.instantAnswers,
       answerNotifications: typeof source.answerNotifications === 'boolean' ? source.answerNotifications : PERSONALIZATION_DEFAULTS.answerNotifications,
       customInstructions: String(source.customInstructions || '').trim().slice(0, 320),
+      appLang: LANG_KEYS.includes(source.appLang) ? source.appLang : 'en',
     };
   }
 
@@ -5042,7 +5370,7 @@
     } catch (_error) {
       personalizationState = { ...PERSONALIZATION_DEFAULTS };
     }
-    renderSettingsPanel(activeSettingsSection);
+    applyLanguage();
     return personalizationState;
   }
 
@@ -5099,7 +5427,10 @@
         ? (notificationToggleOn ? 'Answer notifications enabled' : 'Enable answer notifications')
         : 'Answer notifications are not supported in this browser';
     }
-
+    const langRadios = document.querySelectorAll('input[name="appLang"]');
+    if (langRadios.length) {
+      langRadios.forEach(r => r.checked = r.value === state.appLang);
+    }
     if (settingsAccountNameEl) settingsAccountNameEl.textContent = currentProfileName || authName.textContent || 'Sign in to Lexorium';
     if (settingsAccountMetaEl) {
       const remaining = currentPlan?.unmetered ? 'Priority access enabled' : 'Daily legal access active';
@@ -5141,6 +5472,15 @@
 
   function toggleInstantAnswersSetting() {
     updatePersonalizationField('instantAnswers', !getPersonalizationState().instantAnswers);
+  }
+
+  function setAppLang(lang) {
+    if (!LANG_KEYS.includes(lang)) return;
+    const state = getPersonalizationState();
+    if (state.appLang === lang) return;
+    updatePersonalizationField('appLang', lang);
+    applyLanguage();
+    showToast(t('toast.settingsSaved') || 'Language changed');
   }
 
   function getPersonalizationPromptLines() {
@@ -5527,7 +5867,7 @@
 
     onboardingCardEl.style.display = complete ? 'none' : 'block';
     onboardingCardEl.classList.toggle('completed', complete);
-    onboardingKickerEl.textContent = complete ? 'Workspace Profile' : 'First Impression';
+    onboardingKickerEl.textContent = complete ? 'Workspace Profile' : '';
     onboardingTitleEl.textContent = complete
       ? `${personaLabel} workflow active`
       : (retention.onboardingQuestion || 'What do you want to use Lexorium for?');
@@ -7884,6 +8224,7 @@
       modeSpecificPrompt,
       'In ## Disclaimer, state that Lexorium provides legal information and not legal advice, and note when primary-source verification or local counsel is needed.',
       ...personalizationLines,
+      (function() { try { const l = (typeof personalizationState?.appLang === 'string' && LANG_KEYS.includes(personalizationState.appLang)) ? personalizationState.appLang : 'en'; return TRANSLATIONS[l]?.['lang.systemPrompt'] || TRANSLATIONS.en['lang.systemPrompt'] || ''; } catch(e) { return ''; } })(),
     ].filter(Boolean).join(' ');
     return [{ role: 'system', content: systemPrompt }, ...buildApiMessages(historyMsgs, attachments)];
   }
