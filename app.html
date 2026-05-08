@@ -4257,11 +4257,11 @@
       'lang.switchTo': 'ഭാഷ മാറ്റുക',
       'lang.current': 'നിലവിലെ ഭാഷ',
       'lang.systemPrompt': 'നിങ്ങൾ മലയാളത്തിൽ മറുപടി നൽകണം. എല്ലാ സെക്ഷൻ തലക്കെട്ടുകളും (## Issue, ## Applicable Law, ## Analysis, ## Conclusion, ## Practical Note, ## Disclaimer) ഇംഗ്ലീഷിൽ തന്നെ നിലനിർത്തുക. മലയാളത്തിൽ മാത്രം ഉത്തരം നൽകുക, ഇംഗ്ലീഷിലോ മറ്റ് ഭാഷകളിലോ ഉത്തരം നൽകരുത്.',
-      'settings.nav.general': 'പൊതുവായ',
-      'settings.nav.languages': 'ഭാഷകൾ',
-      'settings.nav.personalization': 'വ്യക്തിവൽക്കരണം',
-      'settings.nav.voice': 'ശബ്ദം',
-      'settings.nav.account': 'അക്കൗണ്ട്',
+      'general': 'പൊതുവായ',
+      'languages': 'ഭാഷകൾ',
+      'personalization': 'വ്യക്തിവൽക്കരണം',
+      'voice': 'ശബ്ദം',
+      'account': 'അക്കൗണ്ട്',
       'settings.general.title': 'പൊതുവായ',
       'settings.general.subtitle': 'ഈ Lexorium വർക്ക്സ്പേസിനായി സ്ഥിര ഉത്തര ശൈലി, വേഗത, സംസാര ഭാഷ എന്നിവ സജ്ജമാക്കുക.',
       'settings.languages.title': 'ഭാഷകൾ',
@@ -4298,11 +4298,11 @@
       'lang.switchTo': 'भाषा बदलें',
       'lang.current': 'वर्तमान भाषा',
       'lang.systemPrompt': 'आपको हिंदी में उत्तर देना है। सभी सेक्शन हेडिंग्स (## Issue, ## Applicable Law, ## Analysis, ## Conclusion, ## Practical Note, ## Disclaimer) अंग्रेज़ी में ही रखें। केवल हिंदी में उत्तर दें, अंग्रेज़ी या अन्य भाषाओं में नहीं।',
-      'settings.nav.general': 'सामान्य',
-      'settings.nav.languages': 'भाषाएँ',
-      'settings.nav.personalization': 'वैयक्तिकरण',
-      'settings.nav.voice': 'आवाज़',
-      'settings.nav.account': 'खाता',
+      'general': 'सामान्य',
+      'languages': 'भाषाएँ',
+      'personalization': 'वैयक्तिकरण',
+      'voice': 'आवाज़',
+      'account': 'खाता',
       'settings.general.title': 'सामान्य',
       'settings.general.subtitle': 'इस Lexorium वर्कस्पेस के लिए डिफ़ॉल्ट उत्तर शैली, गति और बोली जाने वाली भाषा सेट करें।',
       'settings.languages.title': 'भाषाएँ',
@@ -4339,11 +4339,11 @@
       'lang.switchTo': 'Changer la langue',
       'lang.current': 'Langue actuelle',
       'lang.systemPrompt': 'Vous devez répondre en français. Conservez tous les titres de sections (## Issue, ## Applicable Law, ## Analysis, ## Conclusion, ## Practical Note, ## Disclaimer) en anglais. Répondez uniquement en français, pas en anglais ni dans d\'autres langues.',
-      'settings.nav.general': 'Général',
-      'settings.nav.languages': 'Langues',
-      'settings.nav.personalization': 'Personnalisation',
-      'settings.nav.voice': 'Voix',
-      'settings.nav.account': 'Compte',
+      'general': 'Général',
+      'languages': 'Langues',
+      'personalization': 'Personnalisation',
+      'voice': 'Voix',
+      'account': 'Compte',
       'settings.general.title': 'Général',
       'settings.general.subtitle': 'Définissez le style, la vitesse et la langue parlée par défaut pour cet espace de travail Lexorium.',
       'settings.languages.title': 'Langues',
@@ -4496,7 +4496,7 @@
     const navBtns = document.querySelectorAll('.settings-nav-btn span');
     navBtns.forEach(btn => {
       const key = btn.textContent.trim();
-      const map = { 'General': 'settings.nav.general', 'Languages': 'settings.nav.languages', 'Personalization': 'settings.nav.personalization', 'Voice': 'settings.nav.voice', 'Account': 'settings.nav.account' };
+      const map = { 'General': 'general', 'Languages': 'languages', 'Personalization': 'personalization', 'Voice': 'voice', 'Account': 'account' };
       if (map[key]) btn.textContent = t(map[key]);
     });
     const sidebarNewChat = document.querySelector('.sidebar-primary-btn');
