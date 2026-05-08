@@ -4249,13 +4249,14 @@
       'lang.label': 'Language',
       'lang.switchTo': 'Switch language',
       'lang.current': 'Current language',
-      'lang.systemPrompt': 'You must respond in English.',
+      'lang.systemPrompt': 'You must respond in English. Keep all section headings (## Issue, ## Applicable Law, ## Analysis, ## Conclusion, ## Practical Note, ## Disclaimer) in English.',
+      'message.structuredFlow': 'Structured Flow',
     },
     ml: {
       'lang.label': 'ഭാഷ',
       'lang.switchTo': 'ഭാഷ മാറ്റുക',
       'lang.current': 'നിലവിലെ ഭാഷ',
-      'lang.systemPrompt': 'നിങ്ങൾ മലയാളത്തിൽ മറുപടി നൽകണം. മലയാളത്തിൽ മാത്രം ഉത്തരം നൽകുക, ഇംഗ്ലീഷിലോ മറ്റ് ഭാഷകളിലോ ഉത്തരം നൽകരുത്.',
+      'lang.systemPrompt': 'നിങ്ങൾ മലയാളത്തിൽ മറുപടി നൽകണം. എല്ലാ സെക്ഷൻ തലക്കെട്ടുകളും (## Issue, ## Applicable Law, ## Analysis, ## Conclusion, ## Practical Note, ## Disclaimer) ഇംഗ്ലീഷിൽ തന്നെ നിലനിർത്തുക. മലയാളത്തിൽ മാത്രം ഉത്തരം നൽകുക, ഇംഗ്ലീഷിലോ മറ്റ് ഭാഷകളിലോ ഉത്തരം നൽകരുത്.',
       'settings.nav.general': 'പൊതുവായ',
       'settings.nav.languages': 'ഭാഷകൾ',
       'settings.nav.personalization': 'വ്യക്തിവൽക്കരണം',
@@ -4290,12 +4291,13 @@
       'message.lexorium': 'Lexorium',
       'message.processing': 'പ്രോസസ്സ് ചെയ്യുന്നു',
       'message.analysing': 'അറ്റാച്ച്മെന്റുകൾ വിശകലനം ചെയ്യുന്നു',
+      'message.structuredFlow': 'ഘടനാപരമായ ഫ്ലോ',
     },
     hi: {
       'lang.label': 'भाषा',
       'lang.switchTo': 'भाषा बदलें',
       'lang.current': 'वर्तमान भाषा',
-      'lang.systemPrompt': 'आपको हिंदी में उत्तर देना है। केवल हिंदी में उत्तर दें, अंग्रेज़ी या अन्य भाषाओं में नहीं।',
+      'lang.systemPrompt': 'आपको हिंदी में उत्तर देना है। सभी सेक्शन हेडिंग्स (## Issue, ## Applicable Law, ## Analysis, ## Conclusion, ## Practical Note, ## Disclaimer) अंग्रेज़ी में ही रखें। केवल हिंदी में उत्तर दें, अंग्रेज़ी या अन्य भाषाओं में नहीं।',
       'settings.nav.general': 'सामान्य',
       'settings.nav.languages': 'भाषाएँ',
       'settings.nav.personalization': 'वैयक्तिकरण',
@@ -4330,12 +4332,13 @@
       'message.lexorium': 'Lexorium',
       'message.processing': 'प्रोसेसिंग',
       'message.analysing': 'अटैचमेंट का विश्लेषण',
+      'message.structuredFlow': 'संरचित प्रवाह',
     },
     fr: {
       'lang.label': 'Langue',
       'lang.switchTo': 'Changer la langue',
       'lang.current': 'Langue actuelle',
-      'lang.systemPrompt': 'Vous devez répondre en français. Répondez uniquement en français, pas en anglais ni dans d\'autres langues.',
+      'lang.systemPrompt': 'Vous devez répondre en français. Conservez tous les titres de sections (## Issue, ## Applicable Law, ## Analysis, ## Conclusion, ## Practical Note, ## Disclaimer) en anglais. Répondez uniquement en français, pas en anglais ni dans d\'autres langues.',
       'settings.nav.general': 'Général',
       'settings.nav.languages': 'Langues',
       'settings.nav.personalization': 'Personnalisation',
@@ -7818,7 +7821,7 @@
     wrap.className = 'flowchart-wrap';
     const title = document.createElement('div');
     title.className = 'flowchart-title';
-    title.textContent = 'Structured Flow';
+    title.textContent = t('message.structuredFlow') || 'Structured Flow';
     const canvas = document.createElement('div');
     canvas.className = 'flowchart-canvas';
     wrap.appendChild(title);
@@ -8221,7 +8224,7 @@
       'Do not invent cases, citations, statutory language, or legal authorities.',
       'If files or images are attached, analyse their contents directly and answer the legal issue they raise instead of merely describing the attachment.',
       'If the request appears to seek wrongdoing, evasion, or harmful operational steps, do not provide instructions. Instead explain the legal risks, offences, penalties, compliance duties, and lawful alternatives.',
-      'Use these exact headings in this exact order for every response: ## Issue, ## Applicable Law, ## Analysis, ## Conclusion, ## Practical Note, ## Disclaimer.',
+      'Use these exact headings in this exact order for every response: ## Issue, ## Applicable Law, ## Analysis, ## Conclusion, ## Practical Note, ## Disclaimer. These headings MUST remain in English regardless of response language.',
       'Complete every heading with full sentences. Do not leave any section or final sentence unfinished.',
       `The current workflow is ${modeLabel}. Adapt the analysis and practical note to that workflow while keeping the exact response structure.`,
       modeSpecificPrompt,
