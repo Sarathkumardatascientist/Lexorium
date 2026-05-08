@@ -7629,7 +7629,12 @@
       'draft': 'Draft',
       'notes': 'Notes',
       'placeholders to confirm': 'Placeholders',
-      'flow summary': 'Flow Summary'
+      'flow summary': 'Flow Summary',
+      'background': 'Background',
+      'legal reasoning': 'Legal Reasoning',
+      'discussion': 'Discussion',
+      'outcome': 'Outcome',
+      'recommendation': 'Recommendation'
     };
     return map[key] || String(label || '').trim();
   }
@@ -7649,7 +7654,7 @@
       .filter(Boolean);
   }
 
-  function summariseFlowSnippet(text, maxLength = 220, maxSentences = 2) {
+  function summariseFlowSnippet(text, maxLength = 500, maxSentences = 5) {
     const cleaned = String(text || '')
       .replace(/\[SOURCE:\d+\|[^\]]+\]/gi, '')
       .replace(/^\s*[-*]\s+/gm, '')
@@ -7677,7 +7682,7 @@
 
   function extractStructuredFlowSections(text) {
     const lines = String(text || '').split('\n');
-    const headingPattern = /^(?:##\s+|\*\*)(Issue|Applicable Law|Rule\s*\/\s*Provision|Analysis|Conclusion|Practical Note|Disclaimer|Next Step|Court|Facts|Issues|Holding|Reasoning|Significance|Draft|Notes|Placeholders to Confirm|Flow Summary)(?:\*\*)?:?\s*(.*)?$/i;
+    const headingPattern = /^(?:##\s+|\*\*|###\s+)(Issue|Applicable Law|Rule\s*\/\s*Provision|Analysis|Conclusion|Practical Note|Disclaimer|Next Step|Court|Facts|Issues|Holding|Reasoning|Significance|Draft|Notes|Placeholders to Confirm|Flow Summary|Background|Legal Reasoning|Discussion|Outcome|Recommendation)(?:\*\*)?:?\s*(.*)?$/i;
     const sections = [];
     let current = null;
 
@@ -7729,7 +7734,12 @@
       'Draft',
       'Notes',
       'Placeholders to Confirm',
-      'Flow Summary'
+      'Flow Summary',
+      'Background',
+      'Legal Reasoning',
+      'Discussion',
+      'Outcome',
+      'Recommendation'
     ];
     const pattern = new RegExp(`(?:^|\\n|\\s)(${labels.join('|')})\\s*:\\s*([\\s\\S]*?)(?=(?:\\n|\\s)(?:${labels.join('|')})\\s*:|$)`, 'gi');
     const sections = [];
@@ -7743,7 +7753,7 @@
   }
 
   function getOrderedFlowSections(text) {
-    const preferredOrder = ['Facts', 'Issue', 'Issues', 'Applicable Law', 'Court', 'Analysis', 'Reasoning', 'Holding', 'Conclusion', 'Practical Note', 'Significance', 'Disclaimer'];
+    const preferredOrder = ['Facts', 'Issue', 'Issues', 'Background', 'Applicable Law', 'Court', 'Legal Reasoning', 'Analysis', 'Discussion', 'Reasoning', 'Holding', 'Conclusion', 'Outcome', 'Recommendation', 'Practical Note', 'Significance', 'Disclaimer'];
     const fromHeadings = extractStructuredFlowSections(text);
     const fromInline = extractInlineStructuredFlowSections(text);
     const combined = [...fromHeadings];
@@ -7760,7 +7770,7 @@
       .map((label) => combined.find((section) => section.label === label))
       .filter(Boolean);
     const extras = combined.filter((section) => !preferredOrder.includes(section.label));
-    return [...ordered, ...extras].slice(0, 8);
+    return [...ordered, ...extras].slice(0, 12);
   }
 
   function detectFlowchartSteps(text) {
@@ -7778,21 +7788,21 @@
       })
       .filter(Boolean);
 
-    if (numbered.length >= 3) return numbered.slice(0, 8);
+    if (numbered.length >= 3) return numbered.slice(0, 12);
 
     const headingSteps = lines
       .filter(line => /^#{2,3}\s+/.test(line))
       .map(line => line.replace(/^#{2,3}\s+/, '').trim());
 
-    if (headingSteps.length >= 3) return headingSteps.slice(0, 8);
+    if (headingSteps.length >= 3) return headingSteps.slice(0, 12);
 
     const paragraphs = String(text || '')
       .split(/\n{2,}/)
-      .map((chunk) => summariseFlowSnippet(chunk, 180, 2))
+      .map((chunk) => summariseFlowSnippet(chunk, 400, 4))
       .filter(Boolean);
 
     if (paragraphs.length >= 3) {
-      return paragraphs.slice(0, 6).map((step, index) => `Step ${index + 1}: ${step}`);
+      return paragraphs.slice(0, 8).map((step, index) => `Step ${index + 1}: ${step}`);
     }
 
     return [];
@@ -7808,7 +7818,7 @@
     const separator = value.indexOf(':');
     if (separator === -1) return escapeMermaidLabel(value);
     const title = escapeMermaidLabel(value.slice(0, separator).trim());
-    const detailSentences = splitCompleteSentences(value.slice(separator + 1).trim()).slice(0, 2);
+    const detailSentences = splitCompleteSentences(value.slice(separator + 1).trim()).slice(0, 4);
     const detail = escapeMermaidLabel(detailSentences.join(' ').trim() || value.slice(separator + 1).trim());
     return detail ? `${title}<br/>${detail}` : title;
   }
