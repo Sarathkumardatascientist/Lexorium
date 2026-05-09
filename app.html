@@ -8991,7 +8991,20 @@
         persistChatState();
       } else {
         if (pendingAssistantMsg) pendingAssistantMsg.remove();
-        showError('Error: ' + err.message);
+        const errMsg = String(err.message || '');
+        if (/image|vision|does not support/i.test(errMsg) && !/network|timeout|fetch|abort/i.test(errMsg)) {
+          const imgMsg = 'Image analysis requires a vision-enabled AI model. Your current plan may not support this feature. Please try with a different image or upgrade to Pro.';
+          const msgDiv = addMessage('assistant', imgMsg, 'Lexorium');
+          showError(imgMsg);
+          openUpgradeModal({
+            title: 'Vision AI Required',
+            message: 'Your current plan does not include vision-enabled AI models for image analysis. Upgrade to Lexorium Pro to analyze images directly with AI.',
+            reason: 'upgrade_required',
+            planId: 'pro',
+          });
+        } else {
+          showError('Error: ' + err.message);
+        }
       }
       if (!providerUnavailable) {
         currentUsage = usageBeforeSend;
