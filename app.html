@@ -3773,6 +3773,11 @@
                 <span style="font-size:14px;font-weight:500;">Français</span>
                 <span style="font-size:12px;opacity:0.5;margin-left:4px;">French</span>
               </label>
+              <label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:9px 12px;border-radius:8px;background:rgba(255,255,255,0.04);transition:background 0.2s;">
+                <input type="radio" name="appLang" value="ta" onchange="setAppLang('ta')" style="accent-color:#a78bfa;width:16px;height:16px;">
+                <span style="font-size:14px;font-weight:500;">தமிழ்</span>
+                <span style="font-size:12px;opacity:0.5;margin-left:4px;">Tamil</span>
+              </label>
             </div>
           </div>
 
@@ -4242,6 +4247,7 @@
     ml: { label: 'Malayalam', nativeLabel: 'മലയാളം' },
     hi: { label: 'Hindi', nativeLabel: 'हिन्दी' },
     fr: { label: 'French', nativeLabel: 'Français' },
+    ta: { label: 'Tamil', nativeLabel: 'தமிழ்' },
   };
   const LANG_KEYS = Object.keys(LANGUAGES);
   const TRANSLATIONS = {
@@ -4485,6 +4491,45 @@
       'toast.chatCleared': 'Historique effacé',
       'toast.conversationDeleted': 'Conversation supprimée',
       'toast.newChat': 'Nouvelle conversation démarrée',
+    },
+    ta: {
+      'lang.label': 'மொழி',
+      'lang.switchTo': 'மொழியை மாற்றவும்',
+      'lang.current': 'தற்போதைய மொழி',
+      'lang.systemPrompt': 'நீங்கள் தமிழில் பதிலளிக்க வேண்டும். அனைத்து பிரிவு தலைப்புகளையும் (## Issue, ## Applicable Law, ## Analysis, ## Conclusion, ## Practical Note, ## Disclaimer) ஆங்கிலத்தில் வைத்திருக்கவும். தமிழில் மட்டுமே பதிலளிக்கவும், ஆங்கிலம் அல்லது பிற மொழிகளில் பதிலளிக்க வேண்டாம்.',
+      'message.structuredFlow': 'கட்டமைக்கப்பட்ட ஓட்டம்',
+      'sidebar.newChat': 'புதிய அரட்டைகள்',
+      'sidebar.searchChats': 'அரட்டைகளைத் தேடு',
+      'sidebar.yourChats': 'உங்கள் அரட்டைகள்',
+      'general': 'பொது',
+      'languages': 'மொழிகள்',
+      'personalization': 'தனிப்பயனாக்கம்',
+      'voice': 'குரல்',
+      'account': 'கணக்கு',
+      'settings.general.title': 'பொது',
+      'settings.general.subtitle': 'இந்த Lexorium பணியிடத்திற்கான இயல்புநிலை பதில் பாணி, வேகம் மற்றும் பேசும் மொழியை அமைக்கவும்.',
+      'settings.languages.title': 'மொழிகள்',
+      'settings.languages.subtitle': 'Lexorium இடைமுகம் மற்றும் AI பதில்களுக்கான மொழியைத் தேர்வுசெய்க.',
+      'settings.personalization.title': 'தனிப்பயனாக்கம்',
+      'settings.personalization.subtitle': 'சட்ட கட்டமைப்பை மாற்றாமல் Lexorium பதில்களின் தொனி மற்றும் வடிவமைப்பை வடிவமைக்கவும்.',
+      'settings.voice.title': 'குரல்',
+      'settings.voice.subtitle': 'ஆதரிக்கப்படும் திட்டங்கள் மற்றும் உலாவிகளுக்கான குரல் பகுப்பாய்வு மற்றும் வாசிப்பு நடத்தையை நிர்வகிக்கவும்.',
+      'settings.account.title': 'கணக்கு',
+      'settings.account.subtitle': 'தற்போதைய கணக்கு, திட்ட அணுகல் மற்றும் உள்நுழைவு மற்றும் மேம்படுத்தல்களுக்கான விரைவு செயல்களை மதிப்பாய்வு செய்யவும்.',
+      'empty.title': 'இன்று நான் உங்களுக்கு எவ்வாறு உதவ முடியும்?',
+      'empty.subtitle': 'சட்ட நுண்ணறிவு | எப்போதும் இயக்கத்தில்',
+      'empty.habit': 'சட்ட தெளிவுக்காக Lexorium ஐ தினமும் பயன்படுத்தவும்.',
+      'onboarding.title': 'Lexorium ஐ எதற்காகப் பயன்படுத்த விரும்புகிறீர்கள்?',
+      'onboarding.copy': 'உங்கள் சட்ட பணிப்பாய்வைத் தேர்வுசெய்க, இதனால் Lexorium முதல் பதில் முதல் வழிகாட்டுதலை வடிவமைக்க முடியும்.',
+      'onboarding.lawStudent': 'சட்ட மாணவர்',
+      'onboarding.advocate': 'வழக்கறிஞர்',
+      'onboarding.businessUser': 'வணிக பயனர்',
+      'starter.heading': 'இந்த சட்ட தூண்டுதல்களில் ஒன்றில் தொடங்கவும்',
+      'composer.placeholder': 'சட்ட அல்லது இணக்கம் சார்ந்த கேள்வியைக் கேளுங்கள்...',
+      'message.you': 'நீங்கள்',
+      'message.lexorium': 'Lexorium',
+      'message.processing': 'செயலாக்குகிறது',
+      'message.analysing': 'இணைப்புகளை பகுப்பாய்வு செய்கிறது',
     },
   };
   function t(key) {
