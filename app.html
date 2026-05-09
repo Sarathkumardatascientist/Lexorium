@@ -7790,7 +7790,7 @@
     const sections = [];
     let match;
     while ((match = pattern.exec(content))) {
-      const label = normalizeFlowLabel(match[1]);
+      const label = normalizeFlowLabel(match[1].replace(/\*\*/g, ''));
       const body = summariseFlowSnippet(match[2]);
       if (label && body) sections.push({ label, content: body });
     }
@@ -7822,7 +7822,7 @@
     const lines = String(text || '').split('\n').map(l => l.trim()).filter(Boolean);
     const orderedSections = getOrderedFlowSections(text);
 
-    if (orderedSections.length >= 3) {
+    if (orderedSections.length >= 2) {
       return orderedSections.map((section) => `${section.label}: ${section.content}`);
     }
 
@@ -7833,20 +7833,20 @@
       })
       .filter(Boolean);
 
-    if (numbered.length >= 3) return numbered.slice(0, 12);
+    if (numbered.length >= 2) return numbered.slice(0, 12);
 
     const headingSteps = lines
       .filter(line => /^#{2,3}\s+/.test(line))
       .map(line => line.replace(/^#{2,3}\s+/, '').trim());
 
-    if (headingSteps.length >= 3) return headingSteps.slice(0, 12);
+    if (headingSteps.length >= 2) return headingSteps.slice(0, 12);
 
     const paragraphs = String(text || '')
       .split(/\n{2,}/)
       .map((chunk) => summariseFlowSnippet(chunk, 400, 4))
       .filter(Boolean);
 
-    if (paragraphs.length >= 3) {
+    if (paragraphs.length >= 2) {
       return paragraphs.slice(0, 8).map((step, index) => `Step ${index + 1}: ${step}`);
     }
 
@@ -7871,7 +7871,7 @@
   async function renderFlowchartForMessage(messageEl, text) {
     const normalized = normalizeStructuredAssistantText(String(text || ''));
     const steps = detectFlowchartSteps(normalized);
-    if (steps.length < 3 || !window.mermaid) return;
+    if (steps.length < 2 || !window.mermaid) return;
     messageEl.querySelector('.flowchart-wrap')?.remove();
 
     const wrap = document.createElement('div');
@@ -8293,20 +8293,25 @@
   }
 
   function normalizeStructuredAssistantText(text) {
+    const aliasMap = {
+      'rule / provision': 'Applicable Law',
+      'next step': 'Practical Note',
+      'caveat': 'Disclaimer'
+    };
     return String(text || '')
       .replace(/\r\n/g, '\n')
-      .replace(/^\*\*Issue\*\*:?\s*(.+)$/gim, '## Issue\n$1')
-      .replace(/^\*\*Applicable Law\*\*:?\s*(.+)$/gim, '## Applicable Law\n$1')
-      .replace(/^\*\*Rule \/ Provision\*\*:?\s*(.+)$/gim, '## Applicable Law\n$1')
-      .replace(/^Rule \/ Provision:\s*(.+)$/gim, '## Applicable Law\n$1')
-      .replace(/^\*\*Analysis\*\*:?\s*(.+)$/gim, '## Analysis\n$1')
-      .replace(/^\*\*Conclusion\*\*:?\s*(.+)$/gim, '## Conclusion\n$1')
-      .replace(/^\*\*Practical Note\*\*:?\s*(.+)$/gim, '## Practical Note\n$1')
-      .replace(/^\*\*Next Step\*\*:?\s*(.+)$/gim, '## Practical Note\n$1')
-      .replace(/^Next Step:\s*(.+)$/gim, '## Practical Note\n$1')
-      .replace(/^\*\*Disclaimer\*\*:?\s*(.+)$/gim, '## Disclaimer\n$1')
-      .replace(/^\*\*Caveat\*\*:?\s*(.+)$/gim, '## Disclaimer\n$1')
-      .replace(/^Caveat:\s*(.+)$/gim, '## Disclaimer\n$1')
+      .replace(/\*\*(Issue|Applicable Law|Rule \/ Provision|Analysis|Conclusion|Practical Note|Next Step|Disclaimer|Caveat)\*\*:\s*/gi, (match, label) => {
+        const mapped = aliasMap[label.toLowerCase()] || label;
+        return '\n## ' + mapped + '\n';
+      })
+      .replace(/\*\*(Issue|Applicable Law|Analysis|Conclusion|Practical Note|Disclaimer)\*\*\s+/gi, (match, label) => {
+        return '\n## ' + label + '\n';
+      })
+      .replace(/(?:^|\s)(?:Rule \/ Provision|Next Step|Caveat):\s*/gi, (match) => {
+        const label = match.trim().replace(/:$/, '').trim();
+        const mapped = aliasMap[label.toLowerCase()] || label;
+        return '\n## ' + mapped + '\n';
+      })
       .replace(/\n{3,}/g, '\n\n')
       .trim();
   }
