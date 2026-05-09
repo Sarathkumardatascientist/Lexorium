@@ -7869,7 +7869,8 @@
   }
 
   async function renderFlowchartForMessage(messageEl, text) {
-    const steps = detectFlowchartSteps(text);
+    const normalized = normalizeStructuredAssistantText(String(text || ''));
+    const steps = detectFlowchartSteps(normalized);
     if (steps.length < 3 || !window.mermaid) return;
     messageEl.querySelector('.flowchart-wrap')?.remove();
 
@@ -8044,7 +8045,7 @@
     emptyEl.style.display = 'none';
     const div = document.createElement('div');
     div.className = `msg ${role}`;
-    const normalizedContent = role === 'assistant' ? sanitizeAssistantText(content || '') : (content || '');
+    const normalizedContent = role === 'assistant' ? normalizeStructuredAssistantText(sanitizeAssistantText(content || '')) : (content || '');
     div.dataset.rawContent = normalizedContent;
     const roleLabel = role === 'user' ? 'You' : (label || 'Assistant');
     let bodyHtml = '';
@@ -8110,7 +8111,7 @@
   }
 
   async function animateResponse(msgDiv, rawText) {
-    const { clean, sources } = parseSources(sanitizeAssistantText(rawText));
+    const { clean, sources } = parseSources(normalizeStructuredAssistantText(sanitizeAssistantText(rawText)));
     msgDiv.dataset.rawContent = clean;
     const body = msgDiv.querySelector('.msg-body');
     msgDiv.classList.remove('assistant-thinking');
