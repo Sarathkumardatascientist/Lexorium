@@ -8573,6 +8573,7 @@
   }
 
   async function callLexoriumModel(modelId, messages, attachments, mode) {
+    try {
     // 1. Get token silently, then re-sync if Lexorium has a session but storage was cleared.
     let puterToken = await getRequiredPuterToken(false) || '';
 
@@ -8648,6 +8649,11 @@
       throw error;
     }
     return payload;
+    } catch (err) {
+      const proxyBlocked = /proxy|upstream|not.*allowed|blocked|restricted|could not reach/i.test(String(err?.message || ''));
+      if (proxyBlocked) err.code = 403;
+      throw err;
+    }
   }
 
   async function callWithRouting(mode, text, messages, attachments) {
@@ -8656,7 +8662,8 @@
       return await callLexoriumModel('lexorium-auto', messages, attachments, mode);
     } catch (backendError) {
       const code = String(backendError?.code || '').toUpperCase();
-      const providerUnavailable = code.startsWith('PUTER_') || backendError?.code === 503;
+      const msg = String(backendError?.message || '');
+      const providerUnavailable = code.startsWith('PUTER_') || backendError?.code === 503 || backendError?.code === 403 || /proxy|upstream|not.*allowed|blocked|restricted/i.test(msg);
       if (!providerUnavailable) throw backendError;
       return callPuterDirect(messages, attachments, mode);
     }
