@@ -7699,7 +7699,7 @@
       .filter(Boolean);
   }
 
-  function summariseFlowSnippet(text, maxLength = 500, maxSentences = 5) {
+  function summariseFlowSnippet(text, maxLength = 2000, maxSentences = 20) {
     const cleaned = String(text || '')
       .replace(/\[SOURCE:\d+\|[^\]]+\]/gi, '')
       .replace(/^\s*[-*]\s+/gm, '')
@@ -7863,7 +7863,7 @@
     const separator = value.indexOf(':');
     if (separator === -1) return escapeMermaidLabel(value);
     const title = escapeMermaidLabel(value.slice(0, separator).trim());
-    const detailSentences = splitCompleteSentences(value.slice(separator + 1).trim()).slice(0, 4);
+    const detailSentences = splitCompleteSentences(value.slice(separator + 1).trim()).slice(0, 15);
     const detail = escapeMermaidLabel(detailSentences.join(' ').trim() || value.slice(separator + 1).trim());
     return detail ? `${title}<br/>${detail}` : title;
   }
