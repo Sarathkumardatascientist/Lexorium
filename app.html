@@ -7693,13 +7693,19 @@
 
     if (!cleaned) return [];
 
-    return cleaned
+    const abbrs = new Set(['Mr','Mrs','Ms','Dr','Prof','Sr','Jr','St','v','vs','No','S','s','Art','Cl','cl','para','Sch','Vol','p','pp','fn','Ltd','Inc','Co','Corp','LLC','i.e','e.g','viz','cf','etc','Jan','Feb','Mar','Apr','Jun','Jul','Aug','Sep','Oct','Nov','Dec','Ct','Cir','Dist','Dept','Ave','Rd']);
+
+    const protected = cleaned.replace(/\b(\w+(?:\.\w+)?)\.\s/gi, (match, word) => {
+      return abbrs.has(word) ? match.replace(/\s$/, '\x00') : match;
+    });
+
+    return protected
       .split(/(?<=[.!?])\s+/)
-      .map((sentence) => sentence.trim())
+      .map((s) => s.replace(/\x00/g, ' ').trim())
       .filter(Boolean);
   }
 
-  function summariseFlowSnippet(text, maxLength = 2000, maxSentences = 20) {
+  function summariseFlowSnippet(text, maxLength = 5000, maxSentences = 50) {
     const cleaned = String(text || '')
       .replace(/\[SOURCE:\d+\|[^\]]+\]/gi, '')
       .replace(/^\s*[-*]\s+/gm, '')
@@ -7843,7 +7849,7 @@
 
     const paragraphs = String(text || '')
       .split(/\n{2,}/)
-      .map((chunk) => summariseFlowSnippet(chunk, 400, 4))
+      .map((chunk) => summariseFlowSnippet(chunk, 2000, 20))
       .filter(Boolean);
 
     if (paragraphs.length >= 2) {
