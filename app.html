@@ -3640,18 +3640,20 @@
     </div>
   </div>
 
-  <div class="modal-overlay" id="upgradeModal">
-    <div class="modal">
-      <div class="modal-title" id="upgradeModalTitle">Upgrade to Lexorium</div>
-      <div class="upgrade-modal-copy" id="upgradeModalCopy">Upgrade this account to Lexorium Pro.</div>
-      <input class="modal-input" id="upgradeNameInput" type="text" placeholder="Full Name" style="margin-top:16px; margin-bottom:8px;"/>
-      <input class="modal-input" id="upgradePhoneInput" type="tel" placeholder="10-digit mobile number" style="margin-bottom:16px;"/>
-      <div class="modal-actions">
-        <button class="modal-btn" onclick="closeUpgradeModal()">Not now</button>
-        <button class="modal-btn primary" id="upgradeModalAction" onclick="startUpgradeFlow()">Upgrade</button>
-      </div>
-    </div>
-  </div>
+   <div class="modal-overlay" id="upgradeModal">
+     <div class="modal">
+       <div class="modal-title" id="upgradeModalTitle">Upgrade to Lexorium</div>
+       <div class="upgrade-modal-copy" id="upgradeModalCopy">Upgrade this account to Lexorium Pro.</div>
+       <input class="modal-input" id="upgradeNameInput" type="text" placeholder="Full Name" style="margin-top:16px; margin-bottom:8px;"/>
+       <input class="modal-input" id="upgradeUsernameInput" type="text" placeholder="Username" style="margin-bottom:8px;"/>
+       <input class="modal-input" id="upgradeEmailInput" type="email" placeholder="Email Address" style="margin-bottom:8px;"/>
+       <input class="modal-input" id="upgradePhoneInput" type="tel" placeholder="10-digit mobile number" style="margin-bottom:16px;"/>
+       <div class="modal-actions">
+         <button class="modal-btn" onclick="closeUpgradeModal()">Not now</button>
+         <button class="modal-btn primary" id="upgradeModalAction" onclick="startUpgradeFlow()">Upgrade</button>
+       </div>
+     </div>
+   </div>
 
     <div class="modal-overlay" id="advancedModal">
     <div class="modal" style="text-align: center;">
@@ -6397,19 +6399,34 @@
   }
 
   function openUpgradeModal(options) {
-    pendingUpgradePlan = getUpgradeTargetPlan(currentPlan.id, options?.planId || options?.requiredPlan || 'pro');
-    document.getElementById('upgradeModalTitle').textContent = options?.title || `Upgrade to Lexorium ${formatPlanName(pendingUpgradePlan)}`;
-    document.getElementById('upgradeModalCopy').textContent = options?.message || 'Upgrade this account to Lexorium Pro.';
-    const action = document.getElementById('upgradeModalAction');
-    action.textContent = options?.ctaLabel || `Upgrade to ${formatPlanName(pendingUpgradePlan)}`;
-    document.getElementById('upgradeNameInput').value = currentProfileName || authName?.textContent || 'Lexorium User';
-    const savedCheckoutPhone = String(localStorage.getItem(CHECKOUT_PHONE_STORAGE_KEY) || currentProfilePhone || '').replace(/\D/g, '').slice(-10);
-    document.getElementById('upgradePhoneInput').value = savedCheckoutPhone;
-    document.getElementById('upgradeModal').classList.add('open');
-    if (options?.trackEvent !== false) {
-      trackEvent('paywall_viewed', { planId: currentPlan.id, targetPlanId: pendingUpgradePlan, reason: options?.reason || 'upgrade_required' });
-    }
-  }
+     pendingUpgradePlan = getUpgradeTargetPlan(currentPlan.id, options?.planId || options?.requiredPlan || 'pro');
+     document.getElementById('upgradeModalTitle').textContent = options?.title || `Upgrade to Lexorium ${formatPlanName(pendingUpgradePlan)}`;
+     document.getElementById('upgradeModalCopy').textContent = options?.message || 'Upgrade this account to Lexorium Pro.';
+     const action = document.getElementById('upgradeModalAction');
+     action.textContent = options?.ctaLabel || `Upgrade to ${formatPlanName(pendingUpgradePlan)}`;
+     document.getElementById('upgradeNameInput').value = currentProfileName || authName?.textContent || 'Lexorium User';
+     
+     try {
+       const token = getStoredPuterToken();
+       if (token && window.puter?.auth?.getUser) {
+         window.puter.auth.getUser().then((profile) => {
+           if (profile) {
+             const emailEl = document.getElementById('upgradeEmailInput');
+             const usernameEl = document.getElementById('upgradeUsernameInput');
+             if (emailEl) emailEl.value = profile.email || '';
+             if (usernameEl) usernameEl.value = profile.username || profile.handle || '';
+           }
+         }).catch(() => {});
+       }
+     } catch (_e) {}
+     
+     const savedCheckoutPhone = String(localStorage.getItem(CHECKOUT_PHONE_STORAGE_KEY) || currentProfilePhone || '').replace(/\D/g, '').slice(-10);
+     document.getElementById('upgradePhoneInput').value = savedCheckoutPhone;
+     document.getElementById('upgradeModal').classList.add('open');
+     if (options?.trackEvent !== false) {
+       trackEvent('paywall_viewed', { planId: currentPlan.id, targetPlanId: pendingUpgradePlan, reason: options?.reason || 'upgrade_required' });
+     }
+   }
 
   function closeUpgradeModal() {
     document.getElementById('upgradeModal').classList.remove('open');
@@ -6434,34 +6451,47 @@
        return;
      }
 
-     try {
-       await trackEvent('paywall_cta_clicked', { source: 'app', planId: currentPlan.id, targetPlanId: targetPlan });
-       
-       const customerName = document.getElementById('upgradeNameInput').value.trim();
-       const enteredPhone = document.getElementById('upgradePhoneInput').value.trim();
-       
-       if (!customerName) {
-         throw new Error('Please enter your full name for secure checkout.');
-       }
-       
-       const customerPhone = String(enteredPhone || '').replace(/\D/g, '').slice(-10);
-       if (!/^\d{10}$/.test(customerPhone)) {
-         throw new Error('Enter a valid 10-digit mobile number to continue checkout.');
-       }
+      try {
+        await trackEvent('paywall_cta_clicked', { source: 'app', planId: currentPlan.id, targetPlanId: targetPlan });
+        
+        const customerName = document.getElementById('upgradeNameInput').value.trim();
+        const customerUsername = document.getElementById('upgradeUsernameInput')?.value?.trim() || '';
+        const customerEmail = document.getElementById('upgradeEmailInput')?.value?.trim() || '';
+        const enteredPhone = document.getElementById('upgradePhoneInput').value.trim();
+        
+        if (!customerName) {
+          throw new Error('Please enter your full name for secure checkout.');
+        }
+        
+        if (customerEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customerEmail)) {
+          throw new Error('Please enter a valid email address.');
+        }
+        
+        const customerPhone = String(enteredPhone || '').replace(/\D/g, '').slice(-10);
+        if (!/^\d{10}$/.test(customerPhone)) {
+          throw new Error('Enter a valid 10-digit mobile number to continue checkout.');
+        }
 
-       let puterToken = await getRequiredPuterToken(false) || '';
+        let puterToken = await getRequiredPuterToken(false) || '';
 
-       if (!puterToken && currentUserUid) {
-         await syncSessionPayloadWithPuter(false, true).catch(() => null);
-         puterToken = getStoredPuterToken() || '';
-       }
+        if (!puterToken && currentUserUid) {
+          await syncSessionPayloadWithPuter(false, true).catch(() => null);
+          puterToken = getStoredPuterToken() || '';
+        }
 
-       if (!puterToken && currentUserUid && window.puter?.auth?.getAuthToken) {
-         puterToken = String(window.puter.auth.getAuthToken() || '').trim();
-         if (puterToken) setStoredPuterToken(puterToken);
-       }
+        if (!puterToken && currentUserUid && window.puter?.auth?.getAuthToken) {
+          puterToken = String(window.puter.auth.getAuthToken() || '').trim();
+          if (puterToken) setStoredPuterToken(puterToken);
+        }
 
-       const requestBody = JSON.stringify({ plan: targetPlan, source: 'app', customerName, customerPhone });
+        const requestBody = JSON.stringify({ 
+          plan: targetPlan, 
+          source: 'app', 
+          customerName, 
+          customerUsername,
+          customerEmail,
+          customerPhone 
+        });
        
        const createOrderWithToken = async (token) => fetch(CREATE_ORDER_URL, {
          method: 'POST',

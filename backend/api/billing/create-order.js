@@ -159,9 +159,13 @@ module.exports = async (req, res) => {
   }
 
   const customerName = String(body.customerName || user.name || user.email || 'Lexorium User').trim();
+  const customerEmail = String(body.customerEmail || user.email || '').trim();
+  const customerUsername = String(body.customerUsername || '').trim();
+  
   const profileUpdates = {};
   if (customerPhone !== String(user.phone || '')) profileUpdates.phone = customerPhone;
   if (body.customerName && customerName !== String(user.name || '')) profileUpdates.name = customerName;
+  if (customerEmail && customerEmail !== String(user.email || '')) profileUpdates.email = customerEmail.toLowerCase();
 
   if (updateUserProfile && Object.keys(profileUpdates).length > 0) {
     await updateUserProfile(user.uid, profileUpdates).catch(() => null);
@@ -179,7 +183,7 @@ module.exports = async (req, res) => {
       customer_details: {
         customer_id: cashfreeCustomerId,
         customer_name: customerName,
-        customer_email: user.email,
+        customer_email: customerEmail || user.email,
         customer_phone: customerPhone,
       },
       order_meta: {
@@ -188,7 +192,8 @@ module.exports = async (req, res) => {
       order_note: `Lexorium ${checkoutPlan.name}`,
       order_tags: {
         uid: user.uid,
-        email: user.email,
+        email: customerEmail || user.email,
+        username: customerUsername,
         plan: checkoutPlan.id,
       },
     }),
