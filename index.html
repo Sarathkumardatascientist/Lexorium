@@ -4281,29 +4281,37 @@ footer {
       return;
     }
     
-    const plan = pendingCheckoutPlan;
+     const plan = pendingCheckoutPlan;
 
-    try {
-      const order = await fetchJson(CREATE_ORDER_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'same-origin',
-        body: JSON.stringify({ plan, customerPhone }),
-      });
-      localStorage.setItem(CHECKOUT_PHONE_STORAGE_KEY, customerPhone);
+     try {
+       let token = getStoredPuterToken() || '';
+       if (!token && window.puter?.auth?.getAuthToken) {
+         token = String(window.puter.auth.getAuthToken() || '').trim();
+       }
 
-      const cashfree = window.Cashfree({ mode: order.cashfreeMode || cashfreeMode });
-      const result = await cashfree.checkout({
-        paymentSessionId: order.paymentSessionId,
-        redirectTarget: '_self',
-      });
-      if (result?.error) {
-        throw new Error(result.error.message || 'Payment failed or was cancelled.');
-      }
-    } catch (error) {
-      alert(error.message || 'Could not start checkout.');
-    }
-  }
+       const order = await fetchJson(CREATE_ORDER_URL, {
+         method: 'POST',
+         headers: {
+           'Content-Type': 'application/json',
+           ...(token ? { 'X-Puter-Token': token } : {}),
+         },
+         credentials: 'same-origin',
+         body: JSON.stringify({ plan, customerName, customerPhone, source: 'pricing' }),
+       });
+       localStorage.setItem(CHECKOUT_PHONE_STORAGE_KEY, customerPhone);
+
+       const cashfree = window.Cashfree({ mode: order.cashfreeMode || cashfreeMode });
+       const result = await cashfree.checkout({
+         paymentSessionId: order.paymentSessionId,
+         redirectTarget: '_self',
+       });
+       if (result?.error) {
+         throw new Error(result.error.message || 'Payment failed or was cancelled.');
+       }
+     } catch (error) {
+       alert(error.message || 'Could not start checkout.');
+     }
+   }
 
   function contactSales() {
     window.open('https://mail.google.com/mail/?view=cm&fs=1&to=aisprezzatura@gmail.com&su=Enterprise+Enquiry', '_blank');

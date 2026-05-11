@@ -6415,11 +6415,14 @@
          throw new Error('Please enter your full name for secure checkout.');
        }
        
-       const customerPhone = String(enteredPhone || '').replace(/\D/g, '').slice(-10);
+        const customerPhone = String(enteredPhone || '').replace(/\D/g, '').slice(-10);
        if (!/^\d{10}$/.test(customerPhone)) {
          throw new Error('Enter a valid 10-digit mobile number to continue checkout.');
        }
-       const token = getStoredPuterToken() || '';
+       let token = getStoredPuterToken() || '';
+       if (!token && window.puter?.auth?.getAuthToken) {
+         token = String(window.puter.auth.getAuthToken() || '').trim();
+       }
        const response = await fetch(CREATE_ORDER_URL, {
          method: 'POST',
          credentials: 'same-origin',
