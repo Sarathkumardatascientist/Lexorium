@@ -7835,79 +7835,106 @@
       'outcome': 'Outcome',
       'recommendation': 'Recommendation'
     };
-    return map[key] || String(label || '').trim();
-  }
+     return map[key] || String(label || '').trim();
+   }
 
-  function isCompleteSentence(text) {
-    const trimmed = String(text || '').trim();
-    if (!trimmed) return false;
-    return /[.!?]$/.test(trimmed) || /\.\.\.$/.test(trimmed);
-  }
+   function unescapeJsText(text) {
+     return String(text || '')
+       .replace(/\\"/g, '"')
+       .replace(/\\'/g, "'")
+       .replace(/\\\\/g, '\\')
+       .replace(/\\n/g, ' ')
+       .replace(/\\t/g, ' ')
+       .replace(/\\r/g, ' ')
+       .trim();
+   }
 
-  function ensureCompleteSentence(text) {
-    const trimmed = String(text || '').trim();
-    if (!trimmed) return '';
-    if (isCompleteSentence(trimmed)) return trimmed;
-    const cleaned = trimmed.replace(/[,;:]$/, '').trim();
-    return cleaned + '.';
-  }
+   function isCompleteSentence(text) {
+     const trimmed = String(text || '').trim();
+     if (!trimmed) return false;
+     return /[.!?]$/.test(trimmed) || /\.\.\.$/.test(trimmed);
+   }
 
-  function splitCompleteSentences(text) {
-    const cleaned = String(text || '')
-      .replace(/\[SOURCE:\d+\|[^\]]+\]/gi, '')
-      .replace(/^\s*[-*]\s+/gm, '')
-      .replace(/\s+/g, ' ')
-      .trim();
+   function ensureCompleteSentence(text) {
+     const trimmed = String(text || '').trim();
+     if (!trimmed) return '';
+     if (isCompleteSentence(trimmed)) return trimmed;
+     const cleaned = trimmed.replace(/[,;:]$/, '').trim();
+     return cleaned + '.';
+   }
 
-    if (!cleaned) return [];
+   function splitCompleteSentences(text) {
+     const raw = unescapeJsText(String(text || ''));
+     const cleaned = raw
+       .replace(/\[SOURCE:\d+\|[^\]]+\]/gi, '')
+       .replace(/^\s*[-*]\s+/gm, '')
+       .replace(/\s+/g, ' ')
+       .trim();
 
-    const abbrs = new Set(['Mr','Mrs','Ms','Dr','Prof','Sr','Jr','St','v','vs','No','S','s','Art','Cl','cl','para','Sch','Vol','p','pp','fn','Ltd','Inc','Co','Corp','LLC','i.e','e.g','viz','cf','etc','Jan','Feb','Mar','Apr','Jun','Jul','Aug','Sep','Oct','Nov','Dec','Ct','Cir','Dist','Dept','Ave','Rd']);
+     if (!cleaned) return [];
 
-    const protected = cleaned.replace(/\b(\w+(?:\.\w+)?)\.\s/gi, (match, word) => {
-      return abbrs.has(word) ? match.replace(/\s$/, '\x00') : match;
-    });
+     const abbrs = new Set(['Mr','Mrs','Ms','Dr','Prof','Sr','Jr','St','v','vs','No','S','s','Art','Cl','cl','para','Sch','Vol','p','pp','fn','Ltd','Inc','Co','Corp','LLC','i.e','e.g','viz','cf','etc','Jan','Feb','Mar','Apr','Jun','Jul','Aug','Sep','Oct','Nov','Dec','Ct','Cir','Dist','Dept','Ave','Rd']);
 
-    const rawChunks = protected
-      .split(/(?<=[.!?])\s+/)
-      .map((s) => s.replace(/\x00/g, ' ').trim())
-      .filter(Boolean);
+     const protected = cleaned.replace(/\b(\w+(?:\.\w+)?)\.\s/gi, (match, word) => {
+       return abbrs.has(word) ? match.replace(/\s$/, '\x00') : match;
+     });
 
-    return rawChunks.filter(isCompleteSentence);
-  }
+     const rawChunks = protected
+       .split(/(?<=[.!?])\s+/)
+       .map((s) => s.replace(/\x00/g, ' ').trim())
+       .filter(Boolean);
 
-  function summariseFlowSnippet(text, maxLength = 5000, maxSentences = 50) {
-    const cleaned = String(text || '')
-      .replace(/\[SOURCE:\d+\|[^\]]+\]/gi, '')
-      .replace(/^\s*[-*]\s+/gm, '')
-      .replace(/\s+/g, ' ')
-      .trim();
+     if (rawChunks.length === 0) {
+       return [ensureCompleteSentence(cleaned)];
+     }
 
-    if (!cleaned) return '';
+     const complete = rawChunks.filter(isCompleteSentence);
+     if (complete.length > 0) {
+       return complete;
+     }
 
-    const sentences = splitCompleteSentences(cleaned);
+     return rawChunks.map(ensureCompleteSentence);
+   }
 
-    const selected = [];
-    for (const sentence of sentences) {
-      if (selected.length >= maxSentences) break;
-      const candidate = [...selected, sentence].join(' ');
-      if (candidate.length <= maxLength) {
-        selected.push(sentence);
-        continue;
-      }
-      break;
-    }
+   function summariseFlowSnippet(text, maxLength = 2000, maxSentences = 30) {
+     const raw = unescapeJsText(String(text || ''));
+     const cleaned = raw
+       .replace(/\[SOURCE:\d+\|[^\]]+\]/gi, '')
+       .replace(/^\s*[-*]\s+/gm, '')
+       .replace(/\s+/g, ' ')
+       .trim();
 
-    if (selected.length > 0) {
-      return selected.join(' ').trim();
-    }
+     if (!cleaned) return '';
 
-    const firstComplete = sentences.find(isCompleteSentence);
-    if (firstComplete) {
-      return firstComplete.length <= maxLength ? firstComplete : firstComplete.slice(0, maxLength - 3) + '...';
-    }
+     const sentences = splitCompleteSentences(cleaned);
 
-    return ensureCompleteSentence(cleaned.slice(0, Math.min(cleaned.length, maxLength)));
-  }
+     const selected = [];
+     for (const sentence of sentences) {
+       if (selected.length >= maxSentences) break;
+       const candidate = [...selected, sentence].join(' ');
+       if (candidate.length <= maxLength) {
+         selected.push(sentence);
+         continue;
+       }
+       if (selected.length === 0 && sentence.length > maxLength) {
+         const lastSpace = sentence.lastIndexOf(' ', Math.floor(maxLength * 0.8));
+         const truncated = lastSpace > 20 ? sentence.slice(0, lastSpace) : sentence.slice(0, Math.floor(maxLength * 0.8));
+         return ensureCompleteSentence(truncated);
+       }
+       break;
+     }
+
+     if (selected.length > 0) {
+       return selected.join(' ').trim();
+     }
+
+     const firstComplete = sentences.find(isCompleteSentence);
+     if (firstComplete) {
+       return firstComplete.length <= maxLength ? firstComplete : ensureCompleteSentence(firstComplete.slice(0, Math.floor(maxLength * 0.8)));
+     }
+
+     return ensureCompleteSentence(cleaned.slice(0, Math.min(cleaned.length, maxLength)));
+   }
 
   function extractStructuredFlowSections(text) {
     const lines = String(text || '').split('\n');
@@ -8002,94 +8029,131 @@
     return [...ordered, ...extras].slice(0, 12);
   }
 
-  function detectFlowchartSteps(text) {
-    const lines = String(text || '').split('\n').map(l => l.trim()).filter(Boolean);
-    const orderedSections = getOrderedFlowSections(text);
+   function detectFlowchartSteps(text) {
+     const raw = unescapeJsText(String(text || ''));
+     const lines = raw.split('\n').map(l => l.trim()).filter(Boolean);
+     const orderedSections = getOrderedFlowSections(raw);
 
-    if (orderedSections.length >= 2) {
-      return orderedSections.map((section) => `${section.label}: ${section.content}`);
-    }
+     if (orderedSections.length >= 2) {
+       return orderedSections.map((section) => `${section.label}: ${section.content}`);
+     }
 
-    const numbered = lines
-      .map(line => {
-        const match = line.match(/^\d+\.\s+(.+)$/);
-        return match ? ensureCompleteSentence(match[1].trim()) : null;
-      })
-      .filter(Boolean);
+     const numbered = lines
+       .map(line => {
+         const match = line.match(/^\d+\.\s+(.+)$/);
+         return match ? ensureCompleteSentence(unescapeJsText(match[1].trim())) : null;
+       })
+       .filter(Boolean);
 
-    if (numbered.length >= 2) return numbered.slice(0, 12);
+     if (numbered.length >= 2) return numbered.slice(0, 12);
 
-    const headingSteps = lines
-      .filter(line => /^#{2,3}\s+/.test(line))
-      .map(line => ensureCompleteSentence(line.replace(/^#{2,3}\s+/, '').trim()));
+     const headingSteps = lines
+       .filter(line => /^#{2,3}\s+/.test(line))
+       .map(line => ensureCompleteSentence(unescapeJsText(line.replace(/^#{2,3}\s+/, '').trim())));
 
-    if (headingSteps.length >= 2) return headingSteps.slice(0, 12);
+     if (headingSteps.length >= 2) return headingSteps.slice(0, 12);
 
-    const paragraphs = String(text || '')
-      .split(/\n{2,}/)
-      .map((chunk) => summariseFlowSnippet(chunk, 2000, 20))
-      .filter(Boolean);
+     const paragraphs = raw
+       .split(/\n{2,}/)
+       .map((chunk) => summariseFlowSnippet(chunk, 2000, 20))
+       .filter(Boolean);
 
-    if (paragraphs.length >= 2) {
-      return paragraphs.slice(0, 8).map((step, index) => `Step ${index + 1}: ${step}`);
-    }
+     if (paragraphs.length >= 2) {
+       return paragraphs.slice(0, 8).map((step, index) => `Step ${index + 1}: ${step}`);
+     }
 
-    return [];
-  }
+     return [];
+   }
 
-  function escapeHtml(text) {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
-  }
+   function escapeHtml(text) {
+     const div = document.createElement('div');
+     div.textContent = text;
+     return div.innerHTML;
+   }
 
-  function escapeMermaidLabel(text) {
-    let result = String(text || '')
-      .replace(/[<>[\]{}|]/g, '')
-      .replace(/"/g, "'");
-    return escapeHtml(result);
-  }
+   function escapeMermaidLabel(text) {
+     let result = unescapeJsText(String(text || ''))
+       .replace(/[<>[\]{}|()`]/g, ' ')
+       .replace(/\\/g, ' ')
+       .replace(/"/g, "'")
+       .replace(/\s+/g, ' ')
+       .trim();
+     return escapeHtml(result);
+   }
 
-  function formatFlowNodeLabel(step) {
-    const value = String(step || '').trim();
-    if (!value) return '';
-    const separator = value.indexOf(':');
-    if (separator === -1) return escapeMermaidLabel(value);
-    const title = escapeMermaidLabel(value.slice(0, separator).trim());
-    const detail = escapeMermaidLabel(value.slice(separator + 1).trim());
-    return detail ? `${title}<br/>${detail}` : title;
-  }
+   const KNOWN_FLOW_LABELS = new Set([
+     'issue', 'issues', 'applicable law', 'rule / provision',
+     'analysis', 'conclusion', 'practical note', 'next step',
+     'disclaimer', 'caveat', 'court', 'facts', 'holding',
+     'reasoning', 'significance', 'draft', 'notes',
+     'placeholders to confirm', 'flow summary', 'background',
+     'legal reasoning', 'discussion', 'outcome', 'recommendation',
+     'step 1', 'step 2', 'step 3', 'step 4', 'step 5',
+     'step 6', 'step 7', 'step 8'
+   ]);
 
-  async function renderFlowchartForMessage(messageEl, text) {
-    const normalized = normalizeStructuredAssistantText(String(text || ''));
-    const steps = detectFlowchartSteps(normalized);
-    if (steps.length < 2 || !window.mermaid) return;
-    messageEl.querySelector('.flowchart-wrap')?.remove();
+   function formatFlowNodeLabel(step) {
+     const value = String(step || '').trim();
+     if (!value) return '';
+     
+     const separator = value.indexOf(':');
+     if (separator === -1 || separator >= value.length - 1) {
+       return escapeMermaidLabel(value);
+     }
+     
+     const firstPart = value.slice(0, separator).trim().toLowerCase();
+     if (KNOWN_FLOW_LABELS.has(firstPart)) {
+       const title = escapeMermaidLabel(value.slice(0, separator).trim());
+       const detail = escapeMermaidLabel(value.slice(separator + 1).trim());
+       return detail ? `${title}<br/>${detail}` : title;
+     }
+     
+     if (firstPart.length > 20) {
+       return escapeMermaidLabel(value);
+     }
+     
+     if (!firstPart) {
+       return escapeMermaidLabel(value.slice(separator + 1).trim());
+     }
+     
+     const title = escapeMermaidLabel(value.slice(0, separator).trim());
+     const detail = escapeMermaidLabel(value.slice(separator + 1).trim());
+     return detail ? `${title}<br/>${detail}` : title;
+   }
 
-    const wrap = document.createElement('div');
-    wrap.className = 'flowchart-wrap';
-    const title = document.createElement('div');
-    title.className = 'flowchart-title';
-    title.textContent = t('message.structuredFlow') || 'Structured Flow';
-    const canvas = document.createElement('div');
-    canvas.className = 'flowchart-canvas';
-    wrap.appendChild(title);
-    wrap.appendChild(canvas);
-    messageEl.querySelector('.msg-body').appendChild(wrap);
+   async function renderFlowchartForMessage(messageEl, text) {
+     const normalized = normalizeStructuredAssistantText(String(text || ''));
+     const steps = detectFlowchartSteps(normalized);
+     if (steps.length < 2 || !window.mermaid) return;
+     messageEl.querySelector('.flowchart-wrap')?.remove();
 
-    const nodes = steps.map((step, i) => `n${i}["${formatFlowNodeLabel(step)}"]`).join('\n');
-    const edges = steps.slice(1).map((_, i) => `n${i} --> n${i + 1}`).join('\n');
-    const classDefs = `classDef lexorium fill:#111111,stroke:#d9d9d9,stroke-width:1.2px,color:#ffffff,font-size:13px;\nclass ${steps.map((_, i) => `n${i}`).join(',')} lexorium;`;
-    const graph = `flowchart TD\n${nodes}\n${edges}\n${classDefs}`;
+     const wrap = document.createElement('div');
+     wrap.className = 'flowchart-wrap';
+     const title = document.createElement('div');
+     title.className = 'flowchart-title';
+     title.textContent = t('message.structuredFlow') || 'Structured Flow';
+     const canvas = document.createElement('div');
+     canvas.className = 'flowchart-canvas';
+     wrap.appendChild(title);
+     wrap.appendChild(canvas);
+     messageEl.querySelector('.msg-body').appendChild(wrap);
 
-    try {
-      const id = `mermaid-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
-      const result = await window.mermaid.render(id, graph);
-      canvas.innerHTML = result.svg;
-    } catch (err) {
-      wrap.remove();
-    }
-  }
+     const formattedSteps = steps.map(formatFlowNodeLabel);
+     const nodes = formattedSteps.map((label, i) => `n${i}["${label}"]`).join('\n');
+     const edges = steps.slice(1).map((_, i) => `n${i} --> n${i + 1}`).join('\n');
+     const classDefs = `classDef lexorium fill:#111111,stroke:#d9d9d9,stroke-width:1.2px,color:#ffffff,font-size:13px;\nclass ${steps.map((_, i) => `n${i}`).join(',')} lexorium;`;
+     const graph = `flowchart TD\n${nodes}\n${edges}\n${classDefs}`;
+
+     try {
+       const id = `mermaid-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+       const result = await window.mermaid.render(id, graph);
+       canvas.innerHTML = result.svg;
+     } catch (err) {
+       console.warn('Flowchart rendering failed:', err);
+       console.warn('Graph definition:', graph);
+       wrap.remove();
+     }
+   }
 
   // ?? INPUT / MESSAGES ??
   inputEl.addEventListener('input', () => { updateSendBtn(); });
