@@ -6445,6 +6445,17 @@
        }
 
        let puterToken = await getRequiredPuterToken(false) || '';
+
+       if (!puterToken && currentUserUid) {
+         await syncSessionPayloadWithPuter(false, true).catch(() => null);
+         puterToken = getStoredPuterToken() || '';
+       }
+
+       if (!puterToken && currentUserUid && window.puter?.auth?.getAuthToken) {
+         puterToken = String(window.puter.auth.getAuthToken() || '').trim();
+         if (puterToken) setStoredPuterToken(puterToken);
+       }
+
        const requestBody = JSON.stringify({ plan: targetPlan, source: 'app', customerName, customerPhone });
        
        const createOrderWithToken = async (token) => fetch(CREATE_ORDER_URL, {
