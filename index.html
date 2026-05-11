@@ -4312,37 +4312,34 @@ footer {
          body: requestBody,
        }).catch(() => { throw new Error('Could not reach the Lexorium server. Start the local server or open the deployed app.'); });
 
-        let response = await createOrderWithToken(puterToken);
+         let response = await createOrderWithToken(puterToken);
 
-        if (response.status === 401) {
-          const originalToken = puterToken;
-          let freshToken = '';
-          
-          const freshProfile = await ensureSessionFromPuter(false, true).catch(() => null);
-          if (freshProfile) {
-            freshToken = getStoredPuterToken() || '';
-            if (freshToken && freshToken !== originalToken) {
-              response = await createOrderWithToken(freshToken);
-            }
-          }
-          
-          if (response.status === 401 && window.puter?.auth?.getAuthToken) {
-            const sdkToken = String(window.puter.auth.getAuthToken() || '').trim();
-            if (sdkToken && sdkToken !== originalToken && sdkToken !== freshToken) {
-              setStoredPuterToken(sdkToken);
-              response = await createOrderWithToken(sdkToken);
-            }
-          }
+         if (response.status === 401) {
+           const originalToken = puterToken;
+           let freshToken = '';
+           
+           const freshProfile = await ensureSessionFromPuter(false, true).catch(() => null);
+           if (freshProfile) {
+             freshToken = getStoredPuterToken() || '';
+             if (freshToken && freshToken !== originalToken) {
+               response = await createOrderWithToken(freshToken);
+             }
+           }
+           
+           if (response.status === 401 && window.puter?.auth?.getAuthToken) {
+             const sdkToken = String(window.puter.auth.getAuthToken() || '').trim();
+             if (sdkToken && sdkToken !== originalToken && sdkToken !== freshToken) {
+               setStoredPuterToken(sdkToken);
+               response = await createOrderWithToken(sdkToken);
+             }
+           }
+         }
+
+        const order = await response.json().catch(() => ({}));
+        if (!response.ok) {
+          const backendError = order?.message || order?.error || `Request failed with status ${response.status}`;
+          throw new Error(backendError);
         }
-
-        if (response.status === 401) {
-          throw new Error('Could not verify your account. Please sign in again from the Lexorium home page.');
-        }
-
-       const order = await response.json().catch(() => ({}));
-       if (!response.ok) {
-         throw new Error(order?.message || 'Could not start checkout.');
-       }
 
        localStorage.setItem(CHECKOUT_PHONE_STORAGE_KEY, customerPhone);
 

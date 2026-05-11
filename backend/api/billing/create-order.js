@@ -72,56 +72,67 @@ function normalizeCustomerPhone(value) {
   return '';
 }
 
-module.exports = async (req, res) => {
-  if (!requireMethod(req, res, 'POST')) return;
+ module.exports = async (req, res) => {
+   if (!requireMethod(req, res, 'POST')) return;
 
-  const session = getSessionFromRequest(req);
-  const body = await parseJsonBody(req).catch(() => ({}));
-  const explicitToken = extractPuterToken(req, body);
+   const session = getSessionFromRequest(req);
+   const body = await parseJsonBody(req).catch(() => ({}));
+   const explicitToken = extractPuterToken(req, body);
 
-  if (!session?.sub && !explicitToken) {
-    return sendError(res, 401, 'Sign in is required before checkout.');
-  }
+   if (!session?.sub && !explicitToken) {
+     return sendError(res, 401, 'Sign in is required before checkout. No session or token provided.');
+   }
 
-  let user = null;
-  let tokenError = null;
-  if (session?.sub) {
-    user = await getUser(session.sub);
-  }
-  if (!user && explicitToken) {
-    try {
-      const puterProfile = await resolvePuterUser(explicitToken);
-      if (puterProfile) {
-        const uuid = String(
-          puterProfile.uuid || puterProfile.id || puterProfile._id ||
-          puterProfile.username || puterProfile.email || ''
-        ).trim();
-        if (uuid) {
-          const uid = `puter:${uuid.toLowerCase()}`;
-          const name = String(
-            puterProfile.name || puterProfile.display_name || puterProfile.displayName ||
-            puterProfile.full_name || puterProfile.fullName || puterProfile.username || ''
-          ).trim();
-          const email = String(puterProfile.email || '').trim() || `${uuid.toLowerCase()}@puter.local`;
-          const avatar = String(puterProfile.avatar || puterProfile.picture || '').trim();
-          user = await upsertUser({ uid, authProvider: 'puter', name: name || 'Lexorium User', email, avatar });
-        }
-      }
-    } catch (_tokenError) {
-      tokenError = _tokenError;
-    }
-  }
-  if (!user) {
-    if (tokenError) {
-      const errorMessage = tokenError.message || String(tokenError || '');
-      const isAuthError = tokenError.code === 'PUTER_AUTH_REQUIRED' || tokenError.statusCode === 401;
-      if (isAuthError || errorMessage.toLowerCase().includes('sign in') || errorMessage.toLowerCase().includes('auth')) {
-        return sendError(res, 401, 'Your session has expired. Please sign in again.');
-      }
-      return sendError(res, 500, 'Could not verify your account. Please try again or sign in again.');
-    }
-    return sendError(res, 401, 'Sign in is required before checkout.');
-  }
+   let user = null;
+   let tokenError = null;
+   let sessionUserFound = false;
+   let tokenValidationAttempted = false;
+   
+   if (session?.sub) {
+     user = await getUser(session.sub);
+     if (user) sessionUserFound = true;
+   }
+   if (!user && explicitToken) {
+     tokenValidationAttempted = true;
+     try {
+       const puterProfile = await resolvePuterUser(explicitToken);
+       if (puterProfile) {
+         const uuid = String(
+           puterProfile.uuid || puterProfile.id || puterProfile._id ||
+           puterProfile.username || puterProfile.email || ''
+         ).trim();
+         if (uuid) {
+           const uid = `puter:${uuid.toLowerCase()}`;
+           const name = String(
+             puterProfile.name || puterProfile.display_name || puterProfile.displayName ||
+             puterProfile.full_name || puterProfile.fullName || puterProfile.username || ''
+           ).trim();
+           const email = String(puterProfile.email || '').trim() || `${uuid.toLowerCase()}@puter.local`;
+           const avatar = String(puterProfile.avatar || puterProfile.picture || '').trim();
+           user = await upsertUser({ uid, authProvider: 'puter', name: name || 'Lexorium User', email, avatar });
+         }
+       }
+     } catch (_tokenError) {
+       tokenError = _tokenError;
+     }
+   }
+   if (!user) {
+     if (session?.sub && !sessionUserFound) {
+       return sendError(res, 401, 'Session cookie is invalid or user not found. Please sign in again.');
+     }
+     if (tokenError) {
+       const errorMessage = tokenError.message || String(tokenError || '');
+       const isAuthError = tokenError.code === 'PUTER_AUTH_REQUIRED' || tokenError.statusCode === 401;
+       if (isAuthError || errorMessage.toLowerCase().includes('sign in') || errorMessage.toLowerCase().includes('auth')) {
+         return sendError(res, 401, `Puter token is invalid: ${errorMessage}. Please sign in again.`);
+       }
+       return sendError(res, 500, `Token validation failed: ${errorMessage}. Please try again or sign in again.`);
+     }
+     if (explicitToken && tokenValidationAttempted && !tokenError) {
+       return sendError(res, 401, 'Puter token validation returned no profile. Please sign in again.');
+     }
+     return sendError(res, 401, 'Sign in is required before checkout. Authentication failed.');
+   }
 
   const requestedPlan = String(body.plan || 'pro').trim().toLowerCase();
   const checkoutPlan = getCheckoutPlan(requestedPlan);
