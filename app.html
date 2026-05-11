@@ -5506,44 +5506,49 @@
        body: requestBody,
      }).catch(() => null);
 
-     for (let attempt = 0; attempt < 8; attempt += 1) {
-       let puterToken = getStoredPuterToken() || '';
-       let response = await verifyWithToken(puterToken);
+      for (let attempt = 0; attempt < 8; attempt += 1) {
+        let puterToken = getStoredPuterToken() || '';
+        let response = await verifyWithToken(puterToken);
 
-       if (!response) {
-         lastError = new Error('Could not reach payment verification. Please retry.');
-       } else if (response.status === 401 && !recoveredFrom401) {
-         setStoredPuterToken('');
-         const freshSync = await syncSessionPayloadWithPuter(false, true).catch(() => null);
-         if (freshSync?.ok || freshSync?.profile) {
-           puterToken = getStoredPuterToken();
-           response = await verifyWithToken(puterToken);
-         }
-         if (response.status === 401 && currentUserUid && window.puter?.auth?.getAuthToken) {
-           puterToken = String(window.puter.auth.getAuthToken() || '').trim();
-           if (puterToken) {
-             setStoredPuterToken(puterToken);
-             response = await verifyWithToken(puterToken);
-           }
-         }
-         recoveredFrom401 = true;
-       }
+        if (!response) {
+          lastError = new Error('Could not reach payment verification. Please retry.');
+        } else if (response.status === 401 && !recoveredFrom401) {
+          const originalToken = puterToken;
+          let freshToken = '';
+          
+          const freshSync = await syncSessionPayloadWithPuter(false, true).catch(() => null);
+          if (freshSync?.ok || freshSync?.profile) {
+            freshToken = getStoredPuterToken() || '';
+            if (freshToken && freshToken !== originalToken) {
+              response = await verifyWithToken(freshToken);
+            }
+          }
+          
+          if (response.status === 401 && currentUserUid && window.puter?.auth?.getAuthToken) {
+            const sdkToken = String(window.puter.auth.getAuthToken() || '').trim();
+            if (sdkToken && sdkToken !== originalToken && sdkToken !== freshToken) {
+              setStoredPuterToken(sdkToken);
+              response = await verifyWithToken(sdkToken);
+            }
+          }
+          recoveredFrom401 = true;
+        }
 
-       if (!response) {
-         lastError = new Error('Could not reach payment verification. Please retry.');
-       } else {
-         const payload = await response.json().catch(() => ({}));
-         if (response.ok) return payload;
-         lastError = new Error(payload?.message || `Payment verification failed with status ${response.status}`);
-         const message = String(lastError.message || '').toLowerCase();
-         const shouldRetry =
-           attempt < 7
-           && (response.status >= 500 || message.includes('not completed yet'));
-         if (!shouldRetry) throw lastError;
-       }
+        if (!response) {
+          lastError = new Error('Could not reach payment verification. Please retry.');
+        } else {
+          const payload = await response.json().catch(() => ({}));
+          if (response.ok) return payload;
+          lastError = new Error(payload?.message || `Payment verification failed with status ${response.status}`);
+          const message = String(lastError.message || '').toLowerCase();
+          const shouldRetry =
+            attempt < 7
+            && (response.status >= 500 || message.includes('not completed yet'));
+          if (!shouldRetry) throw lastError;
+        }
 
-       await wait(1500);
-     }
+        await wait(1500);
+      }
 
      throw lastError || new Error('Payment verification failed.');
    }
@@ -6470,30 +6475,38 @@
 
        let response = await createOrderWithToken(puterToken);
 
-       if (response.status === 401) {
-         setStoredPuterToken('');
-         const freshSync = await syncSessionPayloadWithPuter(false, true).catch(() => null);
-         if (freshSync?.ok || freshSync?.profile) {
-           puterToken = getStoredPuterToken();
-           response = await createOrderWithToken(puterToken);
-         }
-         if (response.status === 401 && currentUserUid && window.puter?.auth?.getAuthToken) {
-           puterToken = String(window.puter.auth.getAuthToken() || '').trim();
-           if (puterToken) {
-             setStoredPuterToken(puterToken);
-             response = await createOrderWithToken(puterToken);
-           }
-         }
-         if (response.status === 401 && currentUserUid) {
-           await syncSessionPayloadWithPuter(false, true).catch(() => null);
-           puterToken = getStoredPuterToken() || '';
-           if (puterToken) response = await createOrderWithToken(puterToken);
-         }
-       }
+        if (response.status === 401) {
+          const originalToken = puterToken;
+          let freshToken = '';
+          
+          const freshSync = await syncSessionPayloadWithPuter(false, true).catch(() => null);
+          if (freshSync?.ok || freshSync?.profile) {
+            freshToken = getStoredPuterToken() || '';
+            if (freshToken && freshToken !== originalToken) {
+              response = await createOrderWithToken(freshToken);
+            }
+          }
+          
+          if (response.status === 401 && currentUserUid && window.puter?.auth?.getAuthToken) {
+            const sdkToken = String(window.puter.auth.getAuthToken() || '').trim();
+            if (sdkToken && sdkToken !== originalToken && sdkToken !== freshToken) {
+              setStoredPuterToken(sdkToken);
+              response = await createOrderWithToken(sdkToken);
+            }
+          }
+          
+          if (response.status === 401 && currentUserUid && !freshToken) {
+            await syncSessionPayloadWithPuter(false, true).catch(() => null);
+            const retryToken = getStoredPuterToken() || '';
+            if (retryToken && retryToken !== originalToken) {
+              response = await createOrderWithToken(retryToken);
+            }
+          }
+        }
 
-       if (response.status === 401) {
-         throw new Error('Could not verify your account. Please sign in again from the Lexorium home page.');
-       }
+        if (response.status === 401) {
+          throw new Error('Could not verify your account. Please sign in again from the Lexorium home page.');
+        }
 
        const order = await response.json().catch(() => ({}));
        if (!response.ok) throw new Error(order?.message || 'Could not start checkout.');
