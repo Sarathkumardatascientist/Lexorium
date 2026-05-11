@@ -66,29 +66,6 @@ function getPublicAppUrl() {
   return String(process.env.PUBLIC_APP_URL || 'http://localhost:3000').trim().replace(/\/$/, '');
 }
 
-function isLocalHostname(hostname) {
-  return /^(localhost|127(?:\.\d{1,3}){3}|0\.0\.0\.0)$/i.test(String(hostname || '').trim());
-}
-
-function extractDomainFromUrl(urlString) {
-  try {
-    const url = new URL(urlString);
-    const hostname = url.hostname;
-    
-    if (isLocalHostname(hostname)) {
-      return null;
-    }
-    
-    const parts = hostname.split('.');
-    if (parts.length >= 2) {
-      return parts.slice(-2).join('.');
-    }
-    return hostname;
-  } catch (_e) {
-    return null;
-  }
-}
-
 function createSessionCookie(user) {
   const token = encodeSignedValue({
     sub: user.sub || '',
@@ -99,23 +76,8 @@ function createSessionCookie(user) {
     iat: Date.now(),
   }, getRequiredSessionSecret());
 
-  const appUrl = getPublicAppUrl();
-  const isSecure = appUrl.startsWith('https://');
-  const domain = extractDomainFromUrl(appUrl);
-  
-  let cookie = `${SESSION_COOKIE_NAME}=${encodeURIComponent(token)}; Path=/; HttpOnly; Max-Age=${SESSION_MAX_AGE_SECONDS}`;
-  
-  if (isSecure) {
-    cookie += '; Secure; SameSite=None';
-  } else {
-    cookie += '; SameSite=Lax';
-  }
-  
-  if (domain) {
-    cookie += `; Domain=${domain}`;
-  }
-  
-  return cookie;
+  const isSecure = getPublicAppUrl().startsWith('https://');
+  return `${SESSION_COOKIE_NAME}=${encodeURIComponent(token)}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${SESSION_MAX_AGE_SECONDS}${isSecure ? '; Secure' : ''}`;
 }
 
 function getRequiredSessionSecret() {
@@ -128,63 +90,18 @@ function getRequiredSessionSecret() {
 
 function createSignedCookie(name, payload, maxAgeSeconds) {
   const token = encodeSignedValue(payload, getRequiredSessionSecret());
-  const appUrl = getPublicAppUrl();
-  const isSecure = appUrl.startsWith('https://');
-  const domain = extractDomainFromUrl(appUrl);
-  
-  let cookie = `${name}=${encodeURIComponent(token)}; Path=/; HttpOnly; Max-Age=${maxAgeSeconds}`;
-  
-  if (isSecure) {
-    cookie += '; Secure; SameSite=None';
-  } else {
-    cookie += '; SameSite=Lax';
-  }
-  
-  if (domain) {
-    cookie += `; Domain=${domain}`;
-  }
-  
-  return cookie;
+  const isSecure = getPublicAppUrl().startsWith('https://');
+  return `${name}=${encodeURIComponent(token)}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${maxAgeSeconds}${isSecure ? '; Secure' : ''}`;
 }
 
 function createExpiredSessionCookie() {
-  const appUrl = getPublicAppUrl();
-  const isSecure = appUrl.startsWith('https://');
-  const domain = extractDomainFromUrl(appUrl);
-  
-  let cookie = `${SESSION_COOKIE_NAME}=; Path=/; HttpOnly; Max-Age=0`;
-  
-  if (isSecure) {
-    cookie += '; Secure; SameSite=None';
-  } else {
-    cookie += '; SameSite=Lax';
-  }
-  
-  if (domain) {
-    cookie += `; Domain=${domain}`;
-  }
-  
-  return cookie;
+  const isSecure = getPublicAppUrl().startsWith('https://');
+  return `${SESSION_COOKIE_NAME}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0${isSecure ? '; Secure' : ''}`;
 }
 
 function createExpiredCookie(name) {
-  const appUrl = getPublicAppUrl();
-  const isSecure = appUrl.startsWith('https://');
-  const domain = extractDomainFromUrl(appUrl);
-  
-  let cookie = `${name}=; Path=/; HttpOnly; Max-Age=0`;
-  
-  if (isSecure) {
-    cookie += '; Secure; SameSite=None';
-  } else {
-    cookie += '; SameSite=Lax';
-  }
-  
-  if (domain) {
-    cookie += `; Domain=${domain}`;
-  }
-  
-  return cookie;
+  const isSecure = getPublicAppUrl().startsWith('https://');
+  return `${name}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0${isSecure ? '; Secure' : ''}`;
 }
 
 function getSessionFromRequest(req) {
