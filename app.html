@@ -5491,38 +5491,62 @@
     return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
-  async function verifyCashfreePayment(orderId, planId) {
-    let lastError = null;
-    for (let attempt = 0; attempt < 8; attempt += 1) {
-      const token = getStoredPuterToken() || '';
-      const response = await fetch(VERIFY_PAYMENT_URL, {
-        method: 'POST',
-        credentials: 'same-origin',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { 'X-Puter-Token': token } : {}),
-        },
-        body: JSON.stringify({ orderId, plan: planId || 'pro' }),
-      }).catch(() => null);
+   async function verifyCashfreePayment(orderId, planId) {
+     let lastError = null;
+     let recoveredFrom401 = false;
+     const requestBody = JSON.stringify({ orderId, plan: planId || 'pro' });
+     
+     const verifyWithToken = async (token) => fetch(VERIFY_PAYMENT_URL, {
+       method: 'POST',
+       credentials: 'same-origin',
+       headers: {
+         'Content-Type': 'application/json',
+         ...(token ? { 'X-Puter-Token': token } : {}),
+       },
+       body: requestBody,
+     }).catch(() => null);
 
-      if (!response) {
-        lastError = new Error('Could not reach payment verification. Please retry.');
-      } else {
-        const payload = await response.json().catch(() => ({}));
-        if (response.ok) return payload;
-        lastError = new Error(payload?.message || `Payment verification failed with status ${response.status}`);
-        const message = String(lastError.message || '').toLowerCase();
-        const shouldRetry =
-          attempt < 7
-          && (response.status >= 500 || message.includes('not completed yet'));
-        if (!shouldRetry) throw lastError;
-      }
+     for (let attempt = 0; attempt < 8; attempt += 1) {
+       let puterToken = getStoredPuterToken() || '';
+       let response = await verifyWithToken(puterToken);
 
-      await wait(1500);
-    }
+       if (!response) {
+         lastError = new Error('Could not reach payment verification. Please retry.');
+       } else if (response.status === 401 && !recoveredFrom401) {
+         setStoredPuterToken('');
+         const freshSync = await syncSessionPayloadWithPuter(false, true).catch(() => null);
+         if (freshSync?.ok || freshSync?.profile) {
+           puterToken = getStoredPuterToken();
+           response = await verifyWithToken(puterToken);
+         }
+         if (response.status === 401 && currentUserUid && window.puter?.auth?.getAuthToken) {
+           puterToken = String(window.puter.auth.getAuthToken() || '').trim();
+           if (puterToken) {
+             setStoredPuterToken(puterToken);
+             response = await verifyWithToken(puterToken);
+           }
+         }
+         recoveredFrom401 = true;
+       }
 
-    throw lastError || new Error('Payment verification failed.');
-  }
+       if (!response) {
+         lastError = new Error('Could not reach payment verification. Please retry.');
+       } else {
+         const payload = await response.json().catch(() => ({}));
+         if (response.ok) return payload;
+         lastError = new Error(payload?.message || `Payment verification failed with status ${response.status}`);
+         const message = String(lastError.message || '').toLowerCase();
+         const shouldRetry =
+           attempt < 7
+           && (response.status >= 500 || message.includes('not completed yet'));
+         if (!shouldRetry) throw lastError;
+       }
+
+       await wait(1500);
+     }
+
+     throw lastError || new Error('Payment verification failed.');
+   }
 
   function isDesktopSidebar() {
     return window.innerWidth >= 1101;
@@ -6386,28 +6410,28 @@
     document.getElementById('upgradeModal').classList.remove('open');
   }
 
-  async function startUpgradeFlow(planId) {
-    const targetPlan = String(planId || pendingUpgradePlan || 'pro').trim().toLowerCase();
-    if (targetPlan === 'enterprise') {
-      window.location.href = 'index.html#enterprise-contact';
-      return;
-    }
-    if (startAndroidPlayUpgrade(targetPlan)) {
-      await trackEvent('paywall_cta_clicked', { source: 'android_play', planId: currentPlan.id, targetPlanId: targetPlan });
-      return;
-    }
-    if (!authConfig.paymentEnabled || authConfig.paymentProvider !== 'cashfree' || !authConfig.paymentPublicKey) {
-      window.location.href = 'index.html#pricing';
-      return;
-    }
-    if (typeof window.Cashfree !== 'function') {
-      showError('Cashfree checkout is still loading. Please try again.');
-      return;
-    }
+   async function startUpgradeFlow(planId) {
+     const targetPlan = String(planId || pendingUpgradePlan || 'pro').trim().toLowerCase();
+     if (targetPlan === 'enterprise') {
+       window.location.href = 'index.html#enterprise-contact';
+       return;
+     }
+     if (startAndroidPlayUpgrade(targetPlan)) {
+       await trackEvent('paywall_cta_clicked', { source: 'android_play', planId: currentPlan.id, targetPlanId: targetPlan });
+       return;
+     }
+     if (!authConfig.paymentEnabled || authConfig.paymentProvider !== 'cashfree' || !authConfig.paymentPublicKey) {
+       window.location.href = 'index.html#pricing';
+       return;
+     }
+     if (typeof window.Cashfree !== 'function') {
+       showError('Cashfree checkout is still loading. Please try again.');
+       return;
+     }
 
-    try {
-      await trackEvent('paywall_cta_clicked', { source: 'app', planId: currentPlan.id, targetPlanId: targetPlan });
-      
+     try {
+       await trackEvent('paywall_cta_clicked', { source: 'app', planId: currentPlan.id, targetPlanId: targetPlan });
+       
        const customerName = document.getElementById('upgradeNameInput').value.trim();
        const enteredPhone = document.getElementById('upgradePhoneInput').value.trim();
        
@@ -6415,40 +6439,69 @@
          throw new Error('Please enter your full name for secure checkout.');
        }
        
-        const customerPhone = String(enteredPhone || '').replace(/\D/g, '').slice(-10);
+       const customerPhone = String(enteredPhone || '').replace(/\D/g, '').slice(-10);
        if (!/^\d{10}$/.test(customerPhone)) {
          throw new Error('Enter a valid 10-digit mobile number to continue checkout.');
        }
-       let token = getStoredPuterToken() || '';
-       if (!token && window.puter?.auth?.getAuthToken) {
-         token = String(window.puter.auth.getAuthToken() || '').trim();
-       }
-       const response = await fetch(CREATE_ORDER_URL, {
+
+       let puterToken = await getRequiredPuterToken(false) || '';
+       const requestBody = JSON.stringify({ plan: targetPlan, source: 'app', customerName, customerPhone });
+       
+       const createOrderWithToken = async (token) => fetch(CREATE_ORDER_URL, {
          method: 'POST',
          credentials: 'same-origin',
          headers: {
            'Content-Type': 'application/json',
            ...(token ? { 'X-Puter-Token': token } : {}),
          },
-         body: JSON.stringify({ plan: targetPlan, source: 'app', customerName, customerPhone }),
-       });
+         body: requestBody,
+       }).catch(() => { throw new Error('Could not reach the Lexorium server. Start the local server or open the deployed app.'); });
+
+       let response = await createOrderWithToken(puterToken);
+
+       if (response.status === 401) {
+         setStoredPuterToken('');
+         const freshSync = await syncSessionPayloadWithPuter(false, true).catch(() => null);
+         if (freshSync?.ok || freshSync?.profile) {
+           puterToken = getStoredPuterToken();
+           response = await createOrderWithToken(puterToken);
+         }
+         if (response.status === 401 && currentUserUid && window.puter?.auth?.getAuthToken) {
+           puterToken = String(window.puter.auth.getAuthToken() || '').trim();
+           if (puterToken) {
+             setStoredPuterToken(puterToken);
+             response = await createOrderWithToken(puterToken);
+           }
+         }
+         if (response.status === 401 && currentUserUid) {
+           await syncSessionPayloadWithPuter(false, true).catch(() => null);
+           puterToken = getStoredPuterToken() || '';
+           if (puterToken) response = await createOrderWithToken(puterToken);
+         }
+       }
+
+       if (response.status === 401) {
+         throw new Error('Could not verify your account. Please sign in again from the Lexorium home page.');
+       }
+
        const order = await response.json().catch(() => ({}));
        if (!response.ok) throw new Error(order?.message || 'Could not start checkout.');
-        localStorage.setItem(CHECKOUT_PHONE_STORAGE_KEY, customerPhone);
-        const cashfree = window.Cashfree({ mode: order.cashfreeMode || authConfig.cashfreeMode });
-        closeUpgradeModal();
-        showToast('Redirecting to secure payment...');
-        const result = await cashfree.checkout({
-          paymentSessionId: order.paymentSessionId,
-          redirectTarget: '_self',
-        });
-        if (result?.error) {
-          throw new Error(result.error.message || 'Payment failed or was cancelled.');
-        }
+       
+       localStorage.setItem(CHECKOUT_PHONE_STORAGE_KEY, customerPhone);
+       const cashfree = window.Cashfree({ mode: order.cashfreeMode || authConfig.cashfreeMode });
+       closeUpgradeModal();
+       showToast('Redirecting to secure payment...');
+       const result = await cashfree.checkout({
+         paymentSessionId: order.paymentSessionId,
+         redirectTarget: '_self',
+       });
+       if (result?.error) {
+         throw new Error(result.error.message || 'Payment failed or was cancelled.');
+       }
      } catch (error) {
-      showError(error.message || 'Could not start checkout.');
-    }
-  }
+       showError(error.message || 'Could not start checkout.');
+     }
+   }
 
   async function renderAuthProfile() {
     let session = await fetchSessionProfile();

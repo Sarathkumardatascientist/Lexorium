@@ -4267,37 +4267,66 @@ footer {
     document.body.style.overflow = 'hidden';
   }
 
-  async function submitCheckoutModal() {
-    const customerName = document.getElementById('checkoutNameInput').value.trim();
-    if (!customerName) {
-      alert('Please enter your full name for secure checkout.');
-      return;
-    }
-    
-    const rawPhone = document.getElementById('checkoutPhoneInput').value;
-    const customerPhone = String(rawPhone || '').replace(/\D/g, '').slice(-10);
-    if (!/^\d{10}$/.test(customerPhone)) {
-      alert('Enter a valid 10-digit mobile number to continue checkout.');
-      return;
-    }
-    
+   async function submitCheckoutModal() {
+     const customerName = document.getElementById('checkoutNameInput').value.trim();
+     if (!customerName) {
+       alert('Please enter your full name for secure checkout.');
+       return;
+     }
+     
+     const rawPhone = document.getElementById('checkoutPhoneInput').value;
+     const customerPhone = String(rawPhone || '').replace(/\D/g, '').slice(-10);
+     if (!/^\d{10}$/.test(customerPhone)) {
+       alert('Enter a valid 10-digit mobile number to continue checkout.');
+       return;
+     }
+     
      const plan = pendingCheckoutPlan;
+     const requestBody = JSON.stringify({ plan, customerName, customerPhone, source: 'pricing' });
 
      try {
-       let token = getStoredPuterToken() || '';
-       if (!token && window.puter?.auth?.getAuthToken) {
-         token = String(window.puter.auth.getAuthToken() || '').trim();
+       let puterToken = getStoredPuterToken() || '';
+       if (!puterToken && window.puter?.auth?.getAuthToken) {
+         puterToken = String(window.puter.auth.getAuthToken() || '').trim();
        }
 
-       const order = await fetchJson(CREATE_ORDER_URL, {
+       const createOrderWithToken = async (token) => fetch(CREATE_ORDER_URL, {
          method: 'POST',
          headers: {
            'Content-Type': 'application/json',
            ...(token ? { 'X-Puter-Token': token } : {}),
          },
          credentials: 'same-origin',
-         body: JSON.stringify({ plan, customerName, customerPhone, source: 'pricing' }),
-       });
+         body: requestBody,
+       }).catch(() => { throw new Error('Could not reach the Lexorium server. Start the local server or open the deployed app.'); });
+
+       let response = await createOrderWithToken(puterToken);
+
+       if (response.status === 401) {
+         setStoredPuterToken('');
+         const freshProfile = await ensureSessionFromPuter(false, true).catch(() => null);
+         if (freshProfile) {
+           puterToken = getStoredPuterToken() || '';
+           response = await createOrderWithToken(puterToken);
+         }
+         if (response.status === 401 && window.puter?.auth?.getAuthToken) {
+           puterToken = String(window.puter.auth.getAuthToken() || '').trim();
+           if (puterToken) {
+             setStoredPuterToken(puterToken);
+             response = await createOrderWithToken(puterToken);
+           }
+         }
+       }
+
+       if (response.status === 401) {
+         throw new Error('Could not verify your account. Please sign in again from the Lexorium home page.');
+       }
+
+       const order = await response.json().catch(() => ({}));
+       if (!response.ok) {
+         throw new Error(order?.message || 'Could not start checkout.');
+       }
+
        localStorage.setItem(CHECKOUT_PHONE_STORAGE_KEY, customerPhone);
 
        const cashfree = window.Cashfree({ mode: order.cashfreeMode || cashfreeMode });
