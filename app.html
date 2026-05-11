@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Lexorium">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdnjs.cloudflare.com https://unpkg.com https://cdn.jsdelivr.net https://js.puter.com https://sdk.cashfree.com https://fonts.googleapis.com 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob:; connect-src 'self' https://*.puter.com https://api.cashfree.com; font-src 'self' https://fonts.gstatic.com; frame-src 'none'; base-uri 'self'; form-action 'self';">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdnjs.cloudflare.com https://unpkg.com https://cdn.jsdelivr.net https://js.puter.com https://sdk.cashfree.com https://fonts.googleapis.com 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob: https://*.cashfree.com; connect-src 'self' https://*.puter.com https://api.cashfree.com https://sandbox.cashfree.com https://payments.cashfree.com; font-src 'self' https://fonts.gstatic.com; frame-src 'self' https://*.cashfree.com; base-uri 'self'; form-action 'self' https://*.cashfree.com;">
   <meta http-equiv="X-Content-Type-Options" content="nosniff">
   <meta name="referrer" content="no-referrer">
   <meta name="format-detection" content="telephone=no">
@@ -4256,8 +4256,151 @@
       'lang.switchTo': 'Switch language',
       'lang.current': 'Current language',
       'lang.systemPrompt': 'You must respond in English. Keep all section headings (## Issue, ## Applicable Law, ## Analysis, ## Conclusion, ## Practical Note, ## Disclaimer) in English.',
-      'message.structuredFlow': 'Structured Flow',
+      'general': 'General',
+      'languages': 'Languages',
+      'personalization': 'Personalization',
+      'voice': 'Voice',
+      'account': 'Account',
+      'settings.general.title': 'General',
+      'settings.general.subtitle': 'Set the default answer style, speed, and spoken language for this Lexorium workspace.',
+      'settings.languages.title': 'Languages',
+      'settings.languages.subtitle': 'Choose the language for the Lexorium interface and AI responses.',
+      'settings.personalization.title': 'Personalization',
+      'settings.personalization.subtitle': 'Shape the tone and formatting of Lexorium responses while maintaining legal structure.',
+      'settings.voice.title': 'Voice',
+      'settings.voice.subtitle': 'Manage voice analysis and reading behavior for supported plans and browsers.',
+      'settings.account.title': 'Account',
+      'settings.account.subtitle': 'Review the current account, plan access, and quick actions for sign-in and upgrades.',
       'sidebar.newChat': 'New Chats',
+      'sidebar.searchChats': 'Search Chats',
+      'sidebar.yourChats': 'Your Chats',
+      'sidebar.accountMenu.upgrade': 'Upgrade',
+      'sidebar.accountMenu.personalization': 'Personalization',
+      'sidebar.accountMenu.profile': 'Profile',
+      'sidebar.accountMenu.settings': 'Settings',
+      'sidebar.accountMenu.help': 'Help',
+      'sidebar.accountMenu.logOut': 'Log Out',
+      'settings.baseTone.title': 'Base Style & Tone',
+      'settings.baseTone.desc': 'Set the default feel of Lexorium responses while keeping them legally precise and structured.',
+      'settings.baseTone.options.default': 'Default',
+      'settings.baseTone.options.professional': 'Professional',
+      'settings.baseTone.options.concise': 'Concise',
+      'settings.baseTone.options.supportive': 'Supportive',
+      'settings.spokenLanguage.title': 'Spoken Language',
+      'settings.spokenLanguage.desc': 'Used for voice input and reading responses when your browser supports these features.',
+      'settings.spokenLanguage.options.auto': 'Auto Detect',
+      'settings.spokenLanguage.options.en-IN': 'English (India)',
+      'settings.spokenLanguage.options.en-US': 'English (United States)',
+      'settings.spokenLanguage.options.en-GB': 'English (United Kingdom)',
+      'settings.answerSpeed.title': 'Answer Speed',
+      'settings.answerSpeed.desc': 'Instant responses reduce animation time. Disable if you prefer a slower reveal.',
+      'settings.answerNotifications.title': 'Answer Notifications',
+      'settings.answerNotifications.desc': 'Enable notifications to be alerted when a response is ready in another tab.',
+      'settings.warmth.title': 'Warmth',
+      'settings.warmth.desc': 'Choose how warm Lexorium should feel while remaining professional.',
+      'settings.warmth.options.default': 'Default',
+      'settings.warmth.options.subtle': 'Subtle',
+      'settings.warmth.options.balanced': 'Balanced',
+      'settings.warmth.options.high': 'High',
+      'settings.enthusiasm.title': 'Enthusiasm',
+      'settings.enthusiasm.desc': 'Control the energy of phrasing in day-to-day legal Q&A.',
+      'settings.enthusiasm.options.default': 'Default',
+      'settings.enthusiasm.options.low': 'Low',
+      'settings.enthusiasm.options.balanced': 'Balanced',
+      'settings.enthusiasm.options.high': 'High',
+      'settings.headersLists.title': 'Headers & Lists',
+      'settings.headersLists.desc': 'Adjust formatting while preserving required legal structure.',
+      'settings.headersLists.options.default': 'Default',
+      'settings.headersLists.options.minimal': 'Minimal',
+      'settings.headersLists.options.balanced': 'Balanced',
+      'settings.headersLists.options.detailed': 'Detailed',
+      'settings.voicePreference.title': 'Voice Preference',
+      'settings.voicePreference.desc': 'Choose how Lexorium selects a reading voice.',
+      'settings.voicePreference.options.google': 'Google Preferred',
+      'settings.voicePreference.options.system': 'System Default',
+      'settings.answerPlayback.title': 'Answer Playback',
+      'settings.answerPlayback.desc': 'Use the play button on responses to hear the text without the flowchart.',
+      'settings.voiceAnalysis.title': 'Voice Analysis',
+      'settings.voiceAnalysis.desc': 'Pro and Enterprise accounts can ask legal questions by voice.',
+      'settings.account.signIn': 'Sign in to Lexorium',
+      'settings.account.freePlan': 'Free Plan',
+      'settings.account.upgrade': 'Upgrade',
+      'settings.account.renameChat': 'Rename Chat',
+      'settings.account.clearHistory': 'Clear History',
+      'settings.account.hideSidebar': 'Hide Sidebar',
+      'settings.account.voiceSettings': 'Voice Settings',
+      'settings.account.logOut': 'Log Out',
+      'header.brand': 'Lexorium',
+      'header.tagline': 'Powering the Future of Law',
+      'empty.title': 'How can I help you today?',
+      'empty.subtitle': 'Legal Intelligence | Always On',
+      'empty.habit': 'Use Lexorium daily for legal clarity.',
+      'onboarding.title': 'What do you want to use Lexorium for?',
+      'onboarding.copy': 'Choose your legal workflow so Lexorium can tune prompts and guidance from the first answer.',
+      'onboarding.lawStudent': 'Law Student',
+      'onboarding.advocate': 'Advocate',
+      'onboarding.businessUser': 'Business User',
+      'starter.heading': 'Start with one of these legal prompts',
+      'composer.placeholder': 'Ask a legal or compliance question...',
+      'composer.footer': 'Enter send | Shift+Enter new line | legal-only workspace',
+      'composer.footer.disclaimer': 'Do not upload confidential information. AI-generated responses may be inaccurate and are not legal advice.',
+      'composer.attach.draft': 'Draft',
+      'composer.attach.contract': 'Contract Draft',
+      'composer.attach.summarise': 'Summarise Document',
+      'composer.attach.analyse': 'Analyse',
+      'composer.attach.analyseDoc': 'Analyse Document',
+      'composer.attach.risk': 'Risk Assessment',
+      'composer.attach.voice': 'Voice Analysis',
+      'composer.attach.research': 'Research',
+      'composer.attach.researchTopic': 'Research Topic',
+      'composer.attach.attach': 'Attach',
+      'composer.attach.photo': 'Photo',
+      'composer.attach.camera': 'Camera',
+      'composer.attach.file': 'File / PDF',
+      'message.you': 'You',
+      'message.lexorium': 'Lexorium',
+      'message.legalIntelligence': 'Legal Intelligence',
+      'message.processing': 'Processing',
+      'message.analysing': 'Analysing Attachments',
+      'message.thinking.copy': 'Lexorium is preparing your response.',
+      'message.thinking.analysingCopy': 'Lexorium is reviewing uploaded documents and preparing a precise legal response.',
+      'message.copy': 'Copy Response',
+      'message.share': 'Share Response',
+      'message.pdf': 'Download PDF',
+      'message.docx': 'Download DOCX',
+      'message.readAloud': 'Read Aloud',
+      'message.stopReadAloud': 'Stop Reading',
+      'message.structuredFlow': 'Structured Flow',
+      'message.imageAnalysis': 'Image Analysis',
+      'message.fileAnalysis': 'File Analysis',
+      'message.imageAttached': 'Image Attached',
+      'message.pdfAttached': 'PDF Attached',
+      'message.docAttached': 'Document Attached',
+      'message.fileAttached': 'File Attached',
+      'modal.rename.title': 'Rename Chat',
+      'modal.rename.placeholder': 'Enter a name...',
+      'modal.rename.cancel': 'Cancel',
+      'modal.rename.save': 'Save',
+      'modal.upgrade.title': 'Upgrade to Lexorium',
+      'modal.upgrade.copy': 'Upgrade this account to Lexorium Pro.',
+      'modal.upgrade.name': 'Full Name',
+      'modal.upgrade.phone': 'Mobile Number',
+      'modal.upgrade.notNow': 'Not Now',
+      'modal.upgrade.upgrade': 'Upgrade',
+      'modal.advanced.title': 'Advanced Compute Required',
+      'modal.advanced.body': 'Advanced processing may require compute access. You stay in control — any extra usage will be shown to you before execution.',
+      'modal.advanced.cancel': 'Cancel',
+      'modal.advanced.proceed': 'Proceed',
+      'modal.deleteChat.title': 'Delete this chat? This action is irreversible.',
+      'modal.clearHistory.title': 'Clear all history? This action is irreversible.',
+      'modal.newChat.title': 'New chat? The current conversation will be cleared.',
+      'toast.settingsSaved': 'Settings saved',
+      'toast.copied': 'Copied',
+      'toast.shared': 'Shared',
+      'toast.downloaded': 'Downloaded',
+      'toast.chatCleared': 'History cleared',
+      'toast.conversationDeleted': 'Conversation deleted',
+      'toast.newChat': 'New chat started',
     },
     ml: {
       'lang.label': 'ഭാഷ',
@@ -6280,15 +6423,18 @@
       });
       const order = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(order?.message || 'Could not start checkout.');
-      localStorage.setItem(CHECKOUT_PHONE_STORAGE_KEY, customerPhone);
-      const cashfree = window.Cashfree({ mode: order.cashfreeMode || authConfig.cashfreeMode });
-      closeUpgradeModal();
-      showToast('Redirecting to secure payment...');
-      await cashfree.checkout({
-        paymentSessionId: order.paymentSessionId,
-        redirectTarget: '_self',
-      });
-    } catch (error) {
+       localStorage.setItem(CHECKOUT_PHONE_STORAGE_KEY, customerPhone);
+       const cashfree = window.Cashfree({ mode: order.cashfreeMode || authConfig.cashfreeMode });
+       closeUpgradeModal();
+       showToast('Redirecting to secure payment...');
+       const result = await cashfree.checkout({
+         paymentSessionId: order.paymentSessionId,
+         redirectTarget: '_self',
+       });
+       if (result?.error) {
+         throw new Error(result.error.message || 'Payment failed or was cancelled.');
+       }
+     } catch (error) {
       showError(error.message || 'Could not start checkout.');
     }
   }
@@ -7684,6 +7830,20 @@
     return map[key] || String(label || '').trim();
   }
 
+  function isCompleteSentence(text) {
+    const trimmed = String(text || '').trim();
+    if (!trimmed) return false;
+    return /[.!?]$/.test(trimmed) || /\.\.\.$/.test(trimmed);
+  }
+
+  function ensureCompleteSentence(text) {
+    const trimmed = String(text || '').trim();
+    if (!trimmed) return '';
+    if (isCompleteSentence(trimmed)) return trimmed;
+    const cleaned = trimmed.replace(/[,;:]$/, '').trim();
+    return cleaned + '.';
+  }
+
   function splitCompleteSentences(text) {
     const cleaned = String(text || '')
       .replace(/\[SOURCE:\d+\|[^\]]+\]/gi, '')
@@ -7699,10 +7859,12 @@
       return abbrs.has(word) ? match.replace(/\s$/, '\x00') : match;
     });
 
-    return protected
+    const rawChunks = protected
       .split(/(?<=[.!?])\s+/)
       .map((s) => s.replace(/\x00/g, ' ').trim())
       .filter(Boolean);
+
+    return rawChunks.filter(isCompleteSentence);
   }
 
   function summariseFlowSnippet(text, maxLength = 5000, maxSentences = 50) {
@@ -7715,20 +7877,28 @@
     if (!cleaned) return '';
 
     const sentences = splitCompleteSentences(cleaned);
-    if (!sentences.length) return cleaned;
 
     const selected = [];
     for (const sentence of sentences) {
       if (selected.length >= maxSentences) break;
       const candidate = [...selected, sentence].join(' ');
-      if (!selected.length || candidate.length <= maxLength) {
+      if (candidate.length <= maxLength) {
         selected.push(sentence);
         continue;
       }
       break;
     }
 
-    return selected.join(' ').trim() || sentences[0] || cleaned;
+    if (selected.length > 0) {
+      return selected.join(' ').trim();
+    }
+
+    const firstComplete = sentences.find(isCompleteSentence);
+    if (firstComplete) {
+      return firstComplete.length <= maxLength ? firstComplete : firstComplete.slice(0, maxLength - 3) + '...';
+    }
+
+    return ensureCompleteSentence(cleaned.slice(0, Math.min(cleaned.length, maxLength)));
   }
 
   function extractStructuredFlowSections(text) {
@@ -7835,7 +8005,7 @@
     const numbered = lines
       .map(line => {
         const match = line.match(/^\d+\.\s+(.+)$/);
-        return match ? match[1].trim() : null;
+        return match ? ensureCompleteSentence(match[1].trim()) : null;
       })
       .filter(Boolean);
 
@@ -7843,7 +8013,7 @@
 
     const headingSteps = lines
       .filter(line => /^#{2,3}\s+/.test(line))
-      .map(line => line.replace(/^#{2,3}\s+/, '').trim());
+      .map(line => ensureCompleteSentence(line.replace(/^#{2,3}\s+/, '').trim()));
 
     if (headingSteps.length >= 2) return headingSteps.slice(0, 12);
 
@@ -7859,8 +8029,17 @@
     return [];
   }
 
+  function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+  }
+
   function escapeMermaidLabel(text) {
-    return String(text || '').replace(/"/g, "'").replace(/[<>[\]{}|]/g, '');
+    let result = String(text || '')
+      .replace(/[<>[\]{}|]/g, '')
+      .replace(/"/g, "'");
+    return escapeHtml(result);
   }
 
   function formatFlowNodeLabel(step) {
