@@ -1,6 +1,7 @@
 const { getSessionFromRequest } = require('../auth/_session');
+const { extractPuterToken, resolvePuterUser } = require('../_lib/puter-client');
 const store = require('../_lib/store');
-const { activatePaidPlan, getUser, track } = store;
+const { activatePaidPlan, getUser, upsertUser, track } = store;
 const { parseJsonBody, requireMethod, sendError, sendJson } = require('../_lib/http');
 const { fetchOrder, getCashfreeConfig } = require('./_cashfree');
 const { getCheckoutPlan, getPublicPlanSummary } = require('../_lib/plan-access');
@@ -42,20 +43,64 @@ function orderBelongsToUser(order, user) {
   );
 }
 
+async function resolveUserWithFallback(req, body) {
+  const session = getSessionFromRequest(req);
+  const explicitToken = extractPuterToken(req, body);
+
+  if (!session?.sub && !explicitToken) {
+    return null;
+  }
+
+  let user = null;
+  if (session?.sub) {
+    user = await getUser(session.sub);
+  }
+  if (!user && explicitToken) {
+    try {
+      const puterProfile = await resolvePuterUser(explicitToken);
+      if (puterProfile) {
+        const uuid = String(
+          puterProfile.uuid || puterProfile.id || puterProfile._id ||
+          puterProfile.username || puterProfile.email || ''
+        ).trim();
+        if (uuid) {
+          const uid = `puter:${uuid.toLowerCase()}`;
+          const name = String(
+            puterProfile.name || puterProfile.display_name || puterProfile.displayName ||
+            puterProfile.full_name || puterProfile.fullName || puterProfile.username || ''
+          ).trim();
+          const email = String(puterProfile.email || '').trim() || `${uuid.toLowerCase()}@puter.local`;
+          const avatar = String(puterProfile.avatar || puterProfile.picture || '').trim();
+          user = await upsertUser({ uid, authProvider: 'puter', name: name || 'Lexorium User', email, avatar });
+        }
+      }
+    } catch (_tokenError) {
+      // Token resolution failed; user stays null
+    }
+  }
+  return user;
+}
+
 module.exports = async (req, res) => {
   if (!requireMethod(req, res, 'POST')) return;
-
-  const session = getSessionFromRequest(req);
-  if (!session) return sendError(res, 401, 'Sign in is required before verifying payment.');
-
-  const cashfree = getCashfreeConfig();
-  if (!cashfree.enabled) return sendError(res, 500, 'Payment gateway is not configured.');
 
   const body = await parseJsonBody(req).catch((error) => ({ __error: error }));
   if (body.__error) return sendError(res, body.__error.statusCode || 400, body.__error.message);
 
+  const user = await resolveUserWithFallback(req, body);
+  if (!user) {
+    return sendError(res, 401, 'Sign in is required before verifying payment.');
+  }
+
+  const cashfree = getCashfreeConfig();
+  if (!cashfree.enabled) {
+    return sendError(res, 500, 'Payment gateway is not configured.');
+  }
+
   const orderId = String(body.orderId || body.cashfree_order_id || body.order_id || '').trim();
-  if (!orderId) return sendError(res, 400, 'Missing Cashfree order id.');
+  if (!orderId) {
+    return sendError(res, 400, 'Missing Cashfree order id.');
+  }
 
   const { response, data } = await fetchPaidOrderWithRetries(cashfree, orderId);
   if (!response.ok) {
@@ -65,8 +110,6 @@ module.exports = async (req, res) => {
     return sendError(res, 400, 'Payment is not completed yet.');
   }
 
-  const user = await getUser(session.sub);
-  if (!user) return sendError(res, 404, 'User record not found.');
   if (!orderBelongsToUser(data, user)) {
     return sendError(res, 403, 'This payment does not belong to the signed-in Lexorium account.');
   }
@@ -78,7 +121,9 @@ module.exports = async (req, res) => {
     'pro'
   ).trim().toLowerCase();
   const checkoutPlan = getCheckoutPlan(paidPlanId) || getCheckoutPlan('pro');
-  if (!checkoutPlan) return sendError(res, 400, 'The paid plan could not be resolved.');
+  if (!checkoutPlan) {
+    return sendError(res, 400, 'The paid plan could not be resolved.');
+  }
   const paymentId = data.cf_order_id || data.payment_id || data.order_id || '';
 
   const updated = await activatePaidPlan(user.uid, checkoutPlan.id, {

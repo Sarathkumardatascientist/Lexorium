@@ -5494,10 +5494,14 @@
   async function verifyCashfreePayment(orderId, planId) {
     let lastError = null;
     for (let attempt = 0; attempt < 8; attempt += 1) {
+      const token = getStoredPuterToken() || '';
       const response = await fetch(VERIFY_PAYMENT_URL, {
         method: 'POST',
         credentials: 'same-origin',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'X-Puter-Token': token } : {}),
+        },
         body: JSON.stringify({ orderId, plan: planId || 'pro' }),
       }).catch(() => null);
 
@@ -6404,36 +6408,40 @@
     try {
       await trackEvent('paywall_cta_clicked', { source: 'app', planId: currentPlan.id, targetPlanId: targetPlan });
       
-      const customerName = document.getElementById('upgradeNameInput').value.trim();
-      const enteredPhone = document.getElementById('upgradePhoneInput').value.trim();
-      
-      if (!customerName) {
-        throw new Error('Please enter your full name for secure checkout.');
-      }
-      
-      const customerPhone = String(enteredPhone || '').replace(/\D/g, '').slice(-10);
-      if (!/^\d{10}$/.test(customerPhone)) {
-        throw new Error('Enter a valid 10-digit mobile number to continue checkout.');
-      }
-      const response = await fetch(CREATE_ORDER_URL, {
-        method: 'POST',
-        credentials: 'same-origin',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ plan: targetPlan, source: 'app', customerName, customerPhone }),
-      });
-      const order = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(order?.message || 'Could not start checkout.');
-       localStorage.setItem(CHECKOUT_PHONE_STORAGE_KEY, customerPhone);
-       const cashfree = window.Cashfree({ mode: order.cashfreeMode || authConfig.cashfreeMode });
-       closeUpgradeModal();
-       showToast('Redirecting to secure payment...');
-       const result = await cashfree.checkout({
-         paymentSessionId: order.paymentSessionId,
-         redirectTarget: '_self',
-       });
-       if (result?.error) {
-         throw new Error(result.error.message || 'Payment failed or was cancelled.');
+       const customerName = document.getElementById('upgradeNameInput').value.trim();
+       const enteredPhone = document.getElementById('upgradePhoneInput').value.trim();
+       
+       if (!customerName) {
+         throw new Error('Please enter your full name for secure checkout.');
        }
+       
+       const customerPhone = String(enteredPhone || '').replace(/\D/g, '').slice(-10);
+       if (!/^\d{10}$/.test(customerPhone)) {
+         throw new Error('Enter a valid 10-digit mobile number to continue checkout.');
+       }
+       const token = getStoredPuterToken() || '';
+       const response = await fetch(CREATE_ORDER_URL, {
+         method: 'POST',
+         credentials: 'same-origin',
+         headers: {
+           'Content-Type': 'application/json',
+           ...(token ? { 'X-Puter-Token': token } : {}),
+         },
+         body: JSON.stringify({ plan: targetPlan, source: 'app', customerName, customerPhone }),
+       });
+       const order = await response.json().catch(() => ({}));
+       if (!response.ok) throw new Error(order?.message || 'Could not start checkout.');
+        localStorage.setItem(CHECKOUT_PHONE_STORAGE_KEY, customerPhone);
+        const cashfree = window.Cashfree({ mode: order.cashfreeMode || authConfig.cashfreeMode });
+        closeUpgradeModal();
+        showToast('Redirecting to secure payment...');
+        const result = await cashfree.checkout({
+          paymentSessionId: order.paymentSessionId,
+          redirectTarget: '_self',
+        });
+        if (result?.error) {
+          throw new Error(result.error.message || 'Payment failed or was cancelled.');
+        }
      } catch (error) {
       showError(error.message || 'Could not start checkout.');
     }

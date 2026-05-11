@@ -1,6 +1,7 @@
 const { getSessionFromRequest } = require('../auth/_session');
+const { extractPuterToken, resolvePuterUser } = require('../_lib/puter-client');
 const store = require('../_lib/store');
-const { getUser, recordCheckoutIntent, track, updateUserProfile } = store;
+const { getUser, upsertUser, recordCheckoutIntent, track, updateUserProfile } = store;
 const { parseJsonBody, requireMethod, sendError, sendJson } = require('../_lib/http');
 const { createHeaders, getCashfreeConfig } = require('./_cashfree');
 const { comparePlanIds, getCheckoutPlan, getPlanForProfile } = require('../_lib/plan-access');
@@ -75,15 +76,49 @@ module.exports = async (req, res) => {
   if (!requireMethod(req, res, 'POST')) return;
 
   const session = getSessionFromRequest(req);
-  if (!session) return sendError(res, 401, 'Sign in is required before checkout.');
-
-  const user = await getUser(session.sub);
-  if (!user) return sendError(res, 401, 'User record not found.');
-
   const body = await parseJsonBody(req).catch(() => ({}));
+  const explicitToken = extractPuterToken(req, body);
+
+  if (!session?.sub && !explicitToken) {
+    return sendError(res, 401, 'Sign in is required before checkout.');
+  }
+
+  let user = null;
+  if (session?.sub) {
+    user = await getUser(session.sub);
+  }
+  if (!user && explicitToken) {
+    try {
+      const puterProfile = await resolvePuterUser(explicitToken);
+      if (puterProfile) {
+        const uuid = String(
+          puterProfile.uuid || puterProfile.id || puterProfile._id ||
+          puterProfile.username || puterProfile.email || ''
+        ).trim();
+        if (uuid) {
+          const uid = `puter:${uuid.toLowerCase()}`;
+          const name = String(
+            puterProfile.name || puterProfile.display_name || puterProfile.displayName ||
+            puterProfile.full_name || puterProfile.fullName || puterProfile.username || ''
+          ).trim();
+          const email = String(puterProfile.email || '').trim() || `${uuid.toLowerCase()}@puter.local`;
+          const avatar = String(puterProfile.avatar || puterProfile.picture || '').trim();
+          user = await upsertUser({ uid, authProvider: 'puter', name: name || 'Lexorium User', email, avatar });
+        }
+      }
+    } catch (_tokenError) {
+      // Token resolution failed; user stays null
+    }
+  }
+  if (!user) {
+    return sendError(res, 401, 'Sign in is required before checkout.');
+  }
+
   const requestedPlan = String(body.plan || 'pro').trim().toLowerCase();
   const checkoutPlan = getCheckoutPlan(requestedPlan);
-  if (!checkoutPlan) return sendError(res, 400, 'This plan is not available for self-serve checkout.');
+  if (!checkoutPlan) {
+    return sendError(res, 400, 'This plan is not available for self-serve checkout.');
+  }
 
   const currentPlanId = getPlanForProfile(user, req);
   if (currentPlanId === checkoutPlan.id) {
