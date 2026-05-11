@@ -84,6 +84,7 @@ module.exports = async (req, res) => {
   }
 
   let user = null;
+  let tokenError = null;
   if (session?.sub) {
     user = await getUser(session.sub);
   }
@@ -107,10 +108,18 @@ module.exports = async (req, res) => {
         }
       }
     } catch (_tokenError) {
-      // Token resolution failed; user stays null
+      tokenError = _tokenError;
     }
   }
   if (!user) {
+    if (tokenError) {
+      const errorMessage = tokenError.message || String(tokenError || '');
+      const isAuthError = tokenError.code === 'PUTER_AUTH_REQUIRED' || tokenError.statusCode === 401;
+      if (isAuthError || errorMessage.toLowerCase().includes('sign in') || errorMessage.toLowerCase().includes('auth')) {
+        return sendError(res, 401, 'Your session has expired. Please sign in again.');
+      }
+      return sendError(res, 500, 'Could not verify your account. Please try again or sign in again.');
+    }
     return sendError(res, 401, 'Sign in is required before checkout.');
   }
 

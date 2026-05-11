@@ -75,7 +75,7 @@ async function resolveUserWithFallback(req, body) {
         }
       }
     } catch (_tokenError) {
-      // Token resolution failed; user stays null
+      console.error('Token resolution failed in verify-payment:', _tokenError?.message || _tokenError);
     }
   }
   return user;
