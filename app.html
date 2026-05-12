@@ -6456,97 +6456,80 @@
        return;
      }
 
-      try {
-        await trackEvent('paywall_cta_clicked', { source: 'app', planId: currentPlan.id, targetPlanId: targetPlan });
-        
-        const customerName = document.getElementById('upgradeNameInput').value.trim();
-        const customerUsername = document.getElementById('upgradeUsernameInput')?.value?.trim() || '';
-        const customerEmail = document.getElementById('upgradeEmailInput')?.value?.trim() || '';
-        const enteredPhone = document.getElementById('upgradePhoneInput').value.trim();
-        
-        if (!customerName) {
-          throw new Error('Please enter your full name for secure checkout.');
-        }
-        
-        if (customerEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customerEmail)) {
-          throw new Error('Please enter a valid email address.');
-        }
-        
-        const customerPhone = String(enteredPhone || '').replace(/\D/g, '').slice(-10);
-        if (!/^\d{10}$/.test(customerPhone)) {
-          throw new Error('Enter a valid 10-digit mobile number to continue checkout.');
-        }
-
-        let sdkToken = '';
-        if (window.puter?.auth?.getAuthToken) {
-          sdkToken = String(window.puter.auth.getAuthToken() || '').trim();
-          if (sdkToken) setStoredPuterToken(sdkToken);
-        }
-
-        let puterToken = sdkToken || (await getRequiredPuterToken(false) || '');
-
-        if (!puterToken && currentUserUid) {
-          await syncSessionPayloadWithPuter(false, true).catch(() => null);
-          puterToken = getStoredPuterToken() || '';
-        }
-
-        if (!puterToken && !sdkToken && window.puter?.auth?.getAuthToken) {
-          sdkToken = String(window.puter.auth.getAuthToken() || '').trim();
-          if (sdkToken) {
-            setStoredPuterToken(sdkToken);
-            puterToken = sdkToken;
-          }
-        }
-
-        const requestBody = JSON.stringify({ 
-          plan: targetPlan, 
-          source: 'app', 
-          customerName, 
-          customerUsername,
-          customerEmail,
-          customerPhone 
-        });
-       
-       const createOrderWithToken = async (token) => fetch(CREATE_ORDER_URL, {
-         method: 'POST',
-         credentials: 'same-origin',
-         headers: {
-           'Content-Type': 'application/json',
-           ...(token ? { 'X-Puter-Token': token } : {}),
-         },
-         body: requestBody,
-       }).catch(() => { throw new Error('Could not reach the Lexorium server. Start the local server or open the deployed app.'); });
-
-        let response = await createOrderWithToken(puterToken);
-
-         if (response.status === 401) {
-           const originalToken = puterToken;
-           let freshToken = '';
-           
-           const freshSync = await syncSessionPayloadWithPuter(false, true).catch(() => null);
-           if (freshSync?.ok || freshSync?.profile) {
-             freshToken = getStoredPuterToken() || '';
-             if (freshToken && freshToken !== originalToken) {
-               response = await createOrderWithToken(freshToken);
-             }
-           }
-           
-           if (response.status === 401 && currentUserUid && window.puter?.auth?.getAuthToken) {
-             const sdkToken = String(window.puter.auth.getAuthToken() || '').trim();
-             if (sdkToken && sdkToken !== originalToken && sdkToken !== freshToken) {
-               setStoredPuterToken(sdkToken);
-               response = await createOrderWithToken(sdkToken);
-             }
-           }
-           
-           if (response.status === 401 && currentUserUid && !freshToken) {
-             await syncSessionPayloadWithPuter(false, true).catch(() => null);
-             const retryToken = getStoredPuterToken() || '';
-             if (retryToken && retryToken !== originalToken) {
-               response = await createOrderWithToken(retryToken);
-             }
-           }
+       try {
+         await trackEvent('paywall_cta_clicked', { source: 'app', planId: currentPlan.id, targetPlanId: targetPlan });
+         
+         const customerName = document.getElementById('upgradeNameInput').value.trim();
+         const customerUsername = document.getElementById('upgradeUsernameInput')?.value?.trim() || '';
+         const customerEmail = document.getElementById('upgradeEmailInput')?.value?.trim() || '';
+         const enteredPhone = document.getElementById('upgradePhoneInput').value.trim();
+         
+         if (!customerName) {
+           throw new Error('Please enter your full name for secure checkout.');
          }
+         
+         if (customerEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customerEmail)) {
+           throw new Error('Please enter a valid email address.');
+         }
+         
+         const customerPhone = String(enteredPhone || '').replace(/\D/g, '').slice(-10);
+         if (!/^\d{10}$/.test(customerPhone)) {
+           throw new Error('Enter a valid 10-digit mobile number to continue checkout.');
+         }
+
+         let puterToken = await getRequiredPuterToken(false) || '';
+
+         if (!puterToken && currentUserUid) {
+           await syncSessionPayloadWithPuter(false, true).catch(() => null);
+           puterToken = getStoredPuterToken() || '';
+         }
+
+         if (!puterToken && currentUserUid && window.puter?.auth?.getAuthToken) {
+           puterToken = String(window.puter.auth.getAuthToken() || '').trim();
+           if (puterToken) setStoredPuterToken(puterToken);
+         }
+
+         const requestBody = JSON.stringify({ 
+           plan: targetPlan, 
+           source: 'app', 
+           customerName, 
+           customerUsername,
+           customerEmail,
+           customerPhone 
+         });
+        
+        const createOrderWithToken = async (token) => fetch(CREATE_ORDER_URL, {
+          method: 'POST',
+          credentials: 'same-origin',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { 'X-Puter-Token': token } : {}),
+          },
+          body: requestBody,
+        }).catch(() => { throw new Error('Could not reach the Lexorium server. Start the local server or open the deployed app.'); });
+
+         let response = await createOrderWithToken(puterToken);
+
+          if (response.status === 401) {
+            setStoredPuterToken('');
+            const freshSync = await syncSessionPayloadWithPuter(false, true).catch(() => null);
+            if (freshSync?.ok || freshSync?.profile) {
+              puterToken = getStoredPuterToken();
+              response = await createOrderWithToken(puterToken);
+            }
+            if (response.status === 401 && currentUserUid && window.puter?.auth?.getAuthToken) {
+              puterToken = String(window.puter.auth.getAuthToken() || '').trim();
+              if (puterToken) {
+                setStoredPuterToken(puterToken);
+                response = await createOrderWithToken(puterToken);
+              }
+            }
+            if (response.status === 401 && currentUserUid) {
+              await syncSessionPayloadWithPuter(false, true).catch(() => null);
+              puterToken = getStoredPuterToken() || '';
+              if (puterToken) response = await createOrderWithToken(puterToken);
+            }
+          }
 
         const order = await response.json().catch(() => ({}));
         if (!response.ok) {
