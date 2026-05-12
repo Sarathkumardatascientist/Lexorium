@@ -6478,16 +6478,18 @@
            throw new Error('Enter a valid 10-digit mobile number to continue checkout.');
          }
 
-         let puterToken = await getRequiredPuterToken(false) || '';
-
-         if (!puterToken && currentUserUid) {
-           await syncSessionPayloadWithPuter(false, true).catch(() => null);
-           puterToken = getStoredPuterToken() || '';
+         const freshSync = await syncSessionPayloadWithPuter(false, true).catch(() => null);
+         
+         let sdkToken = '';
+         if (window.puter?.auth?.getAuthToken) {
+           sdkToken = String(window.puter.auth.getAuthToken() || '').trim();
+           if (sdkToken) setStoredPuterToken(sdkToken);
          }
-
-         if (!puterToken && currentUserUid && window.puter?.auth?.getAuthToken) {
-           puterToken = String(window.puter.auth.getAuthToken() || '').trim();
-           if (puterToken) setStoredPuterToken(puterToken);
+         
+         let puterToken = sdkToken || getStoredPuterToken() || '';
+         
+         if (!puterToken && (freshSync?.ok || freshSync?.profile)) {
+           puterToken = getStoredPuterToken() || '';
          }
 
          const requestBody = JSON.stringify({ 
@@ -6513,45 +6515,42 @@
 
           if (response.status === 401) {
             setStoredPuterToken('');
-            const freshSync = await syncSessionPayloadWithPuter(false, true).catch(() => null);
-            if (freshSync?.ok || freshSync?.profile) {
+            
+            const secondSync = await syncSessionPayloadWithPuter(false, true).catch(() => null);
+            if (secondSync?.ok || secondSync?.profile) {
               puterToken = getStoredPuterToken();
               response = await createOrderWithToken(puterToken);
             }
-            if (response.status === 401 && currentUserUid && window.puter?.auth?.getAuthToken) {
+            
+            if (response.status === 401 && window.puter?.auth?.getAuthToken) {
               puterToken = String(window.puter.auth.getAuthToken() || '').trim();
               if (puterToken) {
                 setStoredPuterToken(puterToken);
                 response = await createOrderWithToken(puterToken);
               }
             }
-            if (response.status === 401 && currentUserUid) {
-              await syncSessionPayloadWithPuter(false, true).catch(() => null);
-              puterToken = getStoredPuterToken() || '';
-              if (puterToken) response = await createOrderWithToken(puterToken);
-            }
           }
 
-        const order = await response.json().catch(() => ({}));
-        if (!response.ok) {
-          const backendError = order?.message || order?.error || `Request failed with status ${response.status}`;
-          throw new Error(backendError);
+         const order = await response.json().catch(() => ({}));
+         if (!response.ok) {
+           const backendError = order?.message || order?.error || `Request failed with status ${response.status}`;
+           throw new Error(backendError);
+         }
+        
+        localStorage.setItem(CHECKOUT_PHONE_STORAGE_KEY, customerPhone);
+        const cashfree = window.Cashfree({ mode: order.cashfreeMode || authConfig.cashfreeMode });
+        closeUpgradeModal();
+        showToast('Redirecting to secure payment...');
+        const result = await cashfree.checkout({
+          paymentSessionId: order.paymentSessionId,
+          redirectTarget: '_self',
+        });
+        if (result?.error) {
+          throw new Error(result.error.message || 'Payment failed or was cancelled.');
         }
-       
-       localStorage.setItem(CHECKOUT_PHONE_STORAGE_KEY, customerPhone);
-       const cashfree = window.Cashfree({ mode: order.cashfreeMode || authConfig.cashfreeMode });
-       closeUpgradeModal();
-       showToast('Redirecting to secure payment...');
-       const result = await cashfree.checkout({
-         paymentSessionId: order.paymentSessionId,
-         redirectTarget: '_self',
-       });
-       if (result?.error) {
-         throw new Error(result.error.message || 'Payment failed or was cancelled.');
-       }
-     } catch (error) {
-       showError(error.message || 'Could not start checkout.');
-     }
+      } catch (error) {
+        showError(error.message || 'Could not start checkout.');
+      }
    }
 
   async function renderAuthProfile() {
