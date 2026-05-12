@@ -4783,24 +4783,25 @@
 
   function getStoredPuterToken() {
     try {
-      // 1. Try Lexorium-specific storage
+      // 1. ALWAYS try the live SDK FIRST - this is the source of truth for fresh tokens
+      if (window.puter?.auth?.getAuthToken) {
+        let token = window.puter.auth.getAuthToken();
+        if (token && String(token).trim()) {
+          const freshToken = String(token).trim();
+          try { setStoredPuterToken(freshToken); } catch (_e) {}
+          return freshToken;
+        }
+      }
+
+      // 2. Try Lexorium-specific storage (fallback if SDK not available)
       let token = localStorage.getItem(LEXORIUM_PUTER_TOKEN_STORAGE_KEY);
       if (token && String(token).trim()) return String(token).trim();
 
-      // 2. Try Puter's own storage key (common in v2)
+      // 3. Try Puter's own storage key (common in v2)
       token = localStorage.getItem('puter.auth.token');
       if (token && String(token).trim()) {
         try { setStoredPuterToken(token); } catch (_e) {}
         return String(token).trim();
-      }
-
-      // 3. Try the live SDK if available (most reliable for active sessions)
-      if (window.puter?.auth?.getAuthToken) {
-        token = window.puter.auth.getAuthToken();
-        if (token && String(token).trim()) {
-          try { setStoredPuterToken(token); } catch (_e) {}
-          return String(token).trim();
-        }
       }
 
       return '';

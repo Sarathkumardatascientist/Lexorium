@@ -3986,16 +3986,18 @@ footer {
 
   function getStoredPuterToken() {
     try {
-      let token = localStorage.getItem(LEXORIUM_PUTER_TOKEN_STORAGE_KEY) || localStorage.getItem('puter.auth.token') || '';
-      token = String(token || '').trim();
+      // ALWAYS try the live SDK FIRST - this is the source of truth for fresh tokens
       if (window.puter?.auth?.getAuthToken) {
         const sdk = String(window.puter.auth.getAuthToken() || '').trim();
-        if (sdk && sdk !== token) {
+        if (sdk) {
           setStoredPuterToken(sdk);
           return sdk;
         }
       }
-      return token;
+
+      // Fallback to storage only if SDK not available
+      let token = localStorage.getItem(LEXORIUM_PUTER_TOKEN_STORAGE_KEY) || localStorage.getItem('puter.auth.token') || '';
+      return String(token || '').trim();
     } catch (_error) {
       return '';
     }
