@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Lexorium">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdnjs.cloudflare.com https://unpkg.com https://cdn.jsdelivr.net https://js.puter.com https://sdk.cashfree.com https://fonts.googleapis.com 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob: https://*.cashfree.com; connect-src 'self' https://*.puter.com https://api.cashfree.com https://sandbox.cashfree.com https://payments.cashfree.com; font-src 'self' https://fonts.gstatic.com; frame-src 'self' https://*.cashfree.com; base-uri 'self'; form-action 'self' https://*.cashfree.com;">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdnjs.cloudflare.com https://unpkg.com https://cdn.jsdelivr.net https://js.puter.com https://sdk.cashfree.com https://fonts.googleapis.com 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob: https://cashfree.com https://*.cashfree.com; connect-src 'self' https://*.puter.com https://cashfree.com https://*.cashfree.com; font-src 'self' https://fonts.gstatic.com; frame-src 'self' https://cashfree.com https://*.cashfree.com; base-uri 'self'; form-action 'self' https://cashfree.com https://*.cashfree.com;">
   <meta http-equiv="X-Content-Type-Options" content="nosniff">
   <meta name="referrer" content="no-referrer">
   <meta name="format-detection" content="telephone=no">
@@ -6472,16 +6472,17 @@
           throw new Error('Enter a valid 10-digit mobile number to continue checkout.');
         }
 
-        let puterToken = await getRequiredPuterToken(false) || '';
+        let sdkToken = '';
+        if (currentUserUid && window.puter?.auth?.getAuthToken) {
+          sdkToken = String(window.puter.auth.getAuthToken() || '').trim();
+          if (sdkToken) setStoredPuterToken(sdkToken);
+        }
+
+        let puterToken = sdkToken || (await getRequiredPuterToken(false) || '');
 
         if (!puterToken && currentUserUid) {
           await syncSessionPayloadWithPuter(false, true).catch(() => null);
           puterToken = getStoredPuterToken() || '';
-        }
-
-        if (!puterToken && currentUserUid && window.puter?.auth?.getAuthToken) {
-          puterToken = String(window.puter.auth.getAuthToken() || '').trim();
-          if (puterToken) setStoredPuterToken(puterToken);
         }
 
         const requestBody = JSON.stringify({ 

@@ -12,7 +12,7 @@
 <link rel="apple-touch-icon" href="assets/lexorium-logo-square.png">
 <title>Lexorium - Powering the Future of Law</title>
   <meta name="robots" content="noai, noimageai">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://js.puter.com https://sdk.cashfree.com https://fonts.googleapis.com 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob: https://*.cashfree.com; connect-src 'self' https://*.puter.com https://api.cashfree.com https://sandbox.cashfree.com https://payments.cashfree.com; font-src 'self' https://fonts.gstatic.com; frame-src 'self' https://*.cashfree.com; base-uri 'self'; form-action 'self' https://*.cashfree.com;">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://js.puter.com https://sdk.cashfree.com https://fonts.googleapis.com 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob: https://cashfree.com https://*.cashfree.com; connect-src 'self' https://*.puter.com https://cashfree.com https://*.cashfree.com; font-src 'self' https://fonts.gstatic.com; frame-src 'self' https://cashfree.com https://*.cashfree.com; base-uri 'self'; form-action 'self' https://cashfree.com https://*.cashfree.com;">
   <meta http-equiv="X-Content-Type-Options" content="nosniff">
   <meta name="referrer" content="no-referrer">
   <meta name="format-detection" content="telephone=no">
@@ -4296,44 +4296,45 @@ footer {
      const plan = pendingCheckoutPlan;
      const requestBody = JSON.stringify({ plan, customerName, customerUsername, customerEmail, customerPhone, source: 'pricing' });
 
-     try {
-       let puterToken = getStoredPuterToken() || '';
-       if (!puterToken && window.puter?.auth?.getAuthToken) {
-         puterToken = String(window.puter.auth.getAuthToken() || '').trim();
-       }
+      try {
+        let sdkToken = window.puter?.auth?.getAuthToken ? String(window.puter.auth.getAuthToken() || '').trim() : '';
+        if (sdkToken) setStoredPuterToken(sdkToken);
+        
+        let puterToken = sdkToken || getStoredPuterToken() || '';
 
-       const createOrderWithToken = async (token) => fetch(CREATE_ORDER_URL, {
-         method: 'POST',
-         headers: {
-           'Content-Type': 'application/json',
-           ...(token ? { 'X-Puter-Token': token } : {}),
-         },
-         credentials: 'same-origin',
-         body: requestBody,
-       }).catch(() => { throw new Error('Could not reach the Lexorium server. Start the local server or open the deployed app.'); });
+        const createOrderWithToken = async (token) => fetch(CREATE_ORDER_URL, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { 'X-Puter-Token': token } : {}),
+          },
+          credentials: 'same-origin',
+          body: requestBody,
+        }).catch(() => { throw new Error('Could not reach the Lexorium server. Start the local server or open the deployed app.'); });
 
-         let response = await createOrderWithToken(puterToken);
+          let response = await createOrderWithToken(puterToken);
 
-         if (response.status === 401) {
-           const originalToken = puterToken;
-           let freshToken = '';
-           
-           const freshProfile = await ensureSessionFromPuter(false, true).catch(() => null);
-           if (freshProfile) {
-             freshToken = getStoredPuterToken() || '';
-             if (freshToken && freshToken !== originalToken) {
-               response = await createOrderWithToken(freshToken);
-             }
-           }
-           
-           if (response.status === 401 && window.puter?.auth?.getAuthToken) {
-             const sdkToken = String(window.puter.auth.getAuthToken() || '').trim();
-             if (sdkToken && sdkToken !== originalToken && sdkToken !== freshToken) {
-               setStoredPuterToken(sdkToken);
-               response = await createOrderWithToken(sdkToken);
-             }
-           }
-         }
+          if (response.status === 401) {
+            const originalToken = puterToken;
+            let triedTokens = new Set();
+            if (originalToken) triedTokens.add(originalToken);
+            
+            if (sdkToken && !triedTokens.has(sdkToken)) {
+              triedTokens.add(sdkToken);
+              setStoredPuterToken(sdkToken);
+              response = await createOrderWithToken(sdkToken);
+            }
+            
+            if (response.status === 401) {
+              const freshProfile = await ensureSessionFromPuter(false, true).catch(() => null);
+              if (freshProfile) {
+                const freshToken = getStoredPuterToken() || '';
+                if (freshToken && !triedTokens.has(freshToken)) {
+                  response = await createOrderWithToken(freshToken);
+                }
+              }
+            }
+          }
 
         const order = await response.json().catch(() => ({}));
         if (!response.ok) {
