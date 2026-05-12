@@ -81,7 +81,7 @@ module.exports = async (req, res) => {
   const explicitToken = extractProviderToken(req, body);
 
   if (!explicitToken && !session?.sub) {
-    return sendError(res, 401, 'Sign in is required before checkout. (No authentication provided)');
+    return sendError(res, 401, 'Sign in is required before checkout. (No authentication provided - no session, no token)');
   }
 
   let user = null;
@@ -89,6 +89,7 @@ module.exports = async (req, res) => {
   let tokenResolutionAttempted = false;
   let tokenResolutionFailed = false;
   let tokenProfileInvalid = false;
+  let tokenResolutionError = '';
 
   if (session?.sub) {
     user = await getUser(session.sub);
@@ -120,6 +121,7 @@ module.exports = async (req, res) => {
       }
     } catch (_tokenError) {
       tokenResolutionFailed = true;
+      tokenResolutionError = String(_tokenError?.message || _tokenError?.error || _tokenError || 'unknown puter error');
     }
   }
   if (!user) {
@@ -129,6 +131,7 @@ module.exports = async (req, res) => {
     if (explicitToken) debugInfo.push(`tokenPresent: true (length: ${explicitToken.length})`);
     if (tokenResolutionAttempted) debugInfo.push('tokenResolutionAttempted: true');
     if (tokenResolutionFailed) debugInfo.push('tokenResolutionFailed: true');
+    if (tokenResolutionError) debugInfo.push(`puterError: ${tokenResolutionError}`);
     if (tokenProfileInvalid) debugInfo.push('tokenProfileInvalid: true');
     return sendError(res, 401, `Sign in is required before checkout. Debug: ${debugInfo.join(', ') || 'unknown'}`);
   }
