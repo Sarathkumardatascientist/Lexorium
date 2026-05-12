@@ -6478,7 +6478,7 @@
         }
 
         let sdkToken = '';
-        if (currentUserUid && window.puter?.auth?.getAuthToken) {
+        if (window.puter?.auth?.getAuthToken) {
           sdkToken = String(window.puter.auth.getAuthToken() || '').trim();
           if (sdkToken) setStoredPuterToken(sdkToken);
         }
@@ -6488,6 +6488,14 @@
         if (!puterToken && currentUserUid) {
           await syncSessionPayloadWithPuter(false, true).catch(() => null);
           puterToken = getStoredPuterToken() || '';
+        }
+
+        if (!puterToken && !sdkToken && window.puter?.auth?.getAuthToken) {
+          sdkToken = String(window.puter.auth.getAuthToken() || '').trim();
+          if (sdkToken) {
+            setStoredPuterToken(sdkToken);
+            puterToken = sdkToken;
+          }
         }
 
         const requestBody = JSON.stringify({ 
