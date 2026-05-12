@@ -6457,100 +6457,118 @@
        return;
      }
 
-       try {
-         await trackEvent('paywall_cta_clicked', { source: 'app', planId: currentPlan.id, targetPlanId: targetPlan });
-         
-         const customerName = document.getElementById('upgradeNameInput').value.trim();
-         const customerUsername = document.getElementById('upgradeUsernameInput')?.value?.trim() || '';
-         const customerEmail = document.getElementById('upgradeEmailInput')?.value?.trim() || '';
-         const enteredPhone = document.getElementById('upgradePhoneInput').value.trim();
-         
-         if (!customerName) {
-           throw new Error('Please enter your full name for secure checkout.');
-         }
-         
-         if (customerEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customerEmail)) {
-           throw new Error('Please enter a valid email address.');
-         }
-         
-         const customerPhone = String(enteredPhone || '').replace(/\D/g, '').slice(-10);
-         if (!/^\d{10}$/.test(customerPhone)) {
-           throw new Error('Enter a valid 10-digit mobile number to continue checkout.');
-         }
+     try {
+       const customerName = document.getElementById('upgradeNameInput').value.trim();
+       const customerUsername = document.getElementById('upgradeUsernameInput')?.value?.trim() || '';
+       const customerEmail = document.getElementById('upgradeEmailInput')?.value?.trim() || '';
+       const enteredPhone = document.getElementById('upgradePhoneInput').value.trim();
+       
+       if (!customerName) throw new Error('Please enter your full name for secure checkout.');
+       if (customerEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customerEmail)) {
+         throw new Error('Please enter a valid email address.');
+       }
+       
+       const customerPhone = String(enteredPhone || '').replace(/\D/g, '').slice(-10);
+       if (!/^\d{10}$/.test(customerPhone)) {
+         throw new Error('Enter a valid 10-digit mobile number to continue checkout.');
+       }
 
-         const freshSync = await syncSessionPayloadWithPuter(false, true).catch(() => null);
-         
-         let sdkToken = '';
+       await trackEvent('paywall_cta_clicked', { source: 'app', planId: currentPlan.id, targetPlanId: targetPlan });
+
+       let freshToken = '';
+       
+       if (window.puter?.auth?.getAuthToken) {
+         freshToken = String(window.puter.auth.getAuthToken() || '').trim();
+       }
+       
+       if (!freshToken) {
+         await syncSessionPayloadWithPuter(false, true).catch(() => null);
          if (window.puter?.auth?.getAuthToken) {
-           sdkToken = String(window.puter.auth.getAuthToken() || '').trim();
-           if (sdkToken) setStoredPuterToken(sdkToken);
+           freshToken = String(window.puter.auth.getAuthToken() || '').trim();
+         }
+       }
+       
+       if (!freshToken) {
+         freshToken = getStoredPuterToken() || '';
+       }
+
+       const requestBody = JSON.stringify({
+         plan: targetPlan,
+         source: 'app',
+         customerName,
+         customerUsername,
+         customerEmail,
+         customerPhone,
+       });
+
+       let response = await fetch(CREATE_ORDER_URL, {
+         method: 'POST',
+         credentials: 'same-origin',
+         headers: {
+           'Content-Type': 'application/json',
+           ...(freshToken ? { 'X-Puter-Token': freshToken } : {}),
+         },
+         body: requestBody,
+       }).catch(() => {
+         throw new Error('Could not reach the Lexorium server. Start the local server or open the deployed app.');
+       });
+
+       if (response.status === 401) {
+         setStoredPuterToken('');
+         
+         let retryToken = '';
+         if (window.puter?.auth?.getAuthToken) {
+           retryToken = String(window.puter.auth.getAuthToken() || '').trim();
          }
          
-         let puterToken = sdkToken || getStoredPuterToken() || '';
+         if (!retryToken) {
+           await syncSessionPayloadWithPuter(false, true).catch(() => null);
+           if (window.puter?.auth?.getAuthToken) {
+             retryToken = String(window.puter.auth.getAuthToken() || '').trim();
+           }
+         }
          
-         if (!puterToken && (freshSync?.ok || freshSync?.profile)) {
-           puterToken = getStoredPuterToken() || '';
+         if (!retryToken) {
+           retryToken = getStoredPuterToken() || '';
          }
-
-         const requestBody = JSON.stringify({ 
-           plan: targetPlan, 
-           source: 'app', 
-           customerName, 
-           customerUsername,
-           customerEmail,
-           customerPhone 
-         });
-        
-        const createOrderWithToken = async (token) => fetch(CREATE_ORDER_URL, {
-          method: 'POST',
-          credentials: 'same-origin',
-          headers: {
-            'Content-Type': 'application/json',
-            ...(token ? { 'X-Puter-Token': token } : {}),
-          },
-          body: requestBody,
-        }).catch(() => { throw new Error('Could not reach the Lexorium server. Start the local server or open the deployed app.'); });
-
-         let response = await createOrderWithToken(puterToken);
-
-          if (response.status === 401) {
-            setStoredPuterToken('');
-            
-            const secondSync = await syncSessionPayloadWithPuter(false, true).catch(() => null);
-            if (secondSync?.ok || secondSync?.profile) {
-              puterToken = getStoredPuterToken();
-              response = await createOrderWithToken(puterToken);
-            }
-            
-            if (response.status === 401 && window.puter?.auth?.getAuthToken) {
-              puterToken = String(window.puter.auth.getAuthToken() || '').trim();
-              if (puterToken) {
-                setStoredPuterToken(puterToken);
-                response = await createOrderWithToken(puterToken);
-              }
-            }
-          }
-
-         const order = await response.json().catch(() => ({}));
-         if (!response.ok) {
-           const backendError = order?.message || order?.error || `Request failed with status ${response.status}`;
-           throw new Error(backendError);
+         
+         if (retryToken) {
+           response = await fetch(CREATE_ORDER_URL, {
+             method: 'POST',
+             credentials: 'same-origin',
+             headers: {
+               'Content-Type': 'application/json',
+               'X-Puter-Token': retryToken,
+             },
+             body: requestBody,
+           }).catch(() => {
+             throw new Error('Could not reach the Lexorium server.');
+           });
          }
-        
-        localStorage.setItem(CHECKOUT_PHONE_STORAGE_KEY, customerPhone);
-        const cashfree = window.Cashfree({ mode: order.cashfreeMode || authConfig.cashfreeMode });
-        closeUpgradeModal();
-        showToast('Redirecting to secure payment...');
-        const result = await cashfree.checkout({
-          paymentSessionId: order.paymentSessionId,
-          redirectTarget: '_self',
-        });
-        if (result?.error) {
-          throw new Error(result.error.message || 'Payment failed or was cancelled.');
-        }
-      } catch (error) {
-        showError(error.message || 'Could not start checkout.');
-      }
+       }
+
+       const order = await response.json().catch(() => ({}));
+       if (!response.ok) {
+         const backendError = order?.message || order?.error || `Request failed with status ${response.status}`;
+         throw new Error(backendError);
+       }
+
+       localStorage.setItem(CHECKOUT_PHONE_STORAGE_KEY, customerPhone);
+       closeUpgradeModal();
+       showToast('Redirecting to secure payment...');
+       
+       const cashfree = window.Cashfree({ mode: order.cashfreeMode || authConfig.cashfreeMode });
+       const result = await cashfree.checkout({
+         paymentSessionId: order.paymentSessionId,
+         redirectTarget: '_self',
+       });
+       
+       if (result?.error) {
+         throw new Error(result.error.message || 'Payment failed or was cancelled.');
+       }
+     } catch (error) {
+       showError(error.message || 'Could not start checkout.');
+     }
    }
 
   async function renderAuthProfile() {

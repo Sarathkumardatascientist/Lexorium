@@ -81,22 +81,14 @@ module.exports = async (req, res) => {
   const explicitToken = extractProviderToken(req, body);
 
   if (!explicitToken && !session?.sub) {
-    return sendError(res, 401, 'Sign in is required before checkout. (No authentication provided - no session, no token)');
+    return sendError(res, 401, 'Sign in is required before checkout.');
   }
 
   let user = null;
-  let sessionUserFound = false;
-  let tokenResolutionAttempted = false;
-  let tokenResolutionFailed = false;
-  let tokenProfileInvalid = false;
-  let tokenResolutionError = '';
-
   if (session?.sub) {
     user = await getUser(session.sub);
-    if (user) sessionUserFound = true;
   }
   if (!user && explicitToken) {
-    tokenResolutionAttempted = true;
     try {
       const puterProfile = await resolvePuterUser(explicitToken);
       if (puterProfile) {
@@ -113,27 +105,14 @@ module.exports = async (req, res) => {
           const email = String(puterProfile.email || '').trim() || `${uuid.toLowerCase()}@puter.local`;
           const avatar = String(puterProfile.avatar || puterProfile.picture || '').trim();
           user = await upsertUser({ uid, authProvider: 'puter', name: name || 'Lexorium User', email, avatar });
-        } else {
-          tokenProfileInvalid = true;
         }
-      } else {
-        tokenProfileInvalid = true;
       }
     } catch (_tokenError) {
-      tokenResolutionFailed = true;
-      tokenResolutionError = String(_tokenError?.message || _tokenError?.error || _tokenError || 'unknown puter error');
+      // Token resolution failed — leave user as null and return 401 below
     }
   }
   if (!user) {
-    let debugInfo = [];
-    if (session?.sub) debugInfo.push(`sessionPresent: true (uid: ${session.sub})`);
-    if (sessionUserFound) debugInfo.push('sessionUserFound: true');
-    if (explicitToken) debugInfo.push(`tokenPresent: true (length: ${explicitToken.length})`);
-    if (tokenResolutionAttempted) debugInfo.push('tokenResolutionAttempted: true');
-    if (tokenResolutionFailed) debugInfo.push('tokenResolutionFailed: true');
-    if (tokenResolutionError) debugInfo.push(`puterError: ${tokenResolutionError}`);
-    if (tokenProfileInvalid) debugInfo.push('tokenProfileInvalid: true');
-    return sendError(res, 401, `Sign in is required before checkout. Debug: ${debugInfo.join(', ') || 'unknown'}`);
+    return sendError(res, 401, 'Sign in is required before checkout.');
   }
 
   const requestedPlan = String(body.plan || 'pro').trim().toLowerCase();
