@@ -6439,6 +6439,7 @@
   }
 
    async function startUpgradeFlow(planId) {
+     // Billing flow - requires fresh Puter token for authentication
      const targetPlan = String(planId || pendingUpgradePlan || 'pro').trim().toLowerCase();
      if (targetPlan === 'enterprise') {
        window.location.href = 'index.html#enterprise-contact';
