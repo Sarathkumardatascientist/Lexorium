@@ -6475,39 +6475,44 @@
 
        await trackEvent('paywall_cta_clicked', { source: 'app', planId: currentPlan.id, targetPlanId: targetPlan });
 
-       let freshToken = '';
+       let puterToken = '';
        
        if (window.puter?.auth?.getAuthToken) {
-         freshToken = String(window.puter.auth.getAuthToken() || '').trim();
+         puterToken = String(window.puter.auth.getAuthToken() || '').trim();
        }
        
-       if (!freshToken) {
-         await syncSessionPayloadWithPuter(false, true).catch(() => null);
-         if (window.puter?.auth?.getAuthToken) {
-           freshToken = String(window.puter.auth.getAuthToken() || '').trim();
+       if (!puterToken) {
+         const synced = await syncSessionPayloadWithPuter(false, true).catch(() => null);
+         if (synced?.ok || synced?.profile) {
+           if (window.puter?.auth?.getAuthToken) {
+             puterToken = String(window.puter.auth.getAuthToken() || '').trim();
+           }
          }
        }
        
-       if (!freshToken) {
-         freshToken = getStoredPuterToken() || '';
+       if (!puterToken) {
+         puterToken = getStoredPuterToken() || '';
        }
 
-       const requestBody = JSON.stringify({
-         plan: targetPlan,
-         source: 'app',
-         customerName,
-         customerUsername,
-         customerEmail,
-         customerPhone,
-       });
+        const requestBody = JSON.stringify({
+          plan: targetPlan,
+          source: 'app',
+          customerName,
+          customerUsername,
+          customerEmail,
+          customerPhone,
+          puterToken: puterToken,
+        });
+
+       const headers = { 'Content-Type': 'application/json' };
+       if (puterToken) {
+         headers['X-Puter-Token'] = puterToken;
+       }
 
        let response = await fetch(CREATE_ORDER_URL, {
          method: 'POST',
-         credentials: 'same-origin',
-         headers: {
-           'Content-Type': 'application/json',
-           ...(freshToken ? { 'X-Puter-Token': freshToken } : {}),
-         },
+         credentials: 'include',
+         headers: headers,
          body: requestBody,
        }).catch(() => {
          throw new Error('Could not reach the Lexorium server. Start the local server or open the deployed app.');
@@ -6522,9 +6527,11 @@
          }
          
          if (!retryToken) {
-           await syncSessionPayloadWithPuter(false, true).catch(() => null);
-           if (window.puter?.auth?.getAuthToken) {
-             retryToken = String(window.puter.auth.getAuthToken() || '').trim();
+           const freshSync = await syncSessionPayloadWithPuter(false, true).catch(() => null);
+           if (freshSync?.ok || freshSync?.profile) {
+             if (window.puter?.auth?.getAuthToken) {
+               retryToken = String(window.puter.auth.getAuthToken() || '').trim();
+             }
            }
          }
          
@@ -6533,13 +6540,15 @@
          }
          
          if (retryToken) {
+           const retryHeaders = {
+             'Content-Type': 'application/json',
+             'X-Puter-Token': retryToken,
+           };
+           
            response = await fetch(CREATE_ORDER_URL, {
              method: 'POST',
-             credentials: 'same-origin',
-             headers: {
-               'Content-Type': 'application/json',
-               'X-Puter-Token': retryToken,
-             },
+             credentials: 'include',
+             headers: retryHeaders,
              body: requestBody,
            }).catch(() => {
              throw new Error('Could not reach the Lexorium server.');
