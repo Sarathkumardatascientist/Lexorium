@@ -5322,16 +5322,19 @@
 
     if (!token && !liveProfile) return null;
 
-    // 7. Synchronize with Lexorium backend to set session cookie and fetch profile/plan
-    const response = await fetch(SESSION_API_URL, {
-      method: 'POST',
-      credentials: 'same-origin',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(token ? { 'X-Puter-Token': token } : {}),
-      },
-      body: JSON.stringify({ token, profile: liveProfile || undefined }),
-    }).catch(() => ({ __networkError: true }));
+     // 7. Synchronize with Lexorium backend to set session cookie and fetch profile/plan
+     const response = await fetch(SESSION_API_URL, {
+       method: 'POST',
+       credentials: 'same-origin',
+       headers: {
+         'Content-Type': 'application/json',
+         ...(token ? {
+           'X-Puter-Token': token,
+           'Authorization': `Bearer ${token}`,
+         } : {}),
+       },
+       body: JSON.stringify({ token, profile: liveProfile || undefined }),
+     }).catch(() => ({ __networkError: true }));
 
     if (response?.__networkError) {
       throw new Error('Could not reach the Lexorium server. Start the local server or open the deployed app.');
@@ -5480,20 +5483,23 @@
     return authConfig;
   }
 
-  async function trackEvent(eventName, meta) {
-    if (!eventName) return;
-    let sdkToken = window.puter?.auth?.getAuthToken ? String(window.puter.auth.getAuthToken() || '').trim() : '';
-    const token = sdkToken || getStoredPuterToken() || '';
-    await fetch(ANALYTICS_API_URL, {
-      method: 'POST',
-      credentials: 'same-origin',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(token ? { 'X-Puter-Token': token } : {}),
-      },
-      body: JSON.stringify({ eventName, meta: meta || {} }),
-    }).catch(() => null);
-  }
+   async function trackEvent(eventName, meta) {
+     if (!eventName) return;
+     let sdkToken = window.puter?.auth?.getAuthToken ? String(window.puter.auth.getAuthToken() || '').trim() : '';
+     const token = sdkToken || getStoredPuterToken() || '';
+     await fetch(ANALYTICS_API_URL, {
+       method: 'POST',
+       credentials: 'same-origin',
+       headers: {
+         'Content-Type': 'application/json',
+         ...(token ? {
+           'X-Puter-Token': token,
+           'Authorization': `Bearer ${token}`,
+         } : {}),
+       },
+       body: JSON.stringify({ eventName, meta: meta || {} }),
+     }).catch(() => null);
+   }
 
   function wait(ms) {
     return new Promise((resolve) => setTimeout(resolve, ms));
@@ -5509,7 +5515,10 @@
        credentials: 'same-origin',
        headers: {
          'Content-Type': 'application/json',
-         ...(token ? { 'X-Puter-Token': token } : {}),
+         ...(token ? {
+           'X-Puter-Token': token,
+           'Authorization': `Bearer ${token}`,
+         } : {}),
        },
        body: requestBody,
      }).catch(() => null);
@@ -6500,7 +6509,10 @@
          method: 'POST',
          headers: {
            'Content-Type': 'application/json',
-           ...(token ? { 'X-Puter-Token': token } : {}),
+           ...(token ? {
+             'X-Puter-Token': token,
+             'Authorization': `Bearer ${token}`,
+           } : {}),
          },
          credentials: 'same-origin',
          body: requestBody,
@@ -8970,15 +8982,18 @@
       personalization,
       messages: buildApiMessages(messages, attachments),
     });
-    const requestWithToken = async (token) => fetch(CHAT_API_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(token ? { 'X-Puter-Token': token } : {}),
-      },
-      credentials: 'same-origin',
-      body: requestBody,
-    }).catch(() => { throw new Error('Could not reach the Lexorium server. Start the local server or open the deployed app.'); });
+     const requestWithToken = async (token) => fetch(CHAT_API_URL, {
+       method: 'POST',
+       headers: {
+         'Content-Type': 'application/json',
+         ...(token ? {
+           'X-Puter-Token': token,
+           'Authorization': `Bearer ${token}`,
+         } : {}),
+       },
+       credentials: 'same-origin',
+       body: requestBody,
+     }).catch(() => { throw new Error('Could not reach the Lexorium server. Start the local server or open the deployed app.'); });
 
     let response = await requestWithToken(puterToken);
 

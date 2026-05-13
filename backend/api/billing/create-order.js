@@ -73,47 +73,58 @@ function normalizeCustomerPhone(value) {
   return '';
 }
 
-module.exports = async (req, res) => {
-  if (!requireMethod(req, res, 'POST')) return;
+ module.exports = async (req, res) => {
+   if (!requireMethod(req, res, 'POST')) return;
 
-  const session = getSessionFromRequest(req);
-  const body = await parseJsonBody(req).catch(() => ({}));
-  const explicitToken = extractProviderToken(req, body);
+   const session = getSessionFromRequest(req);
+   const body = await parseJsonBody(req).catch(() => ({}));
+   const explicitToken = extractProviderToken(req, body);
 
-  if (!explicitToken && !session?.sub) {
-    return sendError(res, 401, 'Sign in is required before checkout.');
-  }
+   const hasSession = !!(session?.sub);
+   const hasToken = !!(explicitToken && explicitToken.length > 8);
 
-  let user = null;
-  if (session?.sub) {
-    user = await getUser(session.sub);
-  }
-  if (!user && explicitToken) {
-    try {
-      const puterProfile = await resolvePuterUser(explicitToken);
-      if (puterProfile) {
-        const uuid = String(
-          puterProfile.uuid || puterProfile.id || puterProfile._id ||
-          puterProfile.username || puterProfile.email || ''
-        ).trim();
-        if (uuid) {
-          const uid = `puter:${uuid.toLowerCase()}`;
-          const name = String(
-            puterProfile.name || puterProfile.display_name || puterProfile.displayName ||
-            puterProfile.full_name || puterProfile.fullName || puterProfile.username || ''
-          ).trim();
-          const email = String(puterProfile.email || '').trim() || `${uuid.toLowerCase()}@puter.local`;
-          const avatar = String(puterProfile.avatar || puterProfile.picture || '').trim();
-          user = await upsertUser({ uid, authProvider: 'puter', name: name || 'Lexorium User', email, avatar });
-        }
-      }
-    } catch (_tokenError) {
-      // Token resolution failed — leave user as null and return 401 below
-    }
-  }
-  if (!user) {
-    return sendError(res, 401, 'Sign in is required before checkout.');
-  }
+   if (!hasSession && !hasToken) {
+     return sendError(res, 401, 'Please sign in to Lexorium before checkout. If you are already signed in, try signing out and signing in again.');
+   }
+
+   let user = null;
+   if (session?.sub) {
+     user = await getUser(session.sub);
+   }
+   if (!user && explicitToken) {
+     try {
+       const puterProfile = await resolvePuterUser(explicitToken);
+       if (puterProfile) {
+         const uuid = String(
+           puterProfile.uuid || puterProfile.id || puterProfile._id ||
+           puterProfile.username || puterProfile.email || ''
+         ).trim();
+         if (uuid) {
+           const uid = `puter:${uuid.toLowerCase()}`;
+           const name = String(
+             puterProfile.name || puterProfile.display_name || puterProfile.displayName ||
+             puterProfile.full_name || puterProfile.fullName || puterProfile.username || ''
+           ).trim();
+           const email = String(puterProfile.email || '').trim() || `${uuid.toLowerCase()}@puter.local`;
+           const avatar = String(puterProfile.avatar || puterProfile.picture || '').trim();
+           user = await upsertUser({ uid, authProvider: 'puter', name: name || 'Lexorium User', email, avatar });
+         }
+       }
+     } catch (tokenError) {
+       const errorMsg = String(tokenError?.message || tokenError || '').toLowerCase();
+       const isExpired = /expired|invalid|token.*expired|authentication.*failed/i.test(errorMsg);
+       
+       if (isExpired) {
+         return sendError(res, 401, 'Your session has expired. Please sign out and sign in again to Lexorium.');
+       }
+     }
+   }
+   if (!user) {
+     if (hasSession) {
+       return sendError(res, 401, 'Your session could not be verified. Please sign out and sign in again to Lexorium.');
+     }
+     return sendError(res, 401, 'Your authentication token is invalid or has expired. Please sign out and sign in again.');
+   }
 
   const requestedPlan = String(body.plan || 'pro').trim().toLowerCase();
   const checkoutPlan = getCheckoutPlan(requestedPlan);
@@ -161,38 +172,51 @@ module.exports = async (req, res) => {
     await updateUserProfile(user.uid, profileUpdates).catch(() => null);
   }
 
-  const cashfreeCustomerId = toCashfreeCustomerId(user.uid);
+   const cashfreeCustomerId = toCashfreeCustomerId(user.uid);
 
-  const upstream = await fetch(`${cashfree.baseUrl}/orders`, {
-    method: 'POST',
-    headers: createHeaders(cashfree),
-    body: JSON.stringify({
-      order_id: orderId,
-      order_amount: Number((checkoutPlan.pricePaise / 100).toFixed(2)),
-      order_currency: 'INR',
-      customer_details: {
-        customer_id: cashfreeCustomerId,
-        customer_name: customerName,
-        customer_email: customerEmail || user.email,
-        customer_phone: customerPhone,
-      },
-      order_meta: {
-        return_url: `${returnBase}/app.html?cashfree_order_id={order_id}&plan=${checkoutPlan.id}`,
-      },
-      order_note: `Lexorium ${checkoutPlan.name}`,
-      order_tags: {
-        uid: user.uid,
-        email: customerEmail || user.email,
-        username: String(body.customerUsername || '').trim(),
-        plan: checkoutPlan.id,
-      },
-    }),
-  });
+   let upstream;
+   try {
+     upstream = await fetch(`${cashfree.baseUrl}/orders`, {
+       method: 'POST',
+       headers: createHeaders(cashfree),
+       body: JSON.stringify({
+         order_id: orderId,
+         order_amount: Number((checkoutPlan.pricePaise / 100).toFixed(2)),
+         order_currency: 'INR',
+         customer_details: {
+           customer_id: cashfreeCustomerId,
+           customer_name: customerName,
+           customer_email: customerEmail || user.email,
+           customer_phone: customerPhone,
+         },
+         order_meta: {
+           return_url: `${returnBase}/app.html?cashfree_order_id={order_id}&plan=${checkoutPlan.id}`,
+         },
+         order_note: `Lexorium ${checkoutPlan.name}`,
+         order_tags: {
+           uid: user.uid,
+           email: customerEmail || user.email,
+           username: String(body.customerUsername || '').trim(),
+           plan: checkoutPlan.id,
+         },
+       }),
+     });
+   } catch (cashfreeError) {
+     return sendError(res, 503, 'Payment initialization failed. The payment gateway could not be reached. Please try again in a moment.');
+   }
 
-  const data = await upstream.json().catch(() => ({}));
-  if (!upstream.ok) {
-    return sendError(res, upstream.status, data?.message || data?.error || 'Failed to create payment order.');
-  }
+   const data = await upstream.json().catch(() => ({}));
+   if (!upstream.ok) {
+     const cfMessage = String(data?.message || data?.error || '').trim();
+     const cfCode = String(data?.code || data?.error_code || '').trim();
+     
+     if (/invalid.*key|unauthorized|authentication/i.test(cfMessage) || /401|403/.test(String(upstream.status))) {
+       return sendError(res, 500, 'Payment service configuration error. Our team has been notified. Please try again later or contact support.');
+     }
+     
+     const userMessage = cfMessage || 'Failed to create payment order. Please try again.';
+     return sendError(res, upstream.status, userMessage);
+   }
 
   await recordCheckoutIntent(user.uid, checkoutPlan.id, {
     provider: 'cashfree',
