@@ -1,15 +1,14 @@
-// Security headers middleware
-export function securityHeaders(req, res) {
-  res.setHeader('X-Frame-Options', 'DENY');
-  res.setHeader('X-Content-Type-Options', 'nosniff');
-  res.setHeader('X-XSS-Protection', '1; mode=block');
-  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
-  res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
-  res.setHeader('Cross-Origin-Embedder-Policy', 'require-corp');
-  res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
-  res.setHeader('Cross-Origin-Resource-Policy', 'same-origin');
-  res.setHeader('Content-Security-Policy', "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.googleapis.com https://*.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' https://*.puter.com https://openrouter.ai; frame-ancestors 'none'");
-}
+ // Security headers middleware
+ export function securityHeaders(req, res) {
+   res.setHeader('X-Frame-Options', 'DENY');
+   res.setHeader('X-Content-Type-Options', 'nosniff');
+   res.setHeader('X-XSS-Protection', '1; mode=block');
+   res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+   res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+   res.setHeader('Cross-Origin-Embedder-Policy', 'require-corp');
+   res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
+   res.setHeader('Cross-Origin-Resource-Policy', 'same-origin');
+ }
 
 // Simple rate limiter (in-memory, basic)
 const rateLimitMap = new Map();

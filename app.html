@@ -6,9 +6,8 @@
 <meta name="theme-color" content="#0A0A0A">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="Lexorium">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdnjs.cloudflare.com https://unpkg.com https://cdn.jsdelivr.net https://js.puter.com https://sdk.cashfree.com https://fonts.googleapis.com 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob: https://cashfree.com https://*.cashfree.com; connect-src 'self' https://*.puter.com https://cashfree.com https://*.cashfree.com; font-src 'self' https://fonts.gstatic.com; frame-src 'self' https://cashfree.com https://*.cashfree.com; base-uri 'self'; form-action 'self' https://cashfree.com https://*.cashfree.com;">
-  <meta http-equiv="X-Content-Type-Options" content="nosniff">
+   <meta name="apple-mobile-web-app-title" content="Lexorium">
+   <meta http-equiv="X-Content-Type-Options" content="nosniff">
   <meta name="referrer" content="no-referrer">
   <meta name="format-detection" content="telephone=no">
   <link rel="manifest" href="manifest.webmanifest">
@@ -4115,23 +4114,9 @@
         return;
       }
       return origSetAttribute.call(this, name, value);
-    };
+     };
 
-    // CSP violation reporting
-    if (typeof ReportingObserver !== 'undefined') {
-      try {
-        const reporter = new ReportingObserver((reports) => {
-          reports.forEach((report) => {
-            if (report.type === 'csp-violation') {
-              console.warn('[CSP Violation] Blocked: ' + (report.body?.blockedURI || 'unknown'));
-            }
-          });
-        }, { types: ['csp-violation'] });
-        reporter.observe();
-      } catch (_e) { /* ignore */ }
-    }
-
-    // Console security notice
+     // Console security notice
     console.log('%c🔒 Lexorium Security Active', 'color: #4ade80; font-size: 14px; font-weight: bold;');
     console.log('%cThis is a protected legal intelligence platform. All activity is monitored.', 'color: #C0C0C0; font-size: 11px;');
   })();
