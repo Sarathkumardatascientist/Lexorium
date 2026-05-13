@@ -140,14 +140,38 @@ function normalizeCustomerPhone(value) {
     return sendError(res, 400, `This account already has a higher plan than ${checkoutPlan.name}.`);
   }
 
-  const cashfree = getCashfreeConfig();
-  if (!cashfree.enabled) return sendError(res, 500, 'Payment gateway is not configured.');
+   const cashfree = getCashfreeConfig();
+   if (!cashfree.enabled) return sendError(res, 500, 'Payment gateway is not configured.');
 
-  await track(user.uid, 'checkout_started', {
-    source: body.source || 'pricing',
-    provider: 'cashfree',
-    planId: checkoutPlan.id,
-  }).catch(() => null);
+   const isProductionKey = cashfree.secret?.toLowerCase().includes('prod') || cashfree.appId?.toLowerCase().includes('prod');
+   const isSandboxKey = cashfree.secret?.toLowerCase().includes('sand') || cashfree.secret?.toLowerCase().includes('test') || 
+                         cashfree.appId?.toLowerCase().includes('sand') || cashfree.appId?.toLowerCase().includes('test');
+   const isSandboxMode = cashfree.mode === 'sandbox';
+
+   console.log('[Cashfree] Configuration check:', {
+     mode: cashfree.mode,
+     appIdSet: !!cashfree.appId,
+     appIdPrefix: cashfree.appId ? cashfree.appId.substring(0, 8) + '...' : 'not set',
+     secretSet: !!cashfree.secret,
+     secretPrefix: cashfree.secret ? cashfree.secret.substring(0, 12) + '...' : 'not set',
+     baseUrl: cashfree.baseUrl,
+     isProductionKey,
+     isSandboxKey,
+     modeMismatch: (isProductionKey && isSandboxMode) || (isSandboxKey && !isSandboxMode),
+   });
+
+   if (isProductionKey && isSandboxMode) {
+     console.warn('[Cashfree] WARNING: Production credentials detected but running in sandbox mode! This will cause authentication failures.');
+   }
+   if (isSandboxKey && !isSandboxMode) {
+     console.warn('[Cashfree] WARNING: Sandbox/test credentials detected but running in production mode! This will cause authentication failures.');
+   }
+
+   await track(user.uid, 'checkout_started', {
+     source: body.source || 'pricing',
+     provider: 'cashfree',
+     planId: checkoutPlan.id,
+   }).catch(() => null);
 
   let returnBase;
   try {
@@ -205,18 +229,46 @@ function normalizeCustomerPhone(value) {
      return sendError(res, 503, 'Payment initialization failed. The payment gateway could not be reached. Please try again in a moment.');
    }
 
-   const data = await upstream.json().catch(() => ({}));
-   if (!upstream.ok) {
-     const cfMessage = String(data?.message || data?.error || '').trim();
-     const cfCode = String(data?.code || data?.error_code || '').trim();
-     
-     if (/invalid.*key|unauthorized|authentication/i.test(cfMessage) || /401|403/.test(String(upstream.status))) {
-       return sendError(res, 500, 'Payment service configuration error. Our team has been notified. Please try again later or contact support.');
-     }
-     
-     const userMessage = cfMessage || 'Failed to create payment order. Please try again.';
-     return sendError(res, upstream.status, userMessage);
-   }
+    const data = await upstream.json().catch(() => ({}));
+    if (!upstream.ok) {
+      const cfMessage = String(data?.message || data?.error || '').trim();
+      const cfCode = String(data?.code || data?.error_code || '').trim();
+      const status = upstream.status;
+      
+      console.log('[Cashfree] Order creation failed:', {
+        status,
+        code: cfCode,
+        message: cfMessage,
+        mode: cashfree.mode,
+        appId: cashfree.appId ? '***' + cashfree.appId.slice(-4) : 'not set',
+        baseUrl: cashfree.baseUrl,
+      });
+      
+      if (status === 401 || status === 403) {
+        const isProductionKey = cashfree.secret?.toLowerCase().includes('prod');
+        const isSandboxMode = cashfree.mode === 'sandbox';
+        
+        let hint = '';
+        if (isProductionKey && isSandboxMode) {
+          hint = ' Hint: You are using production credentials with sandbox mode. Set CASHFREE_ENV=production or use sandbox credentials.';
+        } else if (!isProductionKey && !isSandboxMode) {
+          hint = ' Hint: You may be using sandbox credentials with production mode. Set CASHFREE_ENV=sandbox or use production credentials.';
+        }
+        
+        const userMessage = cfMessage 
+          ? `Payment gateway authentication failed: ${cfMessage}${hint}`
+          : `Payment gateway authentication failed (status: ${status}).${hint} Please verify your Cashfree credentials or contact support.`;
+          
+        return sendError(res, 500, userMessage);
+      }
+      
+      if (/invalid.*key|unauthorized|authentication/i.test(cfMessage)) {
+        return sendError(res, 500, `Payment gateway error: ${cfMessage}`);
+      }
+      
+      const userMessage = cfMessage || 'Failed to create payment order. Please try again.';
+      return sendError(res, status >= 500 ? 503 : 400, userMessage);
+    }
 
   await recordCheckoutIntent(user.uid, checkoutPlan.id, {
     provider: 'cashfree',
