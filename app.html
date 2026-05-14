@@ -4083,6 +4083,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://unpkg.com/mammoth@1.8.0/mammoth.browser.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
 <script src="https://js.puter.com/v2/"></script>
 <script src="https://sdk.cashfree.com/js/v3/cashfree.js" async defer></script>
@@ -4387,6 +4388,8 @@
       'toast.downloaded': 'Downloaded',
       'toast.chatCleared': 'History cleared',
       'toast.conversationDeleted': 'Conversation deleted',
+      'message.noAnswer': 'There is no answer text to export yet.',
+      'message.pdfLoading': 'PDF export is still loading. Please try again.',
       'toast.newChat': 'New chat started',
     },
     ml: {
@@ -4429,6 +4432,15 @@
       'message.processing': 'പ്രോസസ്സ് ചെയ്യുന്നു',
       'message.analysing': 'അറ്റാച്ച്മെന്റുകൾ വിശകലനം ചെയ്യുന്നു',
       'message.structuredFlow': 'ഘടനാപരമായ ഫ്ലോ',
+      'message.copy': 'ഉത്തരം പകർത്തുക',
+      'message.share': 'ഉത്തരം പങ്കിടുക',
+      'message.pdf': 'PDF ഡൗൺലോഡ്',
+      'message.docx': 'DOCX ഡൗൺലോഡ്',
+      'message.readAloud': 'ഉറക്കെ വായിക്കുക',
+      'message.stopReadAloud': 'വായന നിർത്തുക',
+      'message.noAnswer': 'ഇതുവരെ എക്സ്പോർട്ട് ചെയ്യാൻ ഉത്തര വാചകമില്ല.',
+      'message.pdfLoading': 'PDF എക്സ്പോർട്ട് ഇപ്പോഴും ലോഡ് ചെയ്യുന്നു. ദയവായി വീണ്ടും ശ്രമിക്കുക.',
+      'toast.downloaded': 'ഡൗൺലോഡ് ചെയ്തു',
     },
     hi: {
       'lang.label': 'भाषा',
@@ -4470,6 +4482,15 @@
       'message.processing': 'प्रोसेसिंग',
       'message.analysing': 'अटैचमेंट का विश्लेषण',
       'message.structuredFlow': 'संरचित प्रवाह',
+      'message.copy': 'उत्तर कॉपी करें',
+      'message.share': 'उत्तर साझा करें',
+      'message.pdf': 'PDF डाउनलोड',
+      'message.docx': 'DOCX डाउनलोड',
+      'message.readAloud': 'ज़ोर से पढ़ें',
+      'message.stopReadAloud': 'पढ़ना बंद करें',
+      'message.noAnswer': 'अभी तक निर्यात करने के लिए कोई उत्तर पाठ नहीं है।',
+      'message.pdfLoading': 'PDF निर्यात अभी भी लोड हो रहा है। कृपया पुनः प्रयास करें।',
+      'toast.downloaded': 'डाउनलोड हुआ',
     },
     fr: {
       'lang.label': 'Langue',
@@ -4620,6 +4641,8 @@
       'toast.downloaded': 'Téléchargé',
       'toast.chatCleared': 'Historique effacé',
       'toast.conversationDeleted': 'Conversation supprimée',
+      'message.noAnswer': "Il n'y a pas encore de texte de réponse à exporter.",
+      'message.pdfLoading': "L'exportation PDF est encore en cours de chargement. Veuillez réessayer.",
       'toast.newChat': 'Nouvelle conversation démarrée',
     },
     ta: {
@@ -4660,6 +4683,15 @@
       'message.lexorium': 'Lexorium',
       'message.processing': 'செயலாக்குகிறது',
       'message.analysing': 'இணைப்புகளை பகுப்பாய்வு செய்கிறது',
+      'message.copy': 'பதிலை நகலெடு',
+      'message.share': 'பதிலைப் பகிர்',
+      'message.pdf': 'PDF ஐப் பதிவிறக்குக',
+      'message.docx': 'DOCX ஐப் பதிவிறக்குக',
+      'message.readAloud': 'சத்தமாக வாசி',
+      'message.stopReadAloud': 'வாசிப்பதை நிறுத்து',
+      'message.noAnswer': 'இதுவரை ஏற்றுமதி செய்ய பதில் உரை இல்லை.',
+      'message.pdfLoading': 'PDF ஏற்றுமதி இன்னும் ஏற்றப்படுகிறது. தயவுசெய்து மீண்டும் முயற்சிக்கவும்.',
+      'toast.downloaded': 'பதிவிறக்கப்பட்டது',
     },
   };
   function t(key) {
@@ -7632,23 +7664,23 @@
     if (role !== 'assistant' || !visible) return '';
     const voiceAction = hasVoicePlaybackAccess()
       ? `
-        <button class="msg-action" onclick="toggleMessageSpeech(this)" title="Read aloud" aria-label="Read aloud" aria-pressed="false">
+        <button class="msg-action" onclick="toggleMessageSpeech(this)" title="${t('message.readAloud')}" aria-label="${t('message.readAloud')}" aria-pressed="false">
           <svg viewBox="0 0 16 16" fill="currentColor"><path d="M5 3.5v9l7-4.5-7-4.5z"></path></svg>
         </button>`
       : '';
     return `
       <div class="msg-actions">
         ${voiceAction}
-        <button class="msg-action" onclick="copyMessageText(this)" title="Copy response" aria-label="Copy response">
+        <button class="msg-action" onclick="copyMessageText(this)" title="${t('message.copy')}" aria-label="${t('message.copy')}">
           <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="5" width="8" height="9" rx="1.5"/><path d="M11 5V3.5A1.5 1.5 0 009.5 2h-6A1.5 1.5 0 002 3.5v7A1.5 1.5 0 003.5 12H5"/></svg>
         </button>
-        <button class="msg-action" onclick="shareMessageText(this)" title="Share response" aria-label="Share response">
+        <button class="msg-action" onclick="shareMessageText(this)" title="${t('message.share')}" aria-label="${t('message.share')}">
           <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12.5" cy="3.5" r="1.5"/><circle cx="3.5" cy="8" r="1.5"/><circle cx="12.5" cy="12.5" r="1.5"/><path d="M4.8 7.3l6.3-3.1"/><path d="M4.8 8.7l6.3 3.1"/></svg>
         </button>
-        <button class="msg-action" onclick="downloadMessagePdf(this)" title="Download PDF" aria-label="Download PDF">
+        <button class="msg-action" onclick="downloadMessagePdf(this)" title="${t('message.pdf')}" aria-label="${t('message.pdf')}">
           <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2h7l3 3v9H3z"/><polyline points="10,2 10,5 13,5"/><path d="M8 7v4"/><path d="M6.5 9.5L8 11l1.5-1.5"/><path d="M5 13h6"/></svg>
         </button>
-        <button class="msg-action" onclick="downloadMessageDoc(this)" title="Download DOCX" aria-label="Download DOCX">
+        <button class="msg-action" onclick="downloadMessageDoc(this)" title="${t('message.docx')}" aria-label="${t('message.docx')}">
           <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2h7l3 3v9H3z"/><polyline points="10,2 10,5 13,5"/><path d="M5 8.5h3.5a2 2 0 010 4H5z"/><path d="M10.5 8.5v4"/><path d="M12.5 8.5v4"/></svg>
         </button>
       </div>
@@ -7769,45 +7801,85 @@
   function downloadMessageDoc(button) {
     const text = getMessageText(button.closest('.msg'));
     if (!text) {
-      showError('There is no answer text to export yet.');
+      showError(t('message.noAnswer') || 'There is no answer text to export yet.');
       return;
     }
     const title = extractTitleFromText(text);
     const html = buildStructuredDocumentHtml(text, title);
     downloadBlob(`${safeFileName(title)}.docx`, new Blob([html], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' }));
-    showToast('DOCX downloaded');
+    showToast(t('toast.downloaded') || 'Document downloaded');
   }
 
-  function downloadMessagePdf(button) {
+  async function downloadMessagePdf(button) {
     const text = getMessageText(button.closest('.msg'));
     if (!text) {
-      showError('There is no answer text to export yet.');
+      showError(t('message.noAnswer') || 'There is no answer text to export yet.');
       return;
     }
     if (!window.jspdf?.jsPDF) {
-      showError('PDF export is still loading. Please try again.');
+      showError(t('message.pdfLoading') || 'PDF export is still loading. Please try again.');
       return;
     }
     const title = extractTitleFromText(text);
-    const pdf = new window.jspdf.jsPDF({ unit: 'pt', format: 'a4' });
-    const lines = pdf.splitTextToSize(buildStructuredExportText(text), 520);
-    let y = 48;
-    pdf.setFont('helvetica', 'bold');
-    pdf.setFontSize(16);
-    pdf.text(title, 40, y);
-    y += 24;
-    pdf.setFont('helvetica', 'normal');
-    pdf.setFontSize(11);
-    lines.forEach(line => {
-      if (y > 790) {
+    const lang = typeof personalizationState?.appLang === 'string' && LANG_KEYS.includes(personalizationState.appLang) ? personalizationState.appLang : 'en';
+
+    if (lang === 'en' || lang === 'fr') {
+      const pdf = new window.jspdf.jsPDF({ unit: 'pt', format: 'a4' });
+      const lines = pdf.splitTextToSize(buildStructuredExportText(text), 520);
+      let y = 48;
+      pdf.setFont('helvetica', 'bold');
+      pdf.setFontSize(16);
+      pdf.text(title, 40, y);
+      y += 24;
+      pdf.setFont('helvetica', 'normal');
+      pdf.setFontSize(11);
+      lines.forEach(line => {
+        if (y > 790) {
+          pdf.addPage();
+          y = 48;
+        }
+        pdf.text(line, 40, y);
+        y += 16;
+      });
+      pdf.save(`${safeFileName(title)}.pdf`);
+      showToast(t('toast.downloaded') || 'PDF downloaded');
+      return;
+    }
+
+    if (!window.html2canvas) {
+      showError('PDF Unicode export is still loading. Please try again.');
+      return;
+    }
+    const html = buildStructuredDocumentHtml(text, title);
+    const pageEl = document.createElement('div');
+    pageEl.innerHTML = html;
+    pageEl.style.position = 'absolute';
+    pageEl.style.left = '-9999px';
+    pageEl.style.top = '0';
+    pageEl.style.width = '794px';
+    pageEl.style.background = '#fff';
+    document.body.appendChild(pageEl);
+    try {
+      const canvas = await window.html2canvas(pageEl, { scale: 2, useCORS: true, logging: false });
+      document.body.removeChild(pageEl);
+      const pdf = new window.jspdf.jsPDF({ unit: 'px', format: 'a4' });
+      const pdfW = pdf.internal.pageSize.getWidth();
+      const pdfH = pdf.internal.pageSize.getHeight();
+      const ratio = pdfW / canvas.width;
+      const h = canvas.height * ratio;
+      let pos = 0;
+      pdf.addImage(canvas.toDataURL('image/jpeg', 0.95), 'JPEG', 0, pos, pdfW, h);
+      while (h - pos > pdfH) {
+        pos -= pdfH;
         pdf.addPage();
-        y = 48;
+        pdf.addImage(canvas.toDataURL('image/jpeg', 0.95), 'JPEG', 0, pos, pdfW, h);
       }
-      pdf.text(line, 40, y);
-      y += 16;
-    });
-    pdf.save(`${safeFileName(title)}.pdf`);
-    showToast('PDF downloaded');
+      pdf.save(`${safeFileName(title)}.pdf`);
+      showToast(t('toast.downloaded') || 'PDF downloaded');
+    } catch (error) {
+      document.body.removeChild(pageEl);
+      showError('PDF export with Unicode failed. Please try DOCX download instead.');
+    }
   }
 
   function serializeAttachments(attachments) {
