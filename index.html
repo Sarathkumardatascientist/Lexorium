@@ -3983,18 +3983,25 @@ footer {
     statNumbers.forEach((element) => counterObserver.observe(element));
   }
 
+  function getSdkPuterToken() {
+    try {
+      if (window.puter?.auth?.getAuthToken) {
+        return String(window.puter.auth.getAuthToken() || '').trim();
+      }
+      if (window.puter?.auth?.authToken) {
+        return String(window.puter.auth.authToken || '').trim();
+      }
+    } catch (_e) {}
+    return '';
+  }
+
   function getStoredPuterToken() {
     try {
-      // ALWAYS try the live SDK FIRST - this is the source of truth for fresh tokens
-      if (window.puter?.auth?.getAuthToken) {
-        const sdk = String(window.puter.auth.getAuthToken() || '').trim();
-        if (sdk) {
-          setStoredPuterToken(sdk);
-          return sdk;
-        }
+      const sdk = getSdkPuterToken();
+      if (sdk) {
+        setStoredPuterToken(sdk);
+        return sdk;
       }
-
-      // Fallback to storage only if SDK not available
       let token = localStorage.getItem(LEXORIUM_PUTER_TOKEN_STORAGE_KEY) || localStorage.getItem('puter.auth.token') || '';
       return String(token || '').trim();
     } catch (_error) {
@@ -4157,7 +4164,7 @@ footer {
       throw new Error('Secure sign-in is still loading. Please try again.');
     }
 
-    let sdkToken = window.puter?.auth?.getAuthToken ? String(window.puter.auth.getAuthToken() || '').trim() : '';
+    let sdkToken = getSdkPuterToken();
     const storedOnly = (() => {
       try {
         return String(localStorage.getItem(LEXORIUM_PUTER_TOKEN_STORAGE_KEY) || localStorage.getItem('puter.auth.token') || '').trim();
@@ -4184,7 +4191,7 @@ footer {
       if (liveUid && liveUid !== sessionUid) {
         await fetch(LOGOUT_URL, { method: 'POST', credentials: 'same-origin' }).catch(() => null);
         setStoredPuterToken('');
-        sdkToken = window.puter?.auth?.getAuthToken ? String(window.puter.auth.getAuthToken() || '').trim() : '';
+        sdkToken = getSdkPuterToken();
         if (sdkToken) setStoredPuterToken(sdkToken);
       }
     }
@@ -4192,7 +4199,7 @@ footer {
     let token = forceFresh ? '' : (sdkToken || getStoredPuterToken());
     if (!token && interactive) {
       const signInResult = await beginInteractivePuterSignIn(true);
-      token = String(signInResult?.token || (window.puter?.auth?.getAuthToken ? window.puter.auth.getAuthToken() : '') || '').trim();
+      token = String(signInResult?.token || getSdkPuterToken() || '').trim();
       if (token) setStoredPuterToken(token);
     }
     liveProfile = await getLivePuterProfile();
@@ -4200,8 +4207,8 @@ footer {
       await waitForPuterAuth(1800);
       liveProfile = await getLivePuterProfile();
     }
-    if (!token && liveProfile && window.puter?.auth?.getAuthToken) {
-      token = String(window.puter.auth.getAuthToken() || '').trim();
+    if (!token && liveProfile) {
+      token = getSdkPuterToken();
       if (token) setStoredPuterToken(token);
     }
     if (!token && !liveProfile) return null;
@@ -4298,7 +4305,7 @@ footer {
      const requestBody = JSON.stringify({ plan, customerName, customerUsername, customerEmail, customerPhone, source: 'pricing' });
 
       try {
-        let sdkToken = window.puter?.auth?.getAuthToken ? String(window.puter.auth.getAuthToken() || '').trim() : '';
+        let sdkToken = getSdkPuterToken();
         if (sdkToken) setStoredPuterToken(sdkToken);
         
         let puterToken = sdkToken || getStoredPuterToken() || '';

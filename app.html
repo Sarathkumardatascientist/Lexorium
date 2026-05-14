@@ -4766,16 +4766,25 @@
   let deferredInstallPrompt = null;
   let usageRefreshTimer = null;
 
+  function getSdkPuterToken() {
+    try {
+      if (window.puter?.auth?.getAuthToken) {
+        return String(window.puter.auth.getAuthToken() || '').trim();
+      }
+      if (window.puter?.auth?.authToken) {
+        return String(window.puter.auth.authToken || '').trim();
+      }
+    } catch (_e) {}
+    return '';
+  }
+
   function getStoredPuterToken() {
     try {
       // 1. ALWAYS try the live SDK FIRST - this is the source of truth for fresh tokens
-      if (window.puter?.auth?.getAuthToken) {
-        let token = window.puter.auth.getAuthToken();
-        if (token && String(token).trim()) {
-          const freshToken = String(token).trim();
-          try { setStoredPuterToken(freshToken); } catch (_e) {}
-          return freshToken;
-        }
+      const sdkToken = getSdkPuterToken();
+      if (sdkToken) {
+        try { setStoredPuterToken(sdkToken); } catch (_e) {}
+        return sdkToken;
       }
 
       // 2. Try Lexorium-specific storage (fallback if SDK not available)
@@ -5241,10 +5250,7 @@
       await waitForPuterAuth(interactive ? 5200 : 2400);
     }
 
-    let sdkToken = '';
-    if (window.puter?.auth?.getAuthToken) {
-      sdkToken = String(window.puter.auth.getAuthToken() || '').trim();
-    }
+    const sdkToken = getSdkPuterToken();
     // Puter SDK is the source of truth after in-app account switches; storage can be stale.
     if (!forceFresh && sdkToken && getStoredPuterToken() && sdkToken !== getStoredPuterToken()) {
       setStoredPuterToken(sdkToken);
@@ -5257,7 +5263,7 @@
       if (liveUid && liveUid !== currentUserUid) {
         await fetch(LOGOUT_API_URL, { method: 'POST', credentials: 'same-origin' }).catch(() => null);
         setStoredPuterToken('');
-        sdkToken = String(window.puter?.auth?.getAuthToken?.() || '').trim();
+        sdkToken = getSdkPuterToken();
         if (sdkToken) setStoredPuterToken(sdkToken);
         if (!sdkToken) interactive = true;
       }
@@ -5269,10 +5275,10 @@
       if (getStoredPuterToken()) interactive = false;
     }
 
-    let token = forceFresh ? '' : (String(window.puter?.auth?.getAuthToken?.() || '').trim() || getStoredPuterToken());
+    let token = forceFresh ? '' : (getSdkPuterToken() || getStoredPuterToken());
 
-    if (!token && liveProfile && window.puter?.auth?.getAuthToken) {
-      token = String(window.puter.auth.getAuthToken() || '').trim();
+    if (!token && liveProfile) {
+      token = getSdkPuterToken();
       if (token) setStoredPuterToken(token);
     }
 
@@ -5282,7 +5288,7 @@
       }
       try {
         const signInResult = await beginInteractivePuterSignInOnce(true);
-        token = String(signInResult?.token || (window.puter?.auth?.getAuthToken ? window.puter.auth.getAuthToken() : '') || '').trim();
+        token = String(signInResult?.token || getSdkPuterToken() || '').trim();
         if (token) setStoredPuterToken(token);
       } catch (_signInError) {
         // Sign-in cancelled or failed
@@ -5291,16 +5297,16 @@
 
     liveProfile = await getLivePuterProfile();
 
-    if (!token && liveProfile && window.puter?.auth?.getAuthToken) {
-      token = String(window.puter.auth.getAuthToken() || '').trim();
+    if (!token && liveProfile) {
+      token = getSdkPuterToken();
       if (token) setStoredPuterToken(token);
     }
 
     if (!token && !liveProfile && !interactive) {
       await waitForPuterAuth(1800);
       liveProfile = await getLivePuterProfile();
-      if (liveProfile && window.puter?.auth?.getAuthToken) {
-        token = String(window.puter.auth.getAuthToken() || '').trim();
+      if (liveProfile) {
+        token = getSdkPuterToken();
         if (token) setStoredPuterToken(token);
       }
     }
@@ -5334,10 +5340,8 @@
       throw new Error(getApiFailureMessage(response, payload, SESSION_API_URL));
     }
 
-    if (window.puter?.auth?.getAuthToken) {
-      const refreshed = String(window.puter.auth.getAuthToken() || '').trim();
-      if (refreshed) setStoredPuterToken(refreshed);
-    }
+    const refreshed = getSdkPuterToken();
+    if (refreshed) setStoredPuterToken(refreshed);
 
     // Ensure any freshly linked plan/usage is applied
     return payload || null;
@@ -5470,7 +5474,7 @@
 
    async function trackEvent(eventName, meta) {
      if (!eventName) return;
-     let sdkToken = window.puter?.auth?.getAuthToken ? String(window.puter.auth.getAuthToken() || '').trim() : '';
+      let sdkToken = getSdkPuterToken();
      const token = sdkToken || getStoredPuterToken() || '';
      await fetch(ANALYTICS_API_URL, {
        method: 'POST',
@@ -5526,8 +5530,8 @@
             }
           }
           
-          if (response.status === 401 && currentUserUid && window.puter?.auth?.getAuthToken) {
-            const sdkToken = String(window.puter.auth.getAuthToken() || '').trim();
+          if (response.status === 401 && currentUserUid) {
+            const sdkToken = getSdkPuterToken();
             if (sdkToken && sdkToken !== originalToken && sdkToken !== freshToken) {
               setStoredPuterToken(sdkToken);
               response = await verifyWithToken(sdkToken);
@@ -6476,8 +6480,8 @@
          puterToken = getStoredPuterToken() || '';
        }
 
-       if (!puterToken && currentUserUid && window.puter?.auth?.getAuthToken) {
-         puterToken = String(window.puter.auth.getAuthToken() || '').trim();
+       if (!puterToken && currentUserUid) {
+         puterToken = getSdkPuterToken();
          if (puterToken) setStoredPuterToken(puterToken);
        }
 
@@ -6512,8 +6516,8 @@
            puterToken = getStoredPuterToken();
            response = await createOrderWithToken(puterToken);
          }
-         if (response.status === 401 && currentUserUid && window.puter?.auth?.getAuthToken) {
-           puterToken = String(window.puter.auth.getAuthToken() || '').trim();
+         if (response.status === 401 && currentUserUid) {
+           puterToken = getSdkPuterToken();
            if (puterToken) {
              setStoredPuterToken(puterToken);
              response = await createOrderWithToken(puterToken);
@@ -8951,8 +8955,8 @@
     }
 
     // 2. If token is missing but we are supposedly signed in, try one last background hydration from the SDK.
-    if (!puterToken && currentUserUid && window.puter?.auth?.getAuthToken) {
-      puterToken = String(window.puter.auth.getAuthToken() || '').trim();
+    if (!puterToken && currentUserUid) {
+      puterToken = getSdkPuterToken();
       if (puterToken) setStoredPuterToken(puterToken);
     }
 
@@ -8990,8 +8994,8 @@
         puterToken = getStoredPuterToken();
         response = await requestWithToken(puterToken);
       }
-      if (response.status === 401 && currentUserUid && window.puter?.auth?.getAuthToken) {
-        puterToken = String(window.puter.auth.getAuthToken() || '').trim();
+      if (response.status === 401 && currentUserUid) {
+        puterToken = getSdkPuterToken();
         if (puterToken) {
           setStoredPuterToken(puterToken);
           response = await requestWithToken(puterToken);
