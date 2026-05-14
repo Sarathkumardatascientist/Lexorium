@@ -194,7 +194,7 @@ function normalizePuterError(error, modelId) {
   );
   const usageLimited = Boolean(error?.metadata?.usage_limited || nested?.metadata?.usage_limited || details?.metadata?.usage_limited);
 
-  if (statusCode === 401 || ['token_auth_failed', 'auth_canceled', 'PUTER_AUTH_REQUIRED'].includes(rawCode)) {
+  if (statusCode === 401 || ['token_auth_failed', 'auth_canceled', 'PUTER_AUTH_REQUIRED'].includes(rawCode) || (statusCode === 403 && /user\s*sessions?\b/i.test(rawMessage))) {
     const unauthorized = new Error('Your session expired. Sign in again to continue.');
     unauthorized.statusCode = 401;
     unauthorized.code = 'PUTER_AUTH_REQUIRED';
