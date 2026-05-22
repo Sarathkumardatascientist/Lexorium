@@ -1,5 +1,6 @@
 const { sendJson, sendError, parseJsonBody, requireMethod } = require('../_lib/http');
-const { executeWithPuter, extractPuterToken } = require('../_lib/puter-client');
+const { executeWithPuter, extractPuterToken, resolvePuterUser } = require('../_lib/puter-client');
+const { getSessionFromRequest } = require('../auth/_session');
 
 const MEMORIAL_MODEL = { id: 'google/gemini-3.1-flash-lite-preview', label: 'Gemini Flash' };
 
@@ -50,9 +51,6 @@ module.exports = async (req, res) => {
   const body = await parseJsonBody(req).catch((err) => ({ __error: err }));
   if (body.__error) return sendError(res, body.__error.statusCode || 400, body.__error.message);
 
-  const authToken = extractPuterToken(req, body);
-  if (!authToken) return sendError(res, 401, 'Sign in is required.');
-
   const proposition = String(body.proposition || '').trim();
   if (!proposition) return sendError(res, 400, 'Moot proposition text is required.');
 
@@ -61,11 +59,37 @@ module.exports = async (req, res) => {
     return sendError(res, 400, 'Side must be "petitioner", "respondent", or "both".');
   }
 
+  // Resolve user — prefer session cookie, fall back to Puter token
+  const session = getSessionFromRequest(req);
+  const explicitToken = extractPuterToken(req, body);
+  if (!session?.sub && !explicitToken) {
+    return sendError(res, 401, 'Sign in is required to use Lexorium.');
+  }
+
+  let user = null;
+  if (session?.sub) {
+    user = { uid: session.sub };
+  }
+  if (!user && explicitToken) {
+    try {
+      const puterProfile = await resolvePuterUser(explicitToken);
+      if (puterProfile) {
+        const uuid = String(puterProfile.uuid || puterProfile.id || puterProfile._id || puterProfile.username || puterProfile.email || '').trim();
+        if (uuid) user = { uid: `puter:${uuid.toLowerCase()}` };
+      }
+    } catch { /* token invalid — leave user as null */ }
+  }
+  if (!user) return sendError(res, 401, 'Sign in is required to use Lexorium.');
+
+  // Token for the Puter API call: user's token if valid, else server-level fallback
+  const providerToken = explicitToken || (process.env.PUTER_TOKEN ? String(process.env.PUTER_TOKEN).trim() : '');
+  if (!providerToken) return sendError(res, 401, 'Sign in is required to use Lexorium.');
+
   try {
     if (side === 'both') {
       const [petitionerMemorial, respondentMemorial] = await Promise.all([
-        callPuterAI(buildMemorialPromptForSide(proposition, 'petitioner'), authToken),
-        callPuterAI(buildMemorialPromptForSide(proposition, 'respondent'), authToken),
+        callPuterAI(buildMemorialPromptForSide(proposition, 'petitioner'), providerToken),
+        callPuterAI(buildMemorialPromptForSide(proposition, 'respondent'), providerToken),
       ]);
 
       return sendJson(res, 200, {
@@ -76,7 +100,7 @@ module.exports = async (req, res) => {
       });
     }
 
-    const content = await callPuterAI(buildMemorialPromptForSide(proposition, side), authToken);
+    const content = await callPuterAI(buildMemorialPromptForSide(proposition, side), providerToken);
 
     return sendJson(res, 200, {
       ok: true,
