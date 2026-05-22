@@ -9917,7 +9917,8 @@ RULES:
 Moot proposition:` },
             { role: 'user', content: memorialFileText },
           ];
-          const token = getDirectPuterToken();
+          let dtok = getDirectPuterToken();
+          if (!dtok) await syncSessionPayloadWithPuter(false).catch(() => null);
           if (!window.puter?.ai?.chat) throw new Error('Live response is still loading. Please retry.');
           const raw = await window.puter.ai.chat(msgs, { model: 'google/gemini-3.1-flash-lite-preview', max_tokens: 8192, temperature: 0.4 });
           const text = extractDirectPuterText(raw);
