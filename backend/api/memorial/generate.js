@@ -81,32 +81,41 @@ module.exports = async (req, res) => {
   }
   if (!user) return sendError(res, 401, 'Sign in is required to use Lexorium.');
 
-  // Token for the Puter API call: user's token if valid, else server-level fallback
-  const providerToken = explicitToken || (process.env.PUTER_TOKEN ? String(process.env.PUTER_TOKEN).trim() : '');
-  if (!providerToken) return sendError(res, 401, 'Sign in is required to use Lexorium.');
+  const serverToken = process.env.PUTER_TOKEN ? String(process.env.PUTER_TOKEN).trim() : '';
 
   try {
-    if (side === 'both') {
-      const [petitionerMemorial, respondentMemorial] = await Promise.all([
-        callPuterAI(buildMemorialPromptForSide(proposition, 'petitioner'), providerToken),
-        callPuterAI(buildMemorialPromptForSide(proposition, 'respondent'), providerToken),
-      ]);
+    const tryGenerate = async (token) => {
+      if (side === 'both') {
+        const [petitionerMemorial, respondentMemorial] = await Promise.all([
+          callPuterAI(buildMemorialPromptForSide(proposition, 'petitioner'), token),
+          callPuterAI(buildMemorialPromptForSide(proposition, 'respondent'), token),
+        ]);
+        return sendJson(res, 200, {
+          ok: true,
+          side: 'both',
+          petitioner: { content: petitionerMemorial },
+          respondent: { content: respondentMemorial },
+        });
+      }
+      const content = await callPuterAI(buildMemorialPromptForSide(proposition, side), token);
+      return sendJson(res, 200, { ok: true, side, content });
+    };
 
-      return sendJson(res, 200, {
-        ok: true,
-        side: 'both',
-        petitioner: { content: petitionerMemorial },
-        respondent: { content: respondentMemorial },
-      });
+    try {
+      // First try: use the user's Puter token
+      if (!explicitToken) throw Object.assign(new Error('No user token'), { statusCode: 401 });
+      await tryGenerate(explicitToken);
+    } catch (firstErr) {
+      // On auth failure, retry with the server-level PUTER_TOKEN env var
+      if ((firstErr.statusCode === 401 || firstErr.statusCode === 403) && serverToken) {
+        await tryGenerate(serverToken);
+      } else if (!explicitToken && serverToken) {
+        // No user token at all — use server token directly
+        await tryGenerate(serverToken);
+      } else {
+        throw firstErr;
+      }
     }
-
-    const content = await callPuterAI(buildMemorialPromptForSide(proposition, side), providerToken);
-
-    return sendJson(res, 200, {
-      ok: true,
-      side,
-      content,
-    });
   } catch (error) {
     const status = error.statusCode || 500;
     const message = error.message || 'Memorial generation failed. Please try again.';
