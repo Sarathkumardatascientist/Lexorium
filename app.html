@@ -9809,25 +9809,59 @@
     const btn = document.getElementById('memorialGenBtn');
     if (!btn || btn.disabled) return;
 
-    const token = getStoredPuterToken();
-    if (!token && !currentUserUid) {
-      memorialSetError('Please sign in to generate memorials.');
+    let puterToken = await getRequiredPuterToken(false) || '';
+    if (!puterToken && currentUserUid) {
+      await syncSessionPayloadWithPuter(false, true).catch(() => null);
+      puterToken = getStoredPuterToken() || '';
+    }
+    if (!puterToken && currentUserUid) {
+      puterToken = getSdkPuterToken();
+      if (puterToken) setStoredPuterToken(puterToken);
+    }
+    if (!puterToken) {
+      memorialSetError('Could not verify your session. Please sign in and try again.');
       return;
     }
 
     btn.disabled = true;
     btn.innerHTML = '<span class="spinner"></span> Generating...';
 
+    const doFetch = async (token) => fetch('/api/memorial/generate', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { 'X-Puter-Token': token, 'Authorization': `Bearer ${token}` } : {}),
+      },
+      credentials: 'same-origin',
+      body: JSON.stringify({ proposition: memorialFileText, side: memorialSide }),
+    });
+
     try {
-      const response = await fetch('/api/memorial/generate', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { 'X-Puter-Token': token, 'Authorization': `Bearer ${token}` } : {}),
-        },
-        credentials: 'same-origin',
-        body: JSON.stringify({ proposition: memorialFileText, side: memorialSide }),
-      });
+      let response = await doFetch(puterToken);
+
+      if (response.status === 401) {
+        setStoredPuterToken('');
+        const freshSync = await syncSessionPayloadWithPuter(false, true).catch(() => null);
+        if (freshSync?.ok || freshSync?.profile) {
+          puterToken = getStoredPuterToken();
+          if (puterToken) response = await doFetch(puterToken);
+        }
+        if (response.status === 401 && currentUserUid) {
+          puterToken = getSdkPuterToken();
+          if (puterToken) {
+            setStoredPuterToken(puterToken);
+            response = await doFetch(puterToken);
+          }
+        }
+        if (response.status === 401 && currentUserUid) {
+          await syncSessionPayloadWithPuter(false, true).catch(() => null);
+          puterToken = getStoredPuterToken() || '';
+          if (puterToken) response = await doFetch(puterToken);
+        }
+        if (response.status === 401) {
+          throw new Error('Could not verify AI access. Please sign in again.');
+        }
+      }
 
       const data = await response.json();
       if (!response.ok || !data.ok) {
