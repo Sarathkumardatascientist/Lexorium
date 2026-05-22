@@ -9826,6 +9826,29 @@
     btn.disabled = true;
     btn.innerHTML = '<span class="spinner"></span> Generating...';
 
+    const applyResult = (data) => {
+      memorialResult = data;
+      const tabs = document.getElementById('memorialResultTabs');
+      const content = document.getElementById('memorialContent');
+      if (!tabs || !content) return;
+
+      if (data.side === 'both') {
+        tabs.innerHTML = `
+          <button class="memorial-tab active" onclick="memorialSwitchTab('petitioner')">Petitioner</button>
+          <button class="memorial-tab" onclick="memorialSwitchTab('respondent')">Respondent</button>`;
+        memorialActiveTab = 'petitioner';
+        content.textContent = data.petitioner?.content || 'No content generated.';
+      } else {
+        tabs.innerHTML = '';
+        memorialActiveTab = data.side;
+        content.textContent = data.content || 'No content generated.';
+      }
+
+      document.getElementById('memorialResult').classList.add('active');
+      memorialIsEditing = false;
+      content.removeAttribute('contenteditable');
+    };
+
     const doFetch = async (token) => fetch('/api/memorial/generate', {
       method: 'POST',
       headers: {
@@ -9858,9 +9881,55 @@
           puterToken = getStoredPuterToken() || '';
           if (puterToken) response = await doFetch(puterToken);
         }
-        if (response.status === 401) {
-          throw new Error('Could not verify AI access. Please sign in again.');
+      }
+
+      if (response.status === 401) {
+        // Backend auth failed — fall back to Puter browser SDK (same as main chat callPuterDirect)
+        const directSides = memorialSide === 'both' ? ['petitioner', 'respondent'] : [memorialSide];
+        const results = {};
+        for (const side of directSides) {
+          const label = side.charAt(0).toUpperCase() + side.slice(1);
+          const msgs = [
+            { role: 'system', content: `You are an expert moot court memorial drafter. Draft a complete moot court memorial for the ${label}.
+
+The memorial must follow this structure exactly:
+
+## COVER PAGE
+## INDEX
+## TABLE OF AUTHORITIES
+## STATEMENT OF JURISDICTION  
+## STATEMENT OF FACTS
+## ISSUES RAISED
+## SUMMARY OF ARGUMENTS
+## ARGUMENTS ADVANCED
+## PRAYER
+## RELEVANT CASE LAWS AND CITATIONS
+
+RULES:
+- Use formal legal English
+- Each section starts with "## SECTION NAME"
+- Include proper legal citations (Indian citation style)
+- Arguments must be legally sound and cite relevant precedents
+- Tailor to the jurisdiction implied by the facts
+- ${side === 'petitioner' ? "Argue FROM the Petitioner's perspective, advocating FOR the petitioner." : "Argue FROM the Respondent's perspective, defending AGAINST the petitioner's claims."}
+- Be thorough — arguments advanced should be detailed (3-5 paragraphs per issue)
+
+Moot proposition:` },
+            { role: 'user', content: memorialFileText },
+          ];
+          const token = getDirectPuterToken();
+          if (!window.puter?.ai?.chat) throw new Error('Live response is still loading. Please retry.');
+          const raw = await window.puter.ai.chat(msgs, { model: 'google/gemini-3.1-flash-lite-preview', max_tokens: 8192, temperature: 0.4 });
+          const text = extractDirectPuterText(raw);
+          if (!text) throw new Error('The AI returned an empty response.');
+          results[side] = { content: text };
         }
+        const data = { ok: true, side: memorialSide, ...results };
+        if (memorialSide === 'both') { data.petitioner = results.petitioner; data.respondent = results.respondent; }
+        else { data.content = results[memorialSide].content; }
+        applyResult(data);
+        showToast('Memorial generated via live AI');
+        return;
       }
 
       const data = await response.json();
@@ -9868,27 +9937,7 @@
         throw new Error(data.message || `Request failed with status ${response.status}`);
       }
 
-      memorialResult = data;
-
-      const tabs = document.getElementById('memorialResultTabs');
-      const content = document.getElementById('memorialContent');
-      if (!tabs || !content) return;
-
-      if (data.side === 'both') {
-        tabs.innerHTML = `
-          <button class="memorial-tab active" onclick="memorialSwitchTab('petitioner')">Petitioner</button>
-          <button class="memorial-tab" onclick="memorialSwitchTab('respondent')">Respondent</button>`;
-        memorialActiveTab = 'petitioner';
-        content.textContent = data.petitioner?.content || 'No content generated.';
-      } else {
-        tabs.innerHTML = '';
-        memorialActiveTab = data.side;
-        content.textContent = data.content || 'No content generated.';
-      }
-
-      document.getElementById('memorialResult').classList.add('active');
-      memorialIsEditing = false;
-      content.removeAttribute('contenteditable');
+      applyResult(data);
     } catch (err) {
       memorialSetError(err.message || 'Memorial generation failed. Please try again.');
     } finally {
