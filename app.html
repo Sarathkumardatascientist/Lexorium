@@ -8564,7 +8564,11 @@
       const formattedSteps = steps.map(formatFlowNodeLabel);
       const nodes = formattedSteps.map((label, i) => `n${i}["${label}"]`).join('\n');
       const edges = steps.slice(1).map((_, i) => `n${i} --> n${i + 1}`).join('\n');
-      const classDefs = `classDef lexorium fill:var(--mermaid-node-fill),stroke:var(--mermaid-node-stroke),stroke-width:1.2px,color:var(--mermaid-node-color),font-size:13px;\nclass ${steps.map((_, i) => `n${i}`).join(',')} lexorium;`;
+      const cs = getComputedStyle(document.documentElement);
+      const mf = cs.getPropertyValue('--mermaid-node-fill').trim();
+      const mc = cs.getPropertyValue('--mermaid-node-color').trim();
+      const ms = cs.getPropertyValue('--mermaid-node-stroke').trim();
+      const classDefs = `classDef lexorium fill:${mf},stroke:${ms},stroke-width:1.2px,color:${mc},font-size:13px;\nclass ${steps.map((_, i) => `n${i}`).join(',')} lexorium;`;
      const graph = `flowchart TD\n${nodes}\n${edges}\n${classDefs}`;
 
      try {
