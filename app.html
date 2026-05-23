@@ -109,6 +109,9 @@
     --shadow-brand-alt: rgba(0,0,0,0.3);
     --shadow-sm: rgba(0,0,0,0.22);
     --shadow-toggle: rgba(0,0,0,0.18);
+    --mermaid-node-fill: #111111;
+    --mermaid-node-color: #ffffff;
+    --mermaid-node-stroke: #d9d9d9;
   }
 
   [data-theme="light"] {
@@ -200,6 +203,9 @@
     --shadow-brand-alt: rgba(0,0,0,0.06);
     --shadow-sm: rgba(0,0,0,0.06);
     --shadow-toggle: rgba(0,0,0,0.08);
+    --mermaid-node-fill: #f0f0f0;
+    --mermaid-node-color: #1a1a1a;
+    --mermaid-node-stroke: #cccccc;
   }
 
   html, body {
@@ -6966,8 +6972,6 @@
   }
   function updateMermaidTheme() {
     if (!window.mermaid) return;
-    const container = document.querySelector('.mermaid');
-    if (!container) return;
     try { window.mermaid.initialize(getMermaidConfig()); } catch (_e) {}
   }
   if (window.mermaid) {
@@ -8557,14 +8561,10 @@
      wrap.appendChild(canvas);
      messageEl.querySelector('.msg-body').appendChild(wrap);
 
-     const formattedSteps = steps.map(formatFlowNodeLabel);
-     const nodes = formattedSteps.map((label, i) => `n${i}["${label}"]`).join('\n');
-     const edges = steps.slice(1).map((_, i) => `n${i} --> n${i + 1}`).join('\n');
-     const isLightMermaid = document.documentElement.getAttribute('data-theme') === 'light';
-     const nodeFill = isLightMermaid ? '#f0f0f0' : 'var(--active-text)';
-     const nodeColor = isLightMermaid ? '#1a1a1a' : '#ffffff';
-     const nodeStroke = isLightMermaid ? '#cccccc' : '#d9d9d9';
-     const classDefs = `classDef lexorium fill:${nodeFill},stroke:${nodeStroke},stroke-width:1.2px,color:${nodeColor},font-size:13px;\nclass ${steps.map((_, i) => `n${i}`).join(',')} lexorium;`;
+      const formattedSteps = steps.map(formatFlowNodeLabel);
+      const nodes = formattedSteps.map((label, i) => `n${i}["${label}"]`).join('\n');
+      const edges = steps.slice(1).map((_, i) => `n${i} --> n${i + 1}`).join('\n');
+      const classDefs = `classDef lexorium fill:var(--mermaid-node-fill),stroke:var(--mermaid-node-stroke),stroke-width:1.2px,color:var(--mermaid-node-color),font-size:13px;\nclass ${steps.map((_, i) => `n${i}`).join(',')} lexorium;`;
      const graph = `flowchart TD\n${nodes}\n${edges}\n${classDefs}`;
 
      try {
