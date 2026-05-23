@@ -1039,7 +1039,55 @@ nav {
   letter-spacing: 0.02em;
 }
 
-/* ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ HOW IT WORKS ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ */
+/* COMPLIANCE PORTAL */
+.cp-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 16px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+.cp-cat {
+  background: var(--bg2);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 18px 20px 20px;
+  transition: border-color 0.2s;
+}
+.cp-cat:hover {
+  border-color: rgba(192,192,192,0.3);
+}
+.cp-cat-title {
+  font-family: 'Fraunces', serif;
+  font-style: italic;
+  font-weight: 300;
+  font-size: 13px;
+  color: var(--white);
+  margin-bottom: 12px;
+  letter-spacing: 0.02em;
+}
+.cp-links {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.cp-links a {
+  color: rgba(192,192,192,0.55);
+  font-size: 12px;
+  font-weight: 300;
+  text-decoration: none;
+  padding: 3px 0;
+  transition: color 0.15s;
+}
+.cp-links a:hover {
+  color: var(--white);
+}
+.cp-cta {
+  text-align: center;
+  margin-top: 36px;
+}
+
+/* HOW IT WORKS */
 .how-section {
   padding: 80px 60px;
   background: var(--bg2);
@@ -2657,6 +2705,7 @@ footer {
     <li><a href="#how">How It Works</a></li>
     <li><a href="#platform">Platform</a></li>
     <li><a href="#pricing">Pricing</a></li>
+    <li><a href="#compliance-portal">Compliance</a></li>
     <li><a href="/help">Help</a></li>
     <li><a href="#signin">Sign In</a></li>
   </ul>
@@ -2672,6 +2721,7 @@ footer {
       <li><a href="#how" onclick="closeDrawer()">How It Works</a></li>
       <li><a href="#platform" onclick="closeDrawer()">Platform</a></li>
       <li><a href="#pricing" onclick="closeDrawer()">Pricing</a></li>
+      <li><a href="#compliance-portal" onclick="closeDrawer()">Compliance</a></li>
       <li><a href="/help" onclick="closeDrawer()">Help</a></li>
       <li><a href="#signin" onclick="closeDrawer()">Sign In</a></li>
   </ul>
@@ -3105,6 +3155,14 @@ footer {
       <p class="feature-desc">LexoriumAI is designed with a privacy-first approach to help users manage legal research and documents securely and responsibly.</p>
     </div>
 
+    <div class="feature-card">
+      <div class="feature-icon">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5.5 2.5L8 1l2.5 1.5L13 2v4.5c0 3.2-2.5 5.8-5 6.5-2.5-.7-5-3.3-5-6.5V2l2.5.5z"/><path d="M6.5 8.5L8 10l3-3"/></svg>
+      </div>
+      <div class="feature-title">Compliance Portal</div>
+      <p class="feature-desc">Access 80+ Indian compliance authorities — MCA, Income Tax, GST, EPFO, SEBI, IP India, RERA, CERT-In and more — all linked from one place inside your Lexorium workspace.</p>
+    </div>
+
   </div>
 </section>
 
@@ -3443,6 +3501,183 @@ footer {
   <div class="install-note" id="installWebAppNote">Install Lexorium from this browser for a focused app-style experience on the devices you already use.</div>
 </section>
 
+<!-- COMPLIANCE PORTAL -->
+<section class="section" id="compliance-portal">
+  <p class="section-eyebrow reveal">Legal Compliance Hub</p>
+  <h2 class="section-title reveal">Indian Compliance <span>Portal</span></h2>
+  <p class="section-subtitle reveal" style="max-width:680px;margin:0 auto 36px;text-align:center;color:var(--silver);font-size:14px;line-height:1.7">Access 80+ Indian compliance authorities — central, regulatory, judicial, tax, labour, financial, sectoral, and state-linked portals — all in one place. Click any link to open the official site in a new tab.</p>
+  <div class="cp-grid reveal" id="cpGrid">
+
+    <div class="cp-cat">
+      <div class="cp-cat-title">1. Corporate Affairs &amp; ROC</div>
+      <div class="cp-links">
+        <a href="https://www.mca.gov.in" target="_blank" rel="noopener noreferrer">MCA Portal</a>
+        <a href="https://www.mca.gov.in/content/mca/global/en/mca/efiling.html" target="_blank" rel="noopener noreferrer">MCA V3 Filing</a>
+        <a href="https://www.llp.gov.in" target="_blank" rel="noopener noreferrer">LLP Filing Portal</a>
+        <a href="https://www.mca.gov.in/content/mca/global/en/din-kyc.html" target="_blank" rel="noopener noreferrer">DIN &amp; Director KYC</a>
+        <a href="https://www.iepf.gov.in" target="_blank" rel="noopener noreferrer">IEPF</a>
+        <a href="https://nclt.gov.in" target="_blank" rel="noopener noreferrer">NCLT</a>
+        <a href="https://nclat.gov.in" target="_blank" rel="noopener noreferrer">NCLAT</a>
+        <a href="https://www.ibbi.gov.in" target="_blank" rel="noopener noreferrer">IBBI</a>
+      </div>
+    </div>
+
+    <div class="cp-cat">
+      <div class="cp-cat-title">2. Income Tax &amp; Direct Tax</div>
+      <div class="cp-links">
+        <a href="https://www.incometax.gov.in" target="_blank" rel="noopener noreferrer">Income Tax Portal</a>
+        <a href="https://www.tdscpc.gov.in" target="_blank" rel="noopener noreferrer">TRACES TDS Portal</a>
+        <a href="https://www.tin-nsdl.com" target="_blank" rel="noopener noreferrer">TIN NSDL Services</a>
+        <a href="https://www.pan.NSDL.co.in" target="_blank" rel="noopener noreferrer">PAN Services NSDL</a>
+        <a href="https://eportal.incometax.gov.in" target="_blank" rel="noopener noreferrer">AIS/TIS Taxpayer</a>
+        <a href="https://www.cbdt.gov.in" target="_blank" rel="noopener noreferrer">CBDT</a>
+      </div>
+    </div>
+
+    <div class="cp-cat">
+      <div class="cp-cat-title">3. GST, Customs &amp; Indirect Tax</div>
+      <div class="cp-links">
+        <a href="https://www.gst.gov.in" target="_blank" rel="noopener noreferrer">GST Portal</a>
+        <a href="https://ewaybillgst.gov.in" target="_blank" rel="noopener noreferrer">GST E-Way Bill</a>
+        <a href="https://einvoice.gst.gov.in" target="_blank" rel="noopener noreferrer">GST E-Invoice</a>
+        <a href="https://www.icegate.gov.in" target="_blank" rel="noopener noreferrer">ICEGATE Customs</a>
+        <a href="https://www.cbic.gov.in" target="_blank" rel="noopener noreferrer">CBIC</a>
+        <a href="https://www.dgft.gov.in" target="_blank" rel="noopener noreferrer">DGFT Import Export</a>
+        <a href="https://www.sezindia.gov.in" target="_blank" rel="noopener noreferrer">SEZs</a>
+      </div>
+    </div>
+
+    <div class="cp-cat">
+      <div class="cp-cat-title">4. Labour &amp; Employment Compliance</div>
+      <div class="cp-links">
+        <a href="https://www.epfindia.gov.in" target="_blank" rel="noopener noreferrer">EPFO</a>
+        <a href="https://www.esic.gov.in" target="_blank" rel="noopener noreferrer">ESIC</a>
+        <a href="https://www.shramsuvidha.gov.in" target="_blank" rel="noopener noreferrer">Shram Suvidha</a>
+        <a href="https://www.labour.gov.in" target="_blank" rel="noopener noreferrer">Min. of Labour</a>
+        <a href="https://www.ncs.gov.in" target="_blank" rel="noopener noreferrer">National Career Service</a>
+        <a href="https://bocw.gov.in" target="_blank" rel="noopener noreferrer">BOCW Portal</a>
+      </div>
+    </div>
+
+    <div class="cp-cat">
+      <div class="cp-cat-title">5. Startup, MSME &amp; Industrial Approvals</div>
+      <div class="cp-links">
+        <a href="https://www.startupindia.gov.in" target="_blank" rel="noopener noreferrer">Startup India</a>
+        <a href="https://udyamregistration.gov.in" target="_blank" rel="noopener noreferrer">Udyam MSME</a>
+        <a href="https://www.nsws.gov.in" target="_blank" rel="noopener noreferrer">National Single Window</a>
+        <a href="https://www.govprocurement.nic.in" target="_blank" rel="noopener noreferrer">GeM Procurement</a>
+        <a href="https://www.investindia.gov.in" target="_blank" rel="noopener noreferrer">Invest India</a>
+        <a href="https://www.dipp.gov.in" target="_blank" rel="noopener noreferrer">IEM Portal</a>
+      </div>
+    </div>
+
+    <div class="cp-cat">
+      <div class="cp-cat-title">6. Intellectual Property</div>
+      <div class="cp-links">
+        <a href="https://www.ipindia.gov.in" target="_blank" rel="noopener noreferrer">IP India</a>
+        <a href="https://tmrsearch.ipindia.gov.in" target="_blank" rel="noopener noreferrer">Trademark Registry</a>
+        <a href="https://patentsearch.ipindia.gov.in" target="_blank" rel="noopener noreferrer">Patent Search</a>
+        <a href="https://design.ipindia.gov.in" target="_blank" rel="noopener noreferrer">Design Registry</a>
+        <a href="https://copyright.gov.in" target="_blank" rel="noopener noreferrer">Copyright Office</a>
+        <a href="https://www.ipindia.gov.in/gi-registry.htm" target="_blank" rel="noopener noreferrer">GI Registry</a>
+      </div>
+    </div>
+
+    <div class="cp-cat">
+      <div class="cp-cat-title">7. Securities, Banking &amp; Financial Regulation</div>
+      <div class="cp-links">
+        <a href="https://www.sebi.gov.in" target="_blank" rel="noopener noreferrer">SEBI</a>
+        <a href="https://www.rbi.org.in" target="_blank" rel="noopener noreferrer">Reserve Bank of India</a>
+        <a href="https://firms.rbi.org.in" target="_blank" rel="noopener noreferrer">FIRMS RBI</a>
+        <a href="https://www.fiuindia.gov.in" target="_blank" rel="noopener noreferrer">FIU India</a>
+        <a href="https://www.irdai.gov.in" target="_blank" rel="noopener noreferrer">IRDAI</a>
+        <a href="https://www.pfrda.org.in" target="_blank" rel="noopener noreferrer">PFRDA</a>
+        <a href="https://www.nabard.org" target="_blank" rel="noopener noreferrer">NABARD</a>
+        <a href="https://www.nseindia.com" target="_blank" rel="noopener noreferrer">NSE</a>
+        <a href="https://www.bseindia.com" target="_blank" rel="noopener noreferrer">BSE</a>
+        <a href="https://www.npci.org.in" target="_blank" rel="noopener noreferrer">NPCI</a>
+      </div>
+    </div>
+
+    <div class="cp-cat">
+      <div class="cp-cat-title">8. Competition, Consumer &amp; Trade Regulation</div>
+      <div class="cp-links">
+        <a href="https://www.cci.gov.in" target="_blank" rel="noopener noreferrer">CCI</a>
+        <a href="https://consumerhelpline.gov.in" target="_blank" rel="noopener noreferrer">National Consumer Helpline</a>
+        <a href="https://edaakhil.nic.in" target="_blank" rel="noopener noreferrer">E-Daakhil Consumer</a>
+        <a href="https://www.legalmetrology.gov.in" target="_blank" rel="noopener noreferrer">Legal Metrology</a>
+      </div>
+    </div>
+
+    <div class="cp-cat">
+      <div class="cp-cat-title">9. Courts, Judiciary &amp; Legal Research</div>
+      <div class="cp-links">
+        <a href="https://services.ecourts.gov.in" target="_blank" rel="noopener noreferrer">eCourts Services</a>
+        <a href="https://www.sci.gov.in" target="_blank" rel="noopener noreferrer">Supreme Court of India</a>
+        <a href="https://www.indiacode.nic.in" target="_blank" rel="noopener noreferrer">India Code</a>
+        <a href="https://njdg.ecourts.gov.in" target="_blank" rel="noopener noreferrer">NJDG</a>
+        <a href="https://efiling.ecourts.gov.in" target="_blank" rel="noopener noreferrer">e-Filing Supreme Court</a>
+        <a href="https://efiling.ecourts.gov.in/efiling/" target="_blank" rel="noopener noreferrer">HC e-Filing Portals</a>
+      </div>
+    </div>
+
+    <div class="cp-cat">
+      <div class="cp-cat-title">10. Food, Pharma, Health &amp; Medical</div>
+      <div class="cp-links">
+        <a href="https://www.fssai.gov.in" target="_blank" rel="noopener noreferrer">FSSAI Licensing</a>
+        <a href="https://cdsco.gov.in" target="_blank" rel="noopener noreferrer">CDSCO Drug Regulation</a>
+        <a href="https://ayush.gov.in" target="_blank" rel="noopener noreferrer">Ayush Licensing</a>
+        <a href="https://www.nmc.org.in" target="_blank" rel="noopener noreferrer">National Medical Commission</a>
+      </div>
+    </div>
+
+    <div class="cp-cat">
+      <div class="cp-cat-title">11. Environmental &amp; Industrial Safety</div>
+      <div class="cp-links">
+        <a href="https://cpcb.nic.in" target="_blank" rel="noopener noreferrer">CPCB</a>
+        <a href="https://moef.gov.in" target="_blank" rel="noopener noreferrer">MoEFCC</a>
+        <a href="https://parivesh.nic.in" target="_blank" rel="noopener noreferrer">PARIVESH Clearance</a>
+        <a href="https://cpcb.nic.in/spcb" target="_blank" rel="noopener noreferrer">State PCB</a>
+        <a href="https://peso.gov.in" target="_blank" rel="noopener noreferrer">PESO</a>
+      </div>
+    </div>
+
+    <div class="cp-cat">
+      <div class="cp-cat-title">12. Telecom, IT &amp; Cybersecurity</div>
+      <div class="cp-links">
+        <a href="https://www.cert-in.org.in" target="_blank" rel="noopener noreferrer">CERT-In</a>
+        <a href="https://www.meity.gov.in" target="_blank" rel="noopener noreferrer">MeitY</a>
+        <a href="https://www.trai.gov.in" target="_blank" rel="noopener noreferrer">TRAI</a>
+        <a href="https://www.dot.gov.in" target="_blank" rel="noopener noreferrer">DoT</a>
+        <a href="https://www.meity.gov.in/data-protection" target="_blank" rel="noopener noreferrer">DPDP Resources</a>
+      </div>
+    </div>
+
+    <div class="cp-cat">
+      <div class="cp-cat-title">13. Real Estate &amp; Infrastructure</div>
+      <div class="cp-links">
+        <a href="https://rera.gov.in" target="_blank" rel="noopener noreferrer">RERA Central Advisory</a>
+        <a href="https://rera.gov.in/state-rera" target="_blank" rel="noopener noreferrer">State-wise RERA</a>
+        <a href="https://www.nhai.gov.in" target="_blank" rel="noopener noreferrer">NHAI</a>
+      </div>
+    </div>
+
+    <div class="cp-cat">
+      <div class="cp-cat-title">14. Foreign Investment, FEMA &amp; Trade</div>
+      <div class="cp-links">
+        <a href="https://fdi.gov.in" target="_blank" rel="noopener noreferrer">FDI Policy Portal</a>
+        <a href="https://rbi.org.in/fema" target="_blank" rel="noopener noreferrer">FEMA RBI Compliance</a>
+        <a href="https://www.fieo.org" target="_blank" rel="noopener noreferrer">Export Promotion Councils</a>
+        <a href="https://apeda.gov.in" target="_blank" rel="noopener noreferrer">APEDA</a>
+      </div>
+    </div>
+
+  </div>
+  <div class="cp-cta reveal">
+    <a class="btn-primary btn-lg" href="#signin" onclick="handleLaunchApp(event)"><span>🚀</span> Open in Lexorium App</a>
+  </div>
+</section>
+
 <!-- FINAL CTA -->
 <section class="final-cta">
   <div class="final-cta-content reveal">
@@ -3468,6 +3703,7 @@ footer {
     <li><a href="#how">How It Works</a></li>
     <li><a href="#platform">Platform</a></li>
     <li><a href="#pricing">Pricing</a></li>
+    <li><a href="#compliance-portal">Compliance</a></li>
     <li><a href="#enterprise-contact">Enterprise</a></li>
   </ul>
   <div class="footer-meta">
