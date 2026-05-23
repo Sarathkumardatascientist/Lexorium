@@ -265,7 +265,7 @@ function getUsageWarningState(planId, usage) {
   return {
     level,
     message,
-    showSoftWarning: level > 0 && level < 3,
+    showSoftWarning: level >= 2 && level < 3,
     showHardLimit: level === 3,
   };
 }
