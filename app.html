@@ -1032,6 +1032,7 @@
   .settings-shell {
     display: grid;
     grid-template-columns: 240px minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr);
     min-height: 620px;
     max-height: inherit;
   }
@@ -1126,7 +1127,9 @@
   .settings-content {
     padding: 22px 28px 36px;
     overflow-y: auto;
+    height: 100%;
     min-height: 0;
+    max-height: 100%;
     scroll-behavior: smooth;
     overscroll-behavior: contain;
     scrollbar-width: thin;
