@@ -3168,10 +3168,18 @@
     min-width: 680px;
   }
 
+  .flowchart-canvas svg {
+    overflow: visible;
+  }
   .flowchart-canvas .nodeLabel,
   .flowchart-canvas text,
   .flowchart-canvas tspan {
     fill: #FFFFFF !important;
+  }
+  .flowchart-canvas foreignObject div {
+    white-space: normal !important;
+    word-break: normal !important;
+    overflow-wrap: normal !important;
   }
 
   .source-num {
@@ -8775,14 +8783,12 @@
    }
 
    function escapeMermaidLabel(text) {
-     let result = unescapeJsText(String(text || ''))
-       .replace(/[<>[\]{}|()`]/g, ' ')
-       .replace(/\\/g, ' ')
-       .replace(/"/g, "'")
-       .replace(/\s+/g, ' ')
-       .trim();
-     return escapeHtml(result);
-   }
+      let result = unescapeJsText(String(text || ''))
+        .replace(/"/g, "'")
+        .replace(/\s+/g, ' ')
+        .trim();
+      return escapeHtml(result);
+    }
 
    const KNOWN_FLOW_LABELS = new Set([
      'issue', 'issues', 'applicable law', 'rule / provision',
@@ -8795,34 +8801,9 @@
      'step 6', 'step 7', 'step 8'
    ]);
 
-   function formatFlowNodeLabel(step) {
-     const value = String(step || '').trim();
-     if (!value) return '';
-     
-     const separator = value.indexOf(':');
-     if (separator === -1 || separator >= value.length - 1) {
-       return escapeMermaidLabel(value);
-     }
-     
-     const firstPart = value.slice(0, separator).trim().toLowerCase();
-     if (KNOWN_FLOW_LABELS.has(firstPart)) {
-       const title = escapeMermaidLabel(value.slice(0, separator).trim());
-       const detail = escapeMermaidLabel(value.slice(separator + 1).trim());
-       return detail ? `${title}<br/>${detail}` : title;
-     }
-     
-     if (firstPart.length > 20) {
-       return escapeMermaidLabel(value);
-     }
-     
-     if (!firstPart) {
-       return escapeMermaidLabel(value.slice(separator + 1).trim());
-     }
-     
-     const title = escapeMermaidLabel(value.slice(0, separator).trim());
-     const detail = escapeMermaidLabel(value.slice(separator + 1).trim());
-     return detail ? `${title}<br/>${detail}` : title;
-   }
+    function formatFlowNodeLabel(step) {
+      return escapeMermaidLabel(step);
+    }
 
    async function renderFlowchartForMessage(messageEl, text) {
      const normalized = normalizeStructuredAssistantText(String(text || ''));
