@@ -524,7 +524,7 @@
 
   .sidebar-primary-btn span {
     flex: 1;
-    white-space: nowrap;
+    min-width: 0;
   }
 
   .sidebar-primary-btn:hover {
@@ -847,8 +847,8 @@
     text-transform: uppercase;
     font-weight: 300;
     opacity: 0.55;
-    white-space: nowrap;
-    overflow: visible;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   /* ?? THREE-DOT MENU ?? */
@@ -1033,7 +1033,7 @@
     display: grid;
     grid-template-columns: 240px minmax(0, 1fr);
     grid-template-rows: minmax(0, 1fr);
-    min-height: 620px;
+    min-height: min(620px, 70vh);
     max-height: inherit;
   }
 
@@ -1887,7 +1887,8 @@
     overflow-wrap: anywhere;
     min-width: 0;
     box-shadow: var(--assistant-shadow);
-    overflow: hidden;
+    overflow-x: auto;
+    overflow-y: clip;
     backdrop-filter: blur(16px);
   }
 
@@ -2787,7 +2788,7 @@
     font-weight: 300;
     color: var(--white);
     line-height: 1.6;
-    max-height: 160px;
+    max-height: 40vh;
     min-height: 22px;
     overflow-y: auto;
     letter-spacing: 0.02em;
