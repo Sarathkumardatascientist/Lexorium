@@ -7254,7 +7254,7 @@
       startOnLoad: false,
       theme: 'base',
       securityLevel: 'loose',
-      flowchart: { curve: 'basis', useMaxWidth: true, htmlLabels: true },
+      flowchart: { curve: 'basis', useMaxWidth: true, htmlLabels: false, padding: 20 },
       themeVariables: isLight ? lightVars : darkVars,
     };
   }
@@ -8783,11 +8783,10 @@
    }
 
    function escapeMermaidLabel(text) {
-      let result = unescapeJsText(String(text || ''))
+      return escapeHtml(unescapeJsText(String(text || ''))
         .replace(/"/g, "'")
         .replace(/\s+/g, ' ')
-        .trim();
-      return escapeHtml(result);
+        .trim());
     }
 
    const KNOWN_FLOW_LABELS = new Set([
