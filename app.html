@@ -8675,7 +8675,7 @@
     return sections
       .map((section) => ({
         label: section.label,
-        content: summariseFlowSnippet(section.parts.join(' ')),
+        content: summariseFlowSnippet(section.parts.join(' '), 8000, 50),
       }))
       .filter((section) => section.label && section.content);
   }
